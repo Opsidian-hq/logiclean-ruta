@@ -1,0 +1,46 @@
+name: Database Backup
+
+on:
+  # Ejecutar todos los lunes a las 3am UTC
+  schedule:
+    - cron: '0 3 * * 1'
+  # Permitir ejecución manual desde GitHub
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: pg_dump → artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify pg_dump available
+        run: pg_dump --version
+
+      - name: Run backup script
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          chmod +x ./scripts/backup.sh
+          ./scripts/backup.sh
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: logiclean-backup-${{ github.run_id }}
+          path: backup_logiclean_*.sql
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Report success
+        run: |
+          echo "Backup completado. Artifact disponible por 30 días."
+          echo "Run ID: ${{ github.run_id }}"

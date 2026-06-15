@@ -1,0 +1,27 @@
+name: Supabase Keepalive
+
+on:
+  # Ejecutar cada 12 horas para mantener el proyecto activo
+  # (Supabase pausa proyectos free tras 7 días sin actividad)
+  schedule:
+    - cron: '0 */12 * * *'
+  # Permitir ejecución manual
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          chmod +x ./scripts/keepalive.sh
+          ./scripts/keepalive.sh
