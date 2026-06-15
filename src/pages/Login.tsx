@@ -1,0 +1,183 @@
+/**
+ * Logiclean Ruta — Login Page
+ *
+ * Autenticación via Supabase Auth (email + password).
+ * Al entrar:
+ *  - rol=gerente → /admin
+ *  - rol=vendedor → /catalogo
+ */
+
+import React, { useState, useEffect } from 'react';
+import {
+  IonPage,
+  IonContent,
+  IonInput,
+  IonButton,
+  IonSpinner,
+  IonText,
+  IonItem,
+  IonLabel,
+} from '@ionic/react';
+import { useHistory } from 'react-router-dom';
+import { useAuthContext } from '../context/AuthContext';
+
+// ── Estilos ────────────────────────────────────────────────────
+
+const styles = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100vh',
+    padding: '24px',
+    backgroundColor: 'var(--color-bg, #FAFAFA)',
+  },
+  card: {
+    width: '100%',
+    maxWidth: '400px',
+    backgroundColor: 'var(--color-surface, #FFFFFF)',
+    borderRadius: '16px',
+    padding: '32px 24px',
+    boxShadow: '0 4px 24px rgba(0, 29, 81, 0.10)',
+  },
+  brand: {
+    fontFamily: 'var(--font-brand, cursive)',
+    fontSize: '32px',
+    color: 'var(--color-navy, #001D51)',
+    textAlign: 'center' as const,
+    marginBottom: '8px',
+    lineHeight: 1.2,
+  },
+  subtitle: {
+    fontSize: '14px',
+    color: '#6B7280',
+    textAlign: 'center' as const,
+    marginBottom: '32px',
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    border: '1px solid var(--color-error, #D92D20)',
+    borderRadius: '8px',
+    padding: '12px 16px',
+    marginBottom: '16px',
+    color: 'var(--color-error, #D92D20)',
+    fontSize: '14px',
+  },
+  button: {
+    '--background': 'var(--color-primary, #0606FE)',
+    '--border-radius': '10px',
+    '--padding-top': '14px',
+    '--padding-bottom': '14px',
+    marginTop: '24px',
+    width: '100%',
+    minHeight: 'var(--touch-min, 48px)',
+  },
+};
+
+// ── Componente ────────────────────────────────────────────────
+
+export function LoginPage() {
+  const { signIn, loading, error, user, rol } = useAuthContext();
+  const history = useHistory();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (user && rol) {
+      if (rol === 'gerente') {
+        history.replace('/admin');
+      } else {
+        history.replace('/catalogo');
+      }
+    }
+  }, [user, rol, history]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+    await signIn(email.trim(), password);
+  };
+
+  return (
+    <IonPage>
+      <IonContent>
+        <div style={styles.container}>
+          <div style={styles.card}>
+            {/* Marca */}
+            <div style={styles.brand}>Logiclean Ruta</div>
+            <div style={styles.subtitle}>Inicia sesión para continuar</div>
+
+            {/* Error */}
+            {error && (
+              <div style={styles.errorBox} role="alert">
+                {error === 'Invalid login credentials'
+                  ? 'Correo o contraseña incorrectos.'
+                  : error}
+              </div>
+            )}
+
+            {/* Formulario */}
+            <form onSubmit={handleSubmit} noValidate>
+              <IonItem
+                style={{
+                  '--background': 'transparent',
+                  '--border-color': '#E5E7EB',
+                  marginBottom: '12px',
+                }}
+              >
+                <IonLabel position="stacked" style={{ color: 'var(--color-navy)' }}>
+                  Correo electrónico
+                </IonLabel>
+                <IonInput
+                  type="email"
+                  value={email}
+                  onIonInput={(e) => setEmail(e.detail.value ?? '')}
+                  placeholder="correo@ejemplo.com"
+                  required
+                  autocomplete="email"
+                  inputmode="email"
+                  style={{ minHeight: 'var(--touch-min, 48px)' }}
+                />
+              </IonItem>
+
+              <IonItem
+                style={{
+                  '--background': 'transparent',
+                  '--border-color': '#E5E7EB',
+                }}
+              >
+                <IonLabel position="stacked" style={{ color: 'var(--color-navy)' }}>
+                  Contraseña
+                </IonLabel>
+                <IonInput
+                  type="password"
+                  value={password}
+                  onIonInput={(e) => setPassword(e.detail.value ?? '')}
+                  placeholder="••••••••"
+                  required
+                  autocomplete="current-password"
+                  style={{ minHeight: 'var(--touch-min, 48px)' }}
+                />
+              </IonItem>
+
+              <IonButton
+                type="submit"
+                expand="block"
+                style={styles.button}
+                disabled={loading || !email.trim() || !password.trim()}
+              >
+                {loading ? (
+                  <IonSpinner name="crescent" style={{ color: '#fff' }} />
+                ) : (
+                  'Entrar'
+                )}
+              </IonButton>
+            </form>
+          </div>
+        </div>
+      </IonContent>
+    </IonPage>
+  );
+}

@@ -1,0 +1,21 @@
+/* Logiclean Ruta — Global baseline CSS
+ * Los tokens de diseño reales viven en src/theme/variables.css
+ * Este archivo solo establece el baseline mínimo del HTML.
+ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}

@@ -1,0 +1,205 @@
+/**
+ * Logiclean Ruta — PresentacionForm
+ *
+ * Formulario para crear o editar una PRESENTACION.
+ * Usado dentro de ProductoForm.
+ */
+
+import React, { useState, useEffect } from 'react';
+import {
+  IonItem,
+  IonLabel,
+  IonInput,
+  IonSelect,
+  IonSelectOption,
+  IonButton,
+  IonText,
+} from '@ionic/react';
+import type { Presentacion } from '../../../db/schema';
+
+// ── Tipos ─────────────────────────────────────────────────────
+
+type PresentacionDraft = Omit<Presentacion, 'id' | 'producto_base_id' | 'activo'>;
+
+interface PresentacionFormProps {
+  /** Si se provee, se está editando una presentación existente */
+  inicial?: Partial<Presentacion>;
+  productoBaseId: string;
+  onSave: (data: Omit<Presentacion, 'id'> & { id?: string }) => void;
+  onCancel: () => void;
+}
+
+// ── Validación ────────────────────────────────────────────────
+
+function validar(draft: PresentacionDraft): Record<string, string> {
+  const errores: Record<string, string> = {};
+  if (!draft.nombre.trim()) errores.nombre = 'El nombre es obligatorio';
+  if (!draft.unidad_venta.trim()) errores.unidad_venta = 'La unidad de venta es obligatoria';
+  if (draft.factor_conversion <= 0) errores.factor_conversion = 'El factor debe ser mayor que 0';
+  if (draft.precio_mayoreo < 0) errores.precio_mayoreo = 'El precio no puede ser negativo';
+  if (draft.precio_menudeo < 0) errores.precio_menudeo = 'El precio no puede ser negativo';
+  return errores;
+}
+
+// ── Componente ────────────────────────────────────────────────
+
+export function PresentacionForm({
+  inicial,
+  productoBaseId,
+  onSave,
+  onCancel,
+}: PresentacionFormProps) {
+  const [nombre, setNombre] = useState(inicial?.nombre ?? '');
+  const [unidadVenta, setUnidadVenta] = useState(inicial?.unidad_venta ?? '');
+  const [factorConversion, setFactorConversion] = useState(
+    String(inicial?.factor_conversion ?? 1)
+  );
+  const [precioMayoreo, setPrecioMayoreo] = useState(
+    String(inicial?.precio_mayoreo ?? '')
+  );
+  const [precioMenudeo, setPrecioMenudeo] = useState(
+    String(inicial?.precio_menudeo ?? '')
+  );
+  const [errores, setErrores] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState(false);
+
+  const draft: PresentacionDraft = {
+    nombre,
+    unidad_venta: unidadVenta,
+    factor_conversion: parseFloat(factorConversion) || 0,
+    precio_mayoreo: parseFloat(precioMayoreo) || 0,
+    precio_menudeo: parseFloat(precioMenudeo) || 0,
+  };
+
+  useEffect(() => {
+    if (touched) {
+      setErrores(validar(draft));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nombre, unidadVenta, factorConversion, precioMayoreo, precioMenudeo, touched]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTouched(true);
+    const errs = validar(draft);
+    if (Object.keys(errs).length > 0) {
+      setErrores(errs);
+      return;
+    }
+    onSave({
+      ...(inicial?.id ? { id: inicial.id } : {}),
+      producto_base_id: productoBaseId,
+      nombre: draft.nombre.trim(),
+      unidad_venta: draft.unidad_venta.trim(),
+      factor_conversion: draft.factor_conversion,
+      precio_mayoreo: draft.precio_mayoreo,
+      precio_menudeo: draft.precio_menudeo,
+      activo: inicial?.activo ?? true,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate style={{ padding: '8px 0' }}>
+      {/* Nombre */}
+      <IonItem>
+        <IonLabel position="stacked">Nombre de la presentación *</IonLabel>
+        <IonInput
+          value={nombre}
+          onIonInput={(e) => setNombre(e.detail.value ?? '')}
+          placeholder="Ej. Multiusos 1 L"
+          style={{ minHeight: 'var(--touch-min, 48px)' }}
+        />
+      </IonItem>
+      {errores.nombre && (
+        <IonText color="danger">
+          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.nombre}</p>
+        </IonText>
+      )}
+
+      {/* Unidad de venta */}
+      <IonItem>
+        <IonLabel position="stacked">Unidad de venta *</IonLabel>
+        <IonInput
+          value={unidadVenta}
+          onIonInput={(e) => setUnidadVenta(e.detail.value ?? '')}
+          placeholder="litro, pieza, kg..."
+          style={{ minHeight: 'var(--touch-min, 48px)' }}
+        />
+      </IonItem>
+      {errores.unidad_venta && (
+        <IonText color="danger">
+          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.unidad_venta}</p>
+        </IonText>
+      )}
+
+      {/* Factor de conversión */}
+      <IonItem>
+        <IonLabel position="stacked">Factor de conversión *</IonLabel>
+        <IonInput
+          type="number"
+          value={factorConversion}
+          onIonInput={(e) => setFactorConversion(e.detail.value ?? '1')}
+          min="0.001"
+          step="0.001"
+          style={{ minHeight: 'var(--touch-min, 48px)' }}
+        />
+      </IonItem>
+      {errores.factor_conversion && (
+        <IonText color="danger">
+          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.factor_conversion}</p>
+        </IonText>
+      )}
+
+      {/* Precio mayoreo */}
+      <IonItem>
+        <IonLabel position="stacked">Precio mayoreo *</IonLabel>
+        <IonInput
+          type="number"
+          value={precioMayoreo}
+          onIonInput={(e) => setPrecioMayoreo(e.detail.value ?? '')}
+          min="0"
+          step="0.01"
+          inputmode="decimal"
+          style={{ minHeight: 'var(--touch-min, 48px)' }}
+        />
+      </IonItem>
+      {errores.precio_mayoreo && (
+        <IonText color="danger">
+          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.precio_mayoreo}</p>
+        </IonText>
+      )}
+
+      {/* Precio menudeo */}
+      <IonItem>
+        <IonLabel position="stacked">Precio menudeo *</IonLabel>
+        <IonInput
+          type="number"
+          value={precioMenudeo}
+          onIonInput={(e) => setPrecioMenudeo(e.detail.value ?? '')}
+          min="0"
+          step="0.01"
+          inputmode="decimal"
+          style={{ minHeight: 'var(--touch-min, 48px)' }}
+        />
+      </IonItem>
+      {errores.precio_menudeo && (
+        <IonText color="danger">
+          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.precio_menudeo}</p>
+        </IonText>
+      )}
+
+      {/* Acciones */}
+      <div style={{ display: 'flex', gap: '12px', padding: '16px 0', justifyContent: 'flex-end' }}>
+        <IonButton fill="outline" color="medium" onClick={onCancel} type="button">
+          Cancelar
+        </IonButton>
+        <IonButton
+          type="submit"
+          style={{ '--background': 'var(--color-primary)' }}
+        >
+          {inicial?.id ? 'Actualizar presentación' : 'Agregar presentación'}
+        </IonButton>
+      </div>
+    </form>
+  );
+}

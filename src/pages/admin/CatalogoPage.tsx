@@ -1,0 +1,249 @@
+/**
+ * Logiclean Ruta — CatalogoPage (H-13 — gerente)
+ *
+ * Gestión del catálogo de productos y presentaciones.
+ * Ruta: /admin/catalogo
+ *
+ * Funciones:
+ *  - Lista de PRODUCTO_BASE activos con sus presentaciones
+ *  - Botón "Nuevo producto" → modal ProductoForm
+ *  - Por cada producto: Editar y Dar de baja (activo=false)
+ */
+
+import React, { useState } from 'react';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonBadge,
+  IonSearchbar,
+  IonModal,
+  IonSpinner,
+  IonText,
+  IonAlert,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  IonFab,
+  IonFabButton,
+} from '@ionic/react';
+import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
+import { useCatalog } from '../../hooks/useCatalog';
+import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { ProductoForm } from './components/ProductoForm';
+import type { ProductoBase, Presentacion } from '../../db/schema';
+
+// ── Componente ────────────────────────────────────────────────
+
+export function CatalogoPage() {
+  const {
+    productos,
+    loading,
+    error,
+    saveProducto,
+    desactivarProducto,
+    savePresentacion,
+    desactivarPresentacion,
+    refresh,
+  } = useCatalog();
+
+  const [search, setSearch] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editando, setEditando] = useState<
+    (ProductoBase & { presentaciones?: Presentacion[] }) | null
+  >(null);
+  const [confirmBaja, setConfirmBaja] = useState<string | null>(null);
+
+  const filtrados = productos.filter((p) =>
+    p.nombre.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleSaveProducto = async (
+    productoData: Omit<ProductoBase, 'id'> & { id?: string },
+    presentacionesData: (Omit<Presentacion, 'id'> & { id?: string })[]
+  ) => {
+    await saveProducto(productoData);
+
+    // Guardar presentaciones
+    for (const pres of presentacionesData) {
+      await savePresentacion({
+        ...pres,
+        producto_base_id: productoData.id!,
+      });
+    }
+
+    setModalOpen(false);
+    setEditando(null);
+    await refresh();
+  };
+
+  const handleBaja = async (id: string) => {
+    await desactivarProducto(id);
+    setConfirmBaja(null);
+  };
+
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+          <IonTitle>Catálogo</IonTitle>
+          <IonButtons slot="end">
+            <SyncStatusBadge showLabel={false} />
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent>
+        {/* Buscador */}
+        <IonSearchbar
+          value={search}
+          onIonInput={(e) => setSearch(e.detail.value ?? '')}
+          placeholder="Buscar producto..."
+          style={{ '--background': '#fff' }}
+        />
+
+        {/* Estados de carga */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <IonSpinner name="crescent" />
+          </div>
+        )}
+
+        {!loading && error && (
+          <div style={{ padding: '24px' }}>
+            <IonText color="danger">
+              <p>Error al cargar el catálogo: {error}</p>
+            </IonText>
+          </div>
+        )}
+
+        {!loading && !error && filtrados.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <IonText color="medium">
+              <p>
+                {search
+                  ? `Sin resultados para "${search}"`
+                  : 'No hay productos. Crea el primero.'}
+              </p>
+            </IonText>
+          </div>
+        )}
+
+        {/* Lista de productos */}
+        {!loading && !error && (
+          <IonList>
+            {filtrados.map((producto) => (
+              <IonItemSliding key={producto.id}>
+                <IonItem>
+                  <IonLabel>
+                    <h2 style={{ fontWeight: 700, color: 'var(--color-navy)' }}>
+                      {producto.nombre}
+                    </h2>
+                    <p style={{ fontSize: '13px', color: '#6B7280' }}>
+                      {producto.unidad_compra}
+                      {producto.precio_preferencial != null && (
+                        <> · Precio pref: ${producto.precio_preferencial.toFixed(2)}</>
+                      )}
+                    </p>
+                    {/* Presentaciones resumidas */}
+                    <p style={{ fontSize: '12px', marginTop: '4px' }}>
+                      {producto.presentaciones.length > 0
+                        ? producto.presentaciones.map((p) => p.nombre).join(' · ')
+                        : 'Sin presentaciones'}
+                    </p>
+                  </IonLabel>
+                  <IonBadge
+                    slot="end"
+                    style={{
+                      backgroundColor: 'var(--color-cyan)',
+                      color: 'var(--color-navy)',
+                    }}
+                  >
+                    {producto.presentaciones.length}
+                  </IonBadge>
+                </IonItem>
+
+                <IonItemOptions side="end">
+                  {/* Editar */}
+                  <IonItemOption
+                    color="primary"
+                    onClick={() => {
+                      setEditando(producto);
+                      setModalOpen(true);
+                    }}
+                    style={{ minWidth: '60px' }}
+                  >
+                    <IonIcon icon={pencilOutline} slot="icon-only" />
+                  </IonItemOption>
+                  {/* Baja lógica */}
+                  <IonItemOption
+                    color="danger"
+                    onClick={() => setConfirmBaja(producto.id)}
+                    style={{ minWidth: '60px' }}
+                  >
+                    <IonIcon icon={archiveOutline} slot="icon-only" />
+                  </IonItemOption>
+                </IonItemOptions>
+              </IonItemSliding>
+            ))}
+          </IonList>
+        )}
+
+        {/* FAB: Nuevo producto */}
+        <IonFab vertical="bottom" horizontal="end" slot="fixed">
+          <IonFabButton
+            style={{ '--background': 'var(--color-primary)' }}
+            onClick={() => {
+              setEditando(null);
+              setModalOpen(true);
+            }}
+          >
+            <IonIcon icon={addOutline} />
+          </IonFabButton>
+        </IonFab>
+
+        {/* Modal: ProductoForm */}
+        <IonModal
+          isOpen={modalOpen}
+          onDidDismiss={() => {
+            setModalOpen(false);
+            setEditando(null);
+          }}
+        >
+          <ProductoForm
+            inicial={editando ?? undefined}
+            onSave={handleSaveProducto}
+            onCancel={() => {
+              setModalOpen(false);
+              setEditando(null);
+            }}
+          />
+        </IonModal>
+
+        {/* Alerta: confirmar baja */}
+        <IonAlert
+          isOpen={!!confirmBaja}
+          onDidDismiss={() => setConfirmBaja(null)}
+          header="¿Dar de baja este producto?"
+          message="El producto se marcará como inactivo. Puedes reactivarlo desde la base de datos."
+          buttons={[
+            { text: 'Cancelar', role: 'cancel' },
+            {
+              text: 'Dar de baja',
+              role: 'destructive',
+              handler: () => confirmBaja && handleBaja(confirmBaja),
+            },
+          ]}
+        />
+      </IonContent>
+    </IonPage>
+  );
+}
