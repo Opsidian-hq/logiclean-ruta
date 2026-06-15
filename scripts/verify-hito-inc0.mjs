@@ -5,6 +5,15 @@
  *  alta y edita un producto desde su vista de administración."
  *
  * Este script verifica los requisitos funcionales contra Supabase real.
+ *
+ * Nota sobre offline-first (ADR-0001): el catálogo NUNCA se lee del servidor
+ * sin sesión. El flujo real es: el vendedor inicia sesión, hace un primer sync
+ * autenticado que llena la BD local (Dexie), y de ahí en adelante el catálogo
+ * se sirve "sin conexión" desde ese cache local. Por eso todas las lecturas de
+ * catálogo de este script usan una sesión autenticada (vendedor), nunca el
+ * cliente anónimo — coherente con la RLS (producto_base/presentacion exigen
+ * auth.uid() IS NOT NULL).
+ *
  * Uso: EMAIL_GERENTE=... PASS_GERENTE=... EMAIL_VENDEDOR=... PASS_VENDEDOR=... node scripts/verify-hito-inc0.mjs
  */
 
@@ -38,28 +47,8 @@ async function main() {
   console.log('  Verificación hito Inc 0 — Cimientos');
   console.log('══════════════════════════════════════════\n');
 
-  const supabase = createClient(SUPABASE_URL, ANON_KEY);
-
-  // ── 1. Catálogo disponible sin autenticación (tablas públicas SELECT) ──────
-  console.log('1. Catálogo visible sin autenticación (offline-first: dato ya sincronizado)');
-  {
-    const { data, error } = await supabase
-      .from('producto_base')
-      .select('id, nombre, activo')
-      .eq('activo', true);
-    check('SELECT producto_base sin auth', !error && data?.length > 0,
-          error?.message ?? `${data?.length} productos`);
-
-    const { data: pres, error: eP } = await supabase
-      .from('presentacion')
-      .select('id, nombre, precio_mayoreo, precio_menudeo, factor_conversion')
-      .eq('activo', true);
-    check('SELECT presentacion sin auth', !eP && pres?.length > 0,
-          eP?.message ?? `${pres?.length} presentaciones`);
-  }
-
-  // ── 2. Login vendedor ─────────────────────────────────────────────────────
-  console.log('\n2. Login del vendedor');
+  // ── 1. Login del vendedor ─────────────────────────────────────────────────
+  console.log('1. Login del vendedor');
   const svend = createClient(SUPABASE_URL, ANON_KEY);
   {
     const { data, error } = await svend.auth.signInWithPassword({
@@ -73,19 +62,29 @@ async function main() {
     check('Rol del vendedor = "vendedor"', rol === 'vendedor', `rol=${rol}`);
   }
 
-  // ── 3. Vendedor ve el catálogo (RLS: SELECT público en catálogo) ──────────
-  console.log('\n3. Vendedor ve el catálogo (RLS)');
+  // ── 2. Primer sync autenticado: el catálogo que luego se sirve offline ─────
+  // El vendedor (ya con sesión) lee el catálogo del servidor. Esta es la lectura
+  // que llena Dexie; a partir de aquí la app la sirve "sin conexión" desde el
+  // cache local. La RLS exige auth.uid() IS NOT NULL, por eso usamos svend.
+  console.log('\n2. Vendedor lee el catálogo (primer sync autenticado → cache local Dexie)');
   {
     const { data, error } = await svend
       .from('producto_base')
-      .select('id, nombre')
+      .select('id, nombre, activo')
       .eq('activo', true);
-    check('Vendedor lee catálogo', !error && data?.length > 0,
+    check('SELECT producto_base con sesión de vendedor', !error && data?.length > 0,
           error?.message ?? `${data?.length} productos`);
+
+    const { data: pres, error: eP } = await svend
+      .from('presentacion')
+      .select('id, nombre, precio_mayoreo, precio_menudeo, factor_conversion')
+      .eq('activo', true);
+    check('SELECT presentacion con sesión de vendedor', !eP && pres?.length > 0,
+          eP?.message ?? `${pres?.length} presentaciones`);
   }
 
-  // ── 4. RLS: vendedor no puede ver clientes de otros ──────────────────────
-  console.log('\n4. RLS: vendedor solo ve su propia cartera');
+  // ── 3. RLS: vendedor solo ve su propia cartera ───────────────────────────
+  console.log('\n3. RLS: vendedor solo ve su propia cartera');
   {
     const { data, error } = await svend.from('cliente').select('id');
     // La RLS devuelve [] o solo sus propios clientes, nunca error
@@ -93,8 +92,8 @@ async function main() {
           error?.message ?? `${data?.length} clientes visibles (esperado: 0 por ahora)`);
   }
 
-  // ── 5. Login gerente ──────────────────────────────────────────────────────
-  console.log('\n5. Login del gerente');
+  // ── 4. Login gerente ──────────────────────────────────────────────────────
+  console.log('\n4. Login del gerente');
   const sger = createClient(SUPABASE_URL, ANON_KEY);
   {
     const { data, error } = await sger.auth.signInWithPassword({
@@ -107,8 +106,8 @@ async function main() {
     check('Rol del gerente = "gerente"', rol === 'gerente', `rol=${rol}`);
   }
 
-  // ── 6. H-13: Gerente da de alta un producto nuevo ────────────────────────
-  console.log('\n6. H-13: Gerente da de alta un producto y lo edita');
+  // ── 5. H-13: Gerente da de alta un producto nuevo ────────────────────────
+  console.log('\n5. H-13: Gerente da de alta un producto y lo edita');
   const productoId = crypto.randomUUID();  // UUID generado en cliente (ADR-0001)
   const presentacionId = crypto.randomUUID();
 
@@ -146,20 +145,23 @@ async function main() {
     check('Gerente edita precio de la presentación', !error, error?.message);
   }
 
-  // Verificar que el nuevo valor es visible (sync ida y vuelta)
+  // Sync ida y vuelta: el gerente escribió en el servidor; el dispositivo del
+  // vendedor re-sincroniza y ve el nuevo precio. Se lee con la sesión del
+  // vendedor (svend), no con el cliente anónimo: así es como la app real
+  // refresca el cache de catálogo de cada vendedor.
   {
-    const { data, error } = await supabase  // cliente sin auth (SELECT público)
+    const { data, error } = await svend
       .from('presentacion')
       .select('precio_mayoreo, precio_menudeo')
       .eq('id', presentacionId)
       .single();
-    check('Precio actualizado visible en catálogo (sync ida y vuelta)',
+    check('Vendedor re-sincroniza el precio actualizado (sync ida y vuelta)',
           !error && data?.precio_mayoreo === 40 && data?.precio_menudeo === 55,
           error?.message ?? `mayoreo=${data?.precio_mayoreo} menudeo=${data?.precio_menudeo}`);
   }
 
-  // ── 7. H-13: Baja lógica (activo=false, no DELETE) ───────────────────────
-  console.log('\n7. H-13: Baja lógica del producto (activo=false, nunca DELETE)');
+  // ── 6. H-13: Baja lógica (activo=false, no DELETE) ───────────────────────
+  console.log('\n6. H-13: Baja lógica del producto (activo=false, nunca DELETE)');
   {
     const { error } = await sger
       .from('producto_base')
@@ -177,8 +179,8 @@ async function main() {
           eR?.message ?? `activo=${data?.activo}`);
   }
 
-  // ── 8. Idempotencia (sync sin duplicado) ─────────────────────────────────
-  console.log('\n8. Sync idempotente (upsert con mismo UUID = sin duplicado, T1)');
+  // ── 7. Idempotencia (sync sin duplicado) ─────────────────────────────────
+  console.log('\n7. Sync idempotente (upsert con mismo UUID = sin duplicado, T1)');
   const idUnico = crypto.randomUUID();
   {
     // Upsert 1
@@ -207,8 +209,8 @@ async function main() {
     await sger.from('producto_base').delete().eq('id', productoId);
   }
 
-  // ── 9. RLS: vendedor no puede insertar en producto_base ──────────────────
-  console.log('\n9. RLS: vendedor no puede modificar el catálogo (T4)');
+  // ── 8. RLS: vendedor no puede insertar en producto_base ──────────────────
+  console.log('\n8. RLS: vendedor no puede modificar el catálogo (T4)');
   {
     const { error } = await svend.from('producto_base').insert({
       id: crypto.randomUUID(),
