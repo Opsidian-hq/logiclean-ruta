@@ -1,0 +1,9 @@
+/* Logiclean Ruta — Estilos globales de la aplicación
+ * Los tokens están en src/theme/variables.css
+ * Los estilos de componentes van en los propios archivos TSX (inline styles)
+ */
+
+/* Asegurar que Ionic ocupe toda la pantalla */
+ion-app {
+  height: 100%;
+}

@@ -1,0 +1,83 @@
+/* ============================================================
+ * Logiclean Ruta — Design Tokens
+ * Fuente: docs/brief-sistema-diseno-logiclean.md
+ * ============================================================ */
+
+:root {
+  /* ── Paleta de color ─────────────────────────────────────── */
+  --color-navy:    #001D51;   /* texto principal / encabezados   */
+  --color-body:    #1C1C1E;   /* texto cuerpo                    */
+  --color-primary: #0606FE;   /* acción primaria (botón)         */
+  --color-cyan:    #33E2FF;   /* acento, solo sobre oscuro       */
+  --color-lime:    #63F714;   /* identidad / chip sincronizado   */
+  --color-bg:      #FAFAFA;   /* fondo base                      */
+  --color-surface: #FFFFFF;   /* superficie elevada              */
+  --color-amber:   #F79009;   /* pendiente sync                  */
+  --color-error:   #D92D20;   /* error sync                      */
+
+  /* ── Interacción ─────────────────────────────────────────── */
+  --touch-min: 48px;          /* mínimo de toque (ADR-0001)      */
+
+  /* ── Tipografía ──────────────────────────────────────────── */
+  --font-ui:        'Aaux Next', system-ui, sans-serif;
+  --font-brand:     'Groovy Smooth', cursive;
+  --font-size-base: 17px;
+
+  /* ── Ionic overrides ─────────────────────────────────────── */
+  --ion-background-color:           var(--color-bg);
+  --ion-text-color:                 var(--color-body);
+  --ion-color-primary:              var(--color-primary);
+  --ion-color-primary-contrast:     #ffffff;
+  --ion-color-primary-shade:        #0505d9;
+  --ion-color-primary-tint:         #2020fe;
+  --ion-toolbar-background:         var(--color-navy);
+  --ion-toolbar-color:              #ffffff;
+  --ion-item-background:            var(--color-surface);
+  --ion-font-family:                var(--font-ui);
+
+  /* ── Espaciado ───────────────────────────────────────────── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* ── Bordes ──────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* ── Sombras ─────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Modo oscuro (preparado para futuro) ──────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:      #0a0a0a;
+    --color-surface: #1c1c1e;
+    --color-body:    #f5f5f7;
+  }
+}
+
+/* ── Reset básico ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size:   var(--font-size-base);
+  color:       var(--color-body);
+  background:  var(--color-bg);
+  margin: 0;
+}
+
+/* ── Utilidades de accesibilidad táctil ───────────────────── */
+.touch-target {
+  min-height: var(--touch-min);
+  min-width:  var(--touch-min);
+  display:    flex;
+  align-items: center;
+}
