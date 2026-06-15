@@ -11,8 +11,7 @@
  *  - idle:     🟢 Sincronizado
  */
 
-import React from 'react';
-import { IonBadge, IonIcon, IonSpinner } from '@ionic/react';
+import { IonIcon, IonSpinner } from '@ionic/react';
 import {
   cloudOfflineOutline,
   cloudDoneOutline,

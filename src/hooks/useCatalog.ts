@@ -86,7 +86,10 @@ export function useCatalog(): UseCatalogReturn {
     await loadFromLocal();
   }, [loadFromLocal]);
 
+  // Carga inicial desde la BD local (Dexie) al montar y al cambiar deps.
+  // El setState ocurre dentro de loadFromLocal tras leer el almacén local.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFromLocal();
   }, [loadFromLocal]);
 

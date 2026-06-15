@@ -10,7 +10,7 @@
  *  - Por cada producto: Editar y Dar de baja (activo=false)
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -18,7 +18,6 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonButton,
   IonIcon,
   IonList,
   IonItem,
@@ -51,7 +50,6 @@ export function CatalogoPage() {
     saveProducto,
     desactivarProducto,
     savePresentacion,
-    desactivarPresentacion,
     refresh,
   } = useCatalog();
 
@@ -239,7 +237,9 @@ export function CatalogoPage() {
             {
               text: 'Dar de baja',
               role: 'destructive',
-              handler: () => confirmBaja && handleBaja(confirmBaja),
+              handler: () => {
+                if (confirmBaja) handleBaja(confirmBaja);
+              },
             },
           ]}
         />

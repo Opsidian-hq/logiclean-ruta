@@ -11,7 +11,7 @@
  *  - Baja lógica (activo=false)
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -19,7 +19,6 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonButton,
   IonIcon,
   IonList,
   IonItem,
@@ -272,7 +271,9 @@ export function ClientesPage() {
             {
               text: 'Dar de baja',
               role: 'destructive',
-              handler: () => confirmBaja && handleBaja(confirmBaja),
+              handler: () => {
+                if (confirmBaja) handleBaja(confirmBaja);
+              },
             },
           ]}
         />

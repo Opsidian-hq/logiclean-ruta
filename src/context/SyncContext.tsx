@@ -12,7 +12,7 @@
  *  - enqueue(item): Promise<void>    — encolar operación + trigger sync
  */
 
-import React, {
+import {
   createContext,
   useContext,
   useEffect,

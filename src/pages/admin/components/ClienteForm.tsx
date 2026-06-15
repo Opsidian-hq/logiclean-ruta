@@ -5,7 +5,7 @@
  * También permite reasignar a otro vendedor.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -74,22 +74,18 @@ export function ClienteForm({
     inicial?.fecha_proxima_visita ?? ''
   );
 
-  const [errores, setErrores] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (touched) {
-      setErrores(validar(nombre, tipo, estado, vendedorId));
-    }
-  }, [nombre, tipo, estado, vendedorId, touched]);
+  // Estado derivado: los errores se recalculan en cada render una vez que
+  // el usuario interactuó con el formulario (sin efecto ni setState).
+  const errores = touched ? validar(nombre, tipo, estado, vendedorId) : {};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     const errs = validar(nombre, tipo, estado, vendedorId);
     if (Object.keys(errs).length > 0) {
-      setErrores(errs);
       return;
     }
 

@@ -47,7 +47,7 @@ export function useClientes(): UseClientesReturn {
 
   const loadFromLocal = useCallback(async () => {
     try {
-      let query = db.cliente.where('activo').equals(1);
+      const query = db.cliente.where('activo').equals(1);
 
       const results = await query.toArray();
 
@@ -71,7 +71,10 @@ export function useClientes(): UseClientesReturn {
     await loadFromLocal();
   }, [loadFromLocal]);
 
+  // Carga inicial desde la BD local (Dexie) al montar y al cambiar deps.
+  // El setState ocurre dentro de loadFromLocal tras leer el almacén local.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFromLocal();
   }, [loadFromLocal]);
 

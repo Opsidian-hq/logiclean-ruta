@@ -7,14 +7,13 @@
  *  - rol=vendedor → /catalogo
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   IonPage,
   IonContent,
   IonInput,
   IonButton,
   IonSpinner,
-  IonText,
   IonItem,
   IonLabel,
 } from '@ionic/react';

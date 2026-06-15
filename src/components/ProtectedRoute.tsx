@@ -8,7 +8,7 @@
  *   <ProtectedRoute requiredRol="gerente">  // solo gerente
  */
 
-import React, { type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Redirect } from 'react-router-dom';
 import { IonPage, IonContent, IonSpinner } from '@ionic/react';
 import { useAuthContext } from '../context/AuthContext';

@@ -77,10 +77,13 @@ export class SyncEngine {
   }
 
   /**
-   * Encolar una operación local y sincronizar si hay conexión.
+   * Notificar que una operación ya fue encolada (vía `enqueueOperation`)
+   * y disparar la sincronización si hay conexión.
+   * El ítem se recibe por claridad del contrato con los hooks; el motor
+   * procesa la cola completa, no el ítem individual.
    * Este es el método principal que usan los hooks.
    */
-  async enqueueAndSync(item: SyncQueueItem): Promise<void> {
+  async enqueueAndSync(_item: SyncQueueItem): Promise<void> {
     await this.refreshPendingCount();
     if (this.state.isOnline) {
       await this.syncNow();

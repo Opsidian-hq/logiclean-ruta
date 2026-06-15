@@ -6,7 +6,6 @@
  * Ruta: /catalogo
  */
 
-import React from 'react';
 import {
   IonPage,
   IonHeader,

@@ -5,13 +5,11 @@
  * Usado dentro de ProductoForm.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonItem,
   IonLabel,
   IonInput,
-  IonSelect,
-  IonSelectOption,
   IonButton,
   IonText,
 } from '@ionic/react';
@@ -60,7 +58,6 @@ export function PresentacionForm({
   const [precioMenudeo, setPrecioMenudeo] = useState(
     String(inicial?.precio_menudeo ?? '')
   );
-  const [errores, setErrores] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState(false);
 
   const draft: PresentacionDraft = {
@@ -71,19 +68,15 @@ export function PresentacionForm({
     precio_menudeo: parseFloat(precioMenudeo) || 0,
   };
 
-  useEffect(() => {
-    if (touched) {
-      setErrores(validar(draft));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nombre, unidadVenta, factorConversion, precioMayoreo, precioMenudeo, touched]);
+  // Estado derivado: los errores se recalculan en cada render una vez que
+  // el usuario interactuó con el formulario (sin efecto ni setState).
+  const errores = touched ? validar(draft) : {};
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     const errs = validar(draft);
     if (Object.keys(errs).length > 0) {
-      setErrores(errs);
       return;
     }
     onSave({

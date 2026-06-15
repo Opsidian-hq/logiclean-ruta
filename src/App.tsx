@@ -13,7 +13,6 @@
  *   /                    → redirect según rol
  */
 
-import React from 'react';
 import {
   IonApp,
   IonRouterOutlet,

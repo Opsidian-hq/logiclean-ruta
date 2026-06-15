@@ -5,7 +5,7 @@
  * Incluye sección de gestión de presentaciones.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -78,18 +78,15 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
   const [agregandoPresentacion, setAgregandoPresentacion] = useState(false);
 
   // Estado del formulario
-  const [errores, setErrores] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState(false);
 
   // Generar ID temporal para el producto (si es nuevo)
   const productoId = inicial?.id ?? generateUUID();
 
-  useEffect(() => {
-    if (touched) {
-      setErrores(validarProducto(nombre, unidadCompra));
-    }
-  }, [nombre, unidadCompra, touched]);
+  // Estado derivado: los errores se recalculan en cada render una vez que
+  // el usuario interactuó con el formulario (sin efecto ni setState).
+  const errores = touched ? validarProducto(nombre, unidadCompra) : {};
 
   const handleSavePresentacion = (
     data: Omit<Presentacion, 'id'> & { id?: string }
@@ -119,7 +116,6 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
     setTouched(true);
     const errs = validarProducto(nombre, unidadCompra);
     if (Object.keys(errs).length > 0) {
-      setErrores(errs);
       return;
     }
 

@@ -13,7 +13,7 @@
  *  - signOut(): Promise<void>
  */
 
-import React, {
+import {
   createContext,
   useContext,
   useEffect,

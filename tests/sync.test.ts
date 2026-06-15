@@ -14,7 +14,7 @@
  *  - navigator.onLine
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // ── Tipos locales para los tests ──────────────────────────────
 // (evitar importar desde src/ en tests de lógica pura)
@@ -23,6 +23,7 @@ type SyncOperation = 'upsert' | 'delete';
 type SyncStatus = 'pending' | 'synced' | 'error';
 
 interface QueueItem {
+  _seq?: number;
   id: string;
   table_name: string;
   operation: SyncOperation;
@@ -48,7 +49,7 @@ class InMemoryQueue {
   async getPending(): Promise<QueueItem[]> {
     return Array.from(this.items.values())
       .filter((i) => i.status === 'pending')
-      .sort((a, b) => ((a as any)._seq ?? 0) - ((b as any)._seq ?? 0));
+      .sort((a, b) => (a._seq ?? 0) - (b._seq ?? 0));
   }
 
   async markSynced(id: string): Promise<void> {
