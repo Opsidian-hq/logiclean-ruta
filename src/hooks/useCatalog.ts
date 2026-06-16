@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
+import { toDexieRow } from '../db/normalize';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
 import type { ProductoBase, Presentacion } from '../db/schema';
@@ -56,7 +57,7 @@ export function useCatalog(): UseCatalogReturn {
     try {
       const prods = await db.producto_base
         .where('activo')
-        .equals(1) // Dexie convierte boolean a 0/1 en IndexedDB
+        .equals(1) // booleanos se guardan como 1/0 (ver db/normalize.ts)
         .toArray();
 
       // Cargar presentaciones activas para cada producto
@@ -105,8 +106,8 @@ export function useCatalog(): UseCatalogReturn {
         activo: data.activo ?? true,
       };
 
-      // Guardar en Dexie (local)
-      await db.producto_base.put(producto);
+      // Guardar en Dexie (local) — booleanos a 1/0 para que el índice indexe
+      await db.producto_base.put(toDexieRow(producto));
 
       // Encolar para sync al servidor
       const queueItem = await enqueueOperation(
@@ -156,7 +157,7 @@ export function useCatalog(): UseCatalogReturn {
         activo: data.activo ?? true,
       };
 
-      await db.presentacion.put(presentacion);
+      await db.presentacion.put(toDexieRow(presentacion));
 
       const queueItem = await enqueueOperation(
         'presentacion',

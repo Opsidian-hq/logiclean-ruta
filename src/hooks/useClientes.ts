@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
+import { toDexieRow } from '../db/normalize';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
 import type { Cliente } from '../db/schema';
@@ -94,7 +95,7 @@ export function useClientes(): UseClientesReturn {
         activo: data.activo ?? true,
       };
 
-      await db.cliente.put(cliente);
+      await db.cliente.put(toDexieRow(cliente));
 
       const queueItem = await enqueueOperation(
         'cliente',
