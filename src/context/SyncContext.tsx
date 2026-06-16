@@ -22,6 +22,7 @@ import {
 import { syncEngine } from '../sync/SyncEngine';
 import type { SyncState } from '../sync/SyncEngine';
 import type { SyncQueueItem } from '../sync/queue';
+import { useAuthContext } from './AuthContext';
 
 // ── Tipos ─────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ interface SyncProviderProps {
 
 export function SyncProvider({ children }: SyncProviderProps) {
   const [syncState, setSyncState] = useState<SyncState>(syncEngine.getState());
+  const { user } = useAuthContext();
 
   // Suscribirse a cambios del motor de sync
   useEffect(() => {
@@ -54,6 +56,14 @@ export function SyncProvider({ children }: SyncProviderProps) {
 
     return unsubscribe;
   }, []);
+
+  // Hidratar la BD local al iniciar sesión (el evento `online` no se dispara
+  // en una carga normal con conexión, así que el pull inicial vive aquí).
+  useEffect(() => {
+    if (user && syncState.isOnline) {
+      syncEngine.hydrateNow();
+    }
+  }, [user, syncState.isOnline]);
 
   const syncNow = () => syncEngine.syncNow();
   const enqueue = (item: SyncQueueItem) => syncEngine.enqueueAndSync(item);

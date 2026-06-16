@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { hydrate } from './pull';
 import {
   getPendingItems,
   markSynced,
@@ -43,6 +44,7 @@ export class SyncEngine {
     syncStatus: 'idle',
   };
   private isSyncing = false;
+  private isHydrating = false;
 
   constructor() {
     // Escuchar cambios de conectividad
@@ -136,6 +138,27 @@ export class SyncEngine {
     }
   }
 
+  /**
+   * Hidratar la BD local desde el servidor (pull).
+   * Trae catálogo, clientes e inventario visibles para el usuario actual.
+   * Requiere conexión y una sesión activa (RLS); si no hay, no hace nada.
+   * Idempotente: si ya está corriendo, no inicia otro ciclo.
+   */
+  async hydrateNow(): Promise<void> {
+    if (this.isHydrating || !this.state.isOnline) return;
+
+    this.isHydrating = true;
+    try {
+      await hydrate();
+      // Refrescar el conteo por si la hidratación tocó la cola en el futuro.
+      await this.refreshPendingCount();
+    } catch (error) {
+      console.error('[SyncEngine] Error inesperado durante hidratación:', error);
+    } finally {
+      this.isHydrating = false;
+    }
+  }
+
   /** Procesar un ítem individual de la cola */
   private async processItem(item: SyncQueueItem): Promise<boolean> {
     try {
@@ -182,7 +205,9 @@ export class SyncEngine {
 
   private handleOnline = async () => {
     this.setState({ isOnline: true });
+    // Primero subir los cambios locales pendientes, luego releer del servidor.
     await this.syncNow();
+    await this.hydrateNow();
   };
 
   private handleOffline = () => {
