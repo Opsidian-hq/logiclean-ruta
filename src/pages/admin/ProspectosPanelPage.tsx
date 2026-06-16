@@ -34,7 +34,7 @@ export function ProspectosPanelPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Prospectos</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -44,13 +44,13 @@ export function ProspectosPanelPage() {
 
       <IonContent>
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
           </div>
         )}
 
         {!loading && error && (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: 'var(--space-lg)' }}>
             <IonText color="danger">
               <p>Error al cargar el panel: {error}</p>
             </IonText>
@@ -72,6 +72,7 @@ export function ProspectosPanelPage() {
                       fontWeight: 800,
                       color: 'var(--color-navy)',
                       margin: 0,
+                      fontVariantNumeric: 'var(--numeric)',
                     }}
                   >
                     {adherencia.pct}%
@@ -105,8 +106,8 @@ export function ProspectosPanelPage() {
                       flex: 1,
                       height: '20px',
                       margin: '0 12px',
-                      background: '#EEF0F4',
-                      borderRadius: '4px',
+                      background: 'var(--color-surface-muted)',
+                      borderRadius: 'var(--radius-sm)',
                       overflow: 'hidden',
                     }}
                   >

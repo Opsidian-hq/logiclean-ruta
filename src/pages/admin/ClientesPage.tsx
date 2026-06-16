@@ -99,7 +99,7 @@ export function ClientesPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Clientes</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -113,11 +113,11 @@ export function ClientesPage() {
           value={search}
           onIonInput={(e) => setSearch(e.detail.value ?? '')}
           placeholder="Buscar cliente..."
-          style={{ '--background': '#fff' }}
+          style={{ '--background': 'var(--color-surface)' }}
         />
 
         {/* Filtro por vendedor */}
-        <IonItem style={{ paddingBottom: '8px' }}>
+        <IonItem style={{ paddingBottom: 'var(--space-sm)' }}>
           <IonLabel style={{ fontSize: '14px', color: 'var(--color-navy)' }}>
             Filtrar por vendedor
           </IonLabel>
@@ -140,7 +140,7 @@ export function ClientesPage() {
 
         {/* Conteo de resultados */}
         {!loading && (
-          <div style={{ padding: '8px 16px', fontSize: '13px', color: '#6B7280' }}>
+          <div style={{ padding: 'var(--space-sm) var(--space-md)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
             {filtrados.length} cliente{filtrados.length !== 1 ? 's' : ''}
             {filtroVendedor && ` · ${getNombreVendedor(filtroVendedor)}`}
           </div>
@@ -148,13 +148,13 @@ export function ClientesPage() {
 
         {/* Estados de carga */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
           </div>
         )}
 
         {!loading && error && (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: 'var(--space-lg)' }}>
             <IonText color="danger">
               <p>Error al cargar clientes: {error}</p>
             </IonText>
@@ -162,7 +162,7 @@ export function ClientesPage() {
         )}
 
         {!loading && !error && filtrados.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonText color="medium">
               <p>
                 {search || filtroVendedor
@@ -183,12 +183,12 @@ export function ClientesPage() {
                     <h2 style={{ fontWeight: 700, color: 'var(--color-navy)' }}>
                       {cliente.nombre}
                     </h2>
-                    <p style={{ fontSize: '13px', color: '#6B7280' }}>
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                       {getNombreVendedor(cliente.vendedor_id)} · {cliente.tipo}
                       {cliente.dia_ruta && ` · ${cliente.dia_ruta}`}
                     </p>
                     {cliente.fecha_proxima_visita && (
-                      <IonNote style={{ fontSize: '12px' }}>
+                      <IonNote style={{ fontSize: 'var(--font-size-xs)' }}>
                         Próxima visita: {cliente.fecha_proxima_visita}
                       </IonNote>
                     )}

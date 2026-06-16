@@ -143,10 +143,10 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
   return (
     <>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>{isEditing ? 'Editar producto' : 'Nuevo producto'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onCancel} style={{ color: '#fff' }}>
+            <IonButton onClick={onCancel} style={{ color: 'var(--color-on-dark)' }}>
               Cancelar
             </IonButton>
           </IonButtons>
@@ -160,10 +160,10 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             style={{
               color: 'var(--color-navy)',
               fontWeight: 700,
-              fontSize: '13px',
+              fontSize: 'var(--font-size-sm)',
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
-              paddingTop: '16px',
+              paddingTop: 'var(--space-md)',
             }}
           >
             Datos del producto
@@ -181,7 +181,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             </IonItem>
             {errores.nombre && (
               <IonText color="danger">
-                <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.nombre}</p>
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.nombre}</p>
               </IonText>
             )}
 
@@ -199,7 +199,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             </IonItem>
             {errores.unidad_compra && (
               <IonText color="danger">
-                <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.unidad_compra}</p>
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.unidad_compra}</p>
               </IonText>
             )}
 
@@ -223,10 +223,10 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             style={{
               color: 'var(--color-navy)',
               fontWeight: 700,
-              fontSize: '13px',
+              fontSize: 'var(--font-size-sm)',
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
-              paddingTop: '16px',
+              paddingTop: 'var(--space-md)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -236,7 +236,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             <IonBadge
               style={{
                 backgroundColor: 'var(--color-primary)',
-                color: '#fff',
+                color: 'var(--color-on-dark)',
               }}
             >
               {presentacionesActivas.length}
@@ -249,7 +249,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
                 <IonItem>
                   <IonLabel>
                     <h3>{pres.nombre}</h3>
-                    <p style={{ fontSize: '13px' }}>
+                    <p style={{ fontSize: 'var(--font-size-sm)' }}>
                       {pres.unidad_venta} · factor {pres.factor_conversion}
                       · May ${pres.precio_mayoreo} / Men ${pres.precio_menudeo}
                     </p>
@@ -282,10 +282,10 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
           {(agregandoPresentacion || editandoPresentacion) && (
             <div
               style={{
-                margin: '8px 16px',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                padding: '8px',
+                margin: 'var(--space-sm) var(--space-md)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-sm)',
               }}
             >
               <PresentacionForm
@@ -302,7 +302,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
 
           {/* Botón agregar presentación */}
           {!agregandoPresentacion && !editandoPresentacion && (
-            <div style={{ padding: '8px 16px' }}>
+            <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
               <IonButton
                 fill="outline"
                 expand="block"
@@ -320,7 +320,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
           )}
 
           {/* Botón guardar producto */}
-          <div style={{ padding: '16px' }}>
+          <div style={{ padding: 'var(--space-md)' }}>
             <IonButton
               type="submit"
               expand="block"
@@ -331,7 +331,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
               }}
             >
               {saving ? (
-                <IonSpinner name="crescent" style={{ color: '#fff' }} />
+                <IonSpinner name="crescent" style={{ color: 'var(--color-on-dark)' }} />
               ) : isEditing ? (
                 'Guardar cambios'
               ) : (

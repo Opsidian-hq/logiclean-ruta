@@ -110,10 +110,10 @@ export function ClienteForm({
   return (
     <>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>{isEditing ? 'Editar cliente' : 'Nuevo cliente'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onCancel} style={{ color: '#fff' }}>
+            <IonButton onClick={onCancel} style={{ color: 'var(--color-on-dark)' }}>
               Cancelar
             </IonButton>
           </IonButtons>
@@ -127,9 +127,9 @@ export function ClienteForm({
             style={{
               color: 'var(--color-navy)',
               fontWeight: 700,
-              fontSize: '13px',
+              fontSize: 'var(--font-size-sm)',
               textTransform: 'uppercase',
-              paddingTop: '16px',
+              paddingTop: 'var(--space-md)',
             }}
           >
             Datos del cliente
@@ -148,7 +148,7 @@ export function ClienteForm({
             </IonItem>
             {errores.nombre && (
               <IonText color="danger">
-                <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.nombre}</p>
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.nombre}</p>
               </IonText>
             )}
 
@@ -170,7 +170,7 @@ export function ClienteForm({
             </IonItem>
             {errores.vendedor_id && (
               <IonText color="danger">
-                <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.vendedor_id}</p>
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.vendedor_id}</p>
               </IonText>
             )}
 
@@ -189,7 +189,7 @@ export function ClienteForm({
             </IonItem>
             {errores.tipo && (
               <IonText color="danger">
-                <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.tipo}</p>
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.tipo}</p>
               </IonText>
             )}
 
@@ -208,7 +208,7 @@ export function ClienteForm({
             </IonItem>
             {errores.estado && (
               <IonText color="danger">
-                <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.estado}</p>
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.estado}</p>
               </IonText>
             )}
           </IonList>
@@ -218,9 +218,9 @@ export function ClienteForm({
             style={{
               color: 'var(--color-navy)',
               fontWeight: 700,
-              fontSize: '13px',
+              fontSize: 'var(--font-size-sm)',
               textTransform: 'uppercase',
-              paddingTop: '8px',
+              paddingTop: 'var(--space-sm)',
             }}
           >
             Datos de ruta
@@ -264,7 +264,7 @@ export function ClienteForm({
           </IonList>
 
           {/* ── Guardar ────────────────────────────────────── */}
-          <div style={{ padding: '16px' }}>
+          <div style={{ padding: 'var(--space-md)' }}>
             <IonButton
               type="submit"
               expand="block"
@@ -275,7 +275,7 @@ export function ClienteForm({
               }}
             >
               {saving ? (
-                <IonSpinner name="crescent" style={{ color: '#fff' }} />
+                <IonSpinner name="crescent" style={{ color: 'var(--color-on-dark)' }} />
               ) : isEditing ? (
                 'Guardar cambios'
               ) : (

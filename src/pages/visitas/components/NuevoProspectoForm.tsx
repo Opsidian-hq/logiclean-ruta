@@ -59,10 +59,10 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
   return (
     <>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Nuevo prospecto</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onClose} style={{ color: '#fff' }}>
+            <IonButton onClick={onClose} style={{ color: 'var(--color-on-dark)' }}>
               Cancelar
             </IonButton>
           </IonButtons>
@@ -81,7 +81,7 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
           </IonItem>
           {nombreInvalido && (
             <IonText color="danger">
-              <p style={{ marginLeft: '16px', fontSize: '13px' }}>
+              <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>
                 El nombre es obligatorio
               </p>
             </IonText>
@@ -122,7 +122,7 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
             />
           </IonItem>
 
-          <div style={{ padding: '16px' }}>
+          <div style={{ padding: 'var(--space-md)' }}>
             <IonButton
               expand="block"
               disabled={saving}

@@ -164,7 +164,7 @@ export function VentaPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Nueva venta</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -174,7 +174,7 @@ export function VentaPage() {
 
       <IonContent>
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
           </div>
         )}
@@ -200,7 +200,7 @@ export function VentaPage() {
             </IonList>
 
             {cliente && (
-              <div style={{ padding: '4px 16px 0' }}>
+              <div style={{ padding: 'var(--space-xs) var(--space-md) 0' }}>
                 <IonBadge
                   style={{
                     backgroundColor:
@@ -243,7 +243,7 @@ export function VentaPage() {
                         <h3 style={{ color: 'var(--color-navy)' }}>
                           {r.presentacion.nombre}
                         </h3>
-                        <p style={{ fontSize: '12px', color: '#6B7280' }}>
+                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                           {money(precio)} c/u · disponibles: {r.cantidad}
                           {cantidad > 0 && (
                             <> · subtotal {money(importeLinea(cantidad, precio))}</>
@@ -275,7 +275,7 @@ export function VentaPage() {
                 <IonItem key={idx}>
                   <IonLabel>
                     <h3>{nombrePresentacion(p.presentacion_id)}</h3>
-                    <p style={{ fontSize: '12px', color: '#6B7280' }}>
+                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                       Cantidad: {p.cantidad}
                       {p.fecha_compromiso && <> · compromiso: {p.fecha_compromiso}</>}
                     </p>
@@ -319,7 +319,7 @@ export function VentaPage() {
                   onIonInput={(e) => setPedFecha(e.detail.value ?? '')}
                 />
               </IonItem>
-              <div style={{ padding: '8px 16px' }}>
+              <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
                 <IonButton
                   expand="block"
                   fill="outline"
@@ -391,7 +391,7 @@ export function VentaPage() {
               )}
             </IonList>
 
-            <div style={{ height: '24px' }} />
+            <div style={{ height: 'var(--space-lg)' }} />
           </>
         )}
       </IonContent>
@@ -403,13 +403,13 @@ export function VentaPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 16px',
+              padding: '0 var(--space-md)',
               gap: '12px',
             }}
           >
             <div>
-              <div style={{ fontSize: '12px', color: '#6B7280' }}>Total</div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-navy)' }}>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Total</div>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-navy)', fontVariantNumeric: 'var(--numeric)' }}>
                 {money(total)}
               </div>
             </div>

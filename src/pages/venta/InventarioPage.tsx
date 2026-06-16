@@ -41,7 +41,7 @@ export function InventarioPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Inventario del vehículo</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -54,17 +54,17 @@ export function InventarioPage() {
           value={search}
           onIonInput={(e) => setSearch(e.detail.value ?? '')}
           placeholder="Buscar presentación..."
-          style={{ '--background': '#fff' }}
+          style={{ '--background': 'var(--color-surface)' }}
         />
 
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
           </div>
         )}
 
         {!loading && error && (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: 'var(--space-lg)' }}>
             <IonText color="danger">
               <p>Error al cargar el inventario: {error}</p>
             </IonText>
@@ -72,7 +72,7 @@ export function InventarioPage() {
         )}
 
         {!loading && !error && rows.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonText color="medium">
               <p>
                 No hay presentaciones en el catálogo local. Sincroniza con
@@ -87,8 +87,8 @@ export function InventarioPage() {
             <IonNote
               style={{
                 display: 'block',
-                padding: '8px 16px',
-                fontSize: '13px',
+                padding: 'var(--space-sm) var(--space-md)',
+                fontSize: 'var(--font-size-sm)',
               }}
             >
               {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''} cargada
@@ -102,7 +102,7 @@ export function InventarioPage() {
                     <h2 style={{ fontWeight: 600, color: 'var(--color-navy)' }}>
                       {row.presentacion.nombre}
                     </h2>
-                    <p style={{ fontSize: '13px', color: '#6B7280' }}>
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                       {row.productoNombre} · {row.presentacion.unidad_venta}
                     </p>
                   </IonLabel>

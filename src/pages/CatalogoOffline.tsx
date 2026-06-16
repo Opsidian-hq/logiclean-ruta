@@ -44,12 +44,12 @@ export function CatalogoOfflinePage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Catálogo</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
             <IonButton onClick={() => signOut()} title="Cerrar sesión">
-              <IonIcon icon={logOutOutline} style={{ color: '#fff' }} />
+              <IonIcon icon={logOutOutline} style={{ color: 'var(--color-on-dark)' }} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -61,12 +61,12 @@ export function CatalogoOfflinePage() {
           value={search}
           onIonInput={(e) => setSearch(e.detail.value ?? '')}
           placeholder="Buscar producto..."
-          style={{ '--background': '#fff' }}
+          style={{ '--background': 'var(--color-surface)' }}
         />
 
         {/* Estados */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
             <IonText color="medium">
               <p>Cargando catálogo...</p>
@@ -75,7 +75,7 @@ export function CatalogoOfflinePage() {
         )}
 
         {!loading && error && (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: 'var(--space-lg)' }}>
             <IonText color="danger">
               <p>Error al cargar el catálogo: {error}</p>
             </IonText>
@@ -83,7 +83,7 @@ export function CatalogoOfflinePage() {
         )}
 
         {!loading && !error && filtrados.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonText color="medium">
               <p>
                 {search
@@ -98,19 +98,19 @@ export function CatalogoOfflinePage() {
         {!loading && !error && filtrados.length > 0 && (
           <IonList>
             {filtrados.map((producto) => (
-              <div key={producto.id} style={{ marginBottom: '8px' }}>
+              <div key={producto.id} style={{ marginBottom: 'var(--space-sm)' }}>
                 {/* Encabezado del producto */}
                 <IonItem
                   style={{
                     '--background': 'var(--color-navy)',
-                    '--color': '#fff',
-                    '--padding-start': '16px',
+                    '--color': 'var(--color-on-dark)',
+                    '--padding-start': 'var(--space-md)',
                   }}
                   lines="none"
                 >
                   <IonLabel>
-                    <h2 style={{ color: '#fff', fontWeight: 700 }}>{producto.nombre}</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
+                    <h2 style={{ color: 'var(--color-on-dark)', fontWeight: 'var(--font-weight-bold)' }}>{producto.nombre}</h2>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--font-size-sm)' }}>
                       Unidad de compra: {producto.unidad_compra}
                       {producto.precio_preferencial != null && (
                         <> · Precio pref: ${producto.precio_preferencial.toFixed(2)}</>
@@ -136,18 +136,18 @@ export function CatalogoOfflinePage() {
                 )}
 
                 {producto.presentaciones.map((pres) => (
-                  <IonItem key={pres.id} style={{ '--padding-start': '32px' }}>
+                  <IonItem key={pres.id} style={{ '--padding-start': 'var(--space-xl)' }}>
                     <IonLabel>
                       <h3>{pres.nombre}</h3>
-                      <p style={{ fontSize: '13px', color: '#6B7280' }}>
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                         {pres.unidad_venta} · factor {pres.factor_conversion}
                       </p>
                     </IonLabel>
                     <div slot="end" style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                      <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontVariantNumeric: 'var(--numeric)' }}>
                         May: ${pres.precio_mayoreo.toFixed(2)}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontVariantNumeric: 'var(--numeric)' }}>
                         Men: ${pres.precio_menudeo.toFixed(2)}
                       </div>
                     </div>
