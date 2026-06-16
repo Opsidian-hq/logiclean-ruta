@@ -40,6 +40,9 @@ export const PULL_TABLES: EntityTable[] = [
   'visita',
   'inventario_vehiculo',
   'gasto',
+  // Inc 3 — corte semanal y reconciliación con La Moderna.
+  'suministro_la_moderna',
+  'corte',
 ];
 
 /** Resultado de una hidratación, por tabla. */
