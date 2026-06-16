@@ -24,7 +24,12 @@ import {
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Switch, Redirect } from 'react-router-dom';
-import { gridOutline, peopleOutline } from 'ionicons/icons';
+import {
+  gridOutline,
+  peopleOutline,
+  cubeOutline,
+  cartOutline,
+} from 'ionicons/icons';
 
 /* Ionic Core CSS — DEBE importarse antes de cualquier componente Ionic */
 import '@ionic/react/css/core.css';
@@ -48,6 +53,8 @@ import { SyncProvider } from './context/SyncContext';
 /* Páginas */
 import { LoginPage } from './pages/Login';
 import { CatalogoOfflinePage } from './pages/CatalogoOffline';
+import { InventarioPage } from './pages/venta/InventarioPage';
+import { VentaPage } from './pages/venta/VentaPage';
 import { CatalogoPage } from './pages/admin/CatalogoPage';
 import { ClientesPage } from './pages/admin/ClientesPage';
 
@@ -71,10 +78,10 @@ function App() {
               {/* Ruta pública */}
               <Route exact path="/login" component={LoginPage} />
 
-              {/* Ruta vendedor: catálogo offline */}
-              <Route exact path="/catalogo">
+              {/* Rutas vendedor: shell con tabs (catálogo, inventario, venta) */}
+              <Route path={['/catalogo', '/inventario', '/venta']}>
                 <ProtectedRoute requiredRol="vendedor">
-                  <CatalogoOfflinePage />
+                  <VendedorTabs />
                 </ProtectedRoute>
               </Route>
 
@@ -99,6 +106,35 @@ function App() {
         </SyncProvider>
       </AuthProvider>
     </IonApp>
+  );
+}
+
+// ── Tabs del vendedor ─────────────────────────────────────────
+
+function VendedorTabs() {
+  return (
+    <IonTabs>
+      <IonRouterOutlet>
+        <Route exact path="/catalogo" component={CatalogoOfflinePage} />
+        <Route exact path="/inventario" component={InventarioPage} />
+        <Route exact path="/venta" component={VentaPage} />
+      </IonRouterOutlet>
+
+      <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
+        <IonTabButton tab="venta" href="/venta">
+          <IonIcon icon={cartOutline} style={{ color: '#fff' }} />
+          <span style={{ color: '#fff', fontSize: '11px' }}>Venta</span>
+        </IonTabButton>
+        <IonTabButton tab="inventario" href="/inventario">
+          <IonIcon icon={cubeOutline} style={{ color: '#fff' }} />
+          <span style={{ color: '#fff', fontSize: '11px' }}>Inventario</span>
+        </IonTabButton>
+        <IonTabButton tab="catalogo" href="/catalogo">
+          <IonIcon icon={gridOutline} style={{ color: '#fff' }} />
+          <span style={{ color: '#fff', fontSize: '11px' }}>Catálogo</span>
+        </IonTabButton>
+      </IonTabBar>
+    </IonTabs>
   );
 }
 
