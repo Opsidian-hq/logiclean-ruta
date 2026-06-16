@@ -29,6 +29,7 @@ import {
   IonSpinner,
 } from '@ionic/react';
 import { addOutline, pencilOutline, trashOutline } from 'ionicons/icons';
+import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { PresentacionForm } from './PresentacionForm';
 import { generateUUID } from '../../../lib/uuid';
 import type { ProductoBase, Presentacion } from '../../../db/schema';
@@ -151,6 +152,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             </IonButton>
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
@@ -327,7 +329,10 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
               disabled={saving}
               style={{
                 '--background': 'var(--color-primary)',
-                minHeight: 'var(--touch-min, 48px)',
+                '--border-radius': 'var(--radius-lg)',
+                '--box-shadow': 'var(--shadow-cta)',
+                height: 'var(--cta-height)',
+                fontWeight: 800,
               }}
             >
               {saving ? (

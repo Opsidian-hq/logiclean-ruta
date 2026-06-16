@@ -23,6 +23,7 @@ import {
   IonListHeader,
   IonSpinner,
 } from '@ionic/react';
+import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import type { Cliente, Vendedor } from '../../../db/schema';
 
 // ── Tipos ─────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ export function ClienteForm({
             </IonButton>
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
@@ -271,7 +273,10 @@ export function ClienteForm({
               disabled={saving}
               style={{
                 '--background': 'var(--color-primary)',
-                minHeight: 'var(--touch-min, 48px)',
+                '--border-radius': 'var(--radius-lg)',
+                '--box-shadow': 'var(--shadow-cta)',
+                height: 'var(--cta-height)',
+                fontWeight: 800,
               }}
             >
               {saving ? (

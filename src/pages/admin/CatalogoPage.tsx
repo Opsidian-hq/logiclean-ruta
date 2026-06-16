@@ -37,6 +37,7 @@ import {
 import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
 import { useCatalog } from '../../hooks/useCatalog';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { ProductoForm } from './components/ProductoForm';
 import type { ProductoBase, Presentacion } from '../../db/schema';
 
@@ -93,10 +94,11 @@ export function CatalogoPage() {
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Catálogo</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatusBadge showLabel={false} />
+          <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
+            <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
