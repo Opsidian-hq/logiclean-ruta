@@ -35,7 +35,8 @@ import {
   IonFooter,
 } from '@ionic/react';
 import { addOutline, trashOutline } from 'ionicons/icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useInventario } from '../../hooks/useInventario';
 import { useClientes } from '../../hooks/useClientes';
 import { useVenta } from '../../hooks/useVenta';
@@ -50,8 +51,16 @@ export function VentaPage() {
   const { rows, loading } = useInventario();
   const { clientes } = useClientes();
   const { registrarVenta, submitting } = useVenta();
+  const location = useLocation();
 
   const [clienteId, setClienteId] = useState<string>('');
+
+  // Preselección del cliente vía ?cliente=<id> (entrada desde la ruta del día).
+  useEffect(() => {
+    const pre = new URLSearchParams(location.search).get('cliente');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (pre) setClienteId(pre);
+  }, [location.search]);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [pedidos, setPedidos] = useState<PedidoInput[]>([]);
   const [cobroOn, setCobroOn] = useState(true);

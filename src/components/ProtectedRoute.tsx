@@ -57,7 +57,7 @@ export function ProtectedRoute({ children, requiredRol }: ProtectedRouteProps) {
     if (rol === 'gerente') {
       return <Redirect to="/admin" />;
     }
-    return <Redirect to="/catalogo" />;
+    return <Redirect to="/ruta" />;
   }
 
   return <>{children}</>;

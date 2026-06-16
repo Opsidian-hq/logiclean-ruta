@@ -38,6 +38,7 @@ export const PULL_TABLES: EntityTable[] = [
   'presentacion',
   'cliente',
   'inventario_vehiculo',
+  'gasto',
 ];
 
 /** Resultado de una hidratación, por tabla. */
