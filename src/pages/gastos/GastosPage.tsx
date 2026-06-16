@@ -14,9 +14,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonButton,
   IonList,
-  IonListHeader,
   IonItem,
   IonLabel,
   IonInput,
@@ -24,17 +22,31 @@ import {
   IonSelectOption,
   IonSegment,
   IonSegmentButton,
-  IonNote,
   IonText,
   IonSpinner,
   IonToast,
 } from '@ionic/react';
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useGastos } from '../../hooks/useGastos';
 import { CATEGORIAS_RUTA } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
+import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
+import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
+
+const sectionLabel: CSSProperties = {
+  display: 'block',
+  fontSize: 'var(--font-size-xs)',
+  fontWeight: 800,
+  letterSpacing: '0.6px',
+  textTransform: 'uppercase',
+  color: 'var(--color-text-secondary)',
+  padding: '14px var(--space-md) 6px',
+};
 const OTRO = '__otro__';
 
 export function GastosPage() {
@@ -73,18 +85,17 @@ export function GastosPage() {
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Gastos de ruta</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatusBadge showLabel={false} />
+          <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
+            <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip text="El gasto se guarda en el equipo al instante" />
       </IonHeader>
 
       <IonContent>
         {/* ── Formulario ── */}
         <IonList>
-          <IonListHeader>
-            <IonLabel>Registrar gasto</IonLabel>
-          </IonListHeader>
+          <span style={sectionLabel}>Registrar gasto</span>
 
           <IonItem>
             <IonLabel position="stacked">Categoría *</IonLabel>
@@ -163,64 +174,76 @@ export function GastosPage() {
           </IonItem>
 
           <div style={{ padding: '12px var(--space-md)' }}>
-            <IonButton
-              expand="block"
-              disabled={!puedeGuardar}
-              style={{ '--background': 'var(--color-primary)' }}
-              onClick={guardar}
-            >
+            <PrimaryCTA disabled={!puedeGuardar} onClick={guardar}>
               Registrar gasto
-            </IonButton>
+            </PrimaryCTA>
           </div>
         </IonList>
 
         {/* ── Gastos del día ── */}
-        <IonList>
-          <IonListHeader>
-            <IonLabel>Gastos de hoy</IonLabel>
-          </IonListHeader>
+        <span style={sectionLabel}>Gastos de hoy</span>
 
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>
-              <IonSpinner name="crescent" />
-            </div>
-          )}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>
+            <IonSpinner name="crescent" />
+          </div>
+        )}
 
-          {!loading && gastosHoy.length === 0 && (
-            <IonItem lines="none">
-              <IonNote>Aún no hay gastos registrados hoy.</IonNote>
-            </IonItem>
-          )}
+        {!loading && gastosHoy.length === 0 && (
+          <IonText color="medium">
+            <p style={{ fontSize: 'var(--font-size-sm)', padding: '0 var(--space-md)' }}>
+              Aún no hay gastos registrados hoy.
+            </p>
+          </IonText>
+        )}
 
-          {!loading &&
-            gastosHoy.map((g) => (
-              <IonItem key={g.id}>
-                <IonLabel>
-                  <h3 style={{ color: 'var(--color-navy)' }}>{g.categoria}</h3>
-                  <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                    {g.forma_pago}
-                    {g.descripcion && <> · {g.descripcion}</>}
-                  </p>
-                </IonLabel>
-                <IonText slot="end" style={{ fontWeight: 600, fontVariantNumeric: 'var(--numeric)' }}>
+        {!loading && gastosHoy.length > 0 && (
+          <div style={{ padding: '0 var(--space-md)' }}>
+            {gastosHoy.map((g) => (
+              <div
+                key={g.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '11px',
+                  padding: '11px 0',
+                  borderBottom: '1px solid var(--color-divider)',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>{g.categoria}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '4px', flexWrap: 'wrap' }}>
+                    <Chip tone={g.forma_pago === 'efectivo' ? 'primarySoft' : 'neutral'}>
+                      {g.forma_pago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                    </Chip>
+                    {g.descripcion && (
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{g.descripcion}</span>
+                    )}
+                  </div>
+                </div>
+                <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
                   {money(g.monto)}
-                </IonText>
-              </IonItem>
+                </span>
+              </div>
             ))}
 
-          {!loading && gastosHoy.length > 0 && (
-            <IonItem lines="none">
-              <IonLabel>
-                <IonText color="medium">
-                  <p style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}>
-                    Efectivo: <strong>{money(totales.efectivo)}</strong> ·
-                    Transferencia: <strong>{money(totales.transferencia)}</strong>
-                  </p>
-                </IonText>
-              </IonLabel>
-            </IonItem>
-          )}
-        </IonList>
+            {/* Totales por bolsa */}
+            <Card padding="13px 14px" style={{ marginTop: 'var(--space-md)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Efectivo</span>
+                <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                  {money(totales.efectivo)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--color-divider)' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Transferencia</span>
+                <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                  {money(totales.transferencia)}
+                </span>
+              </div>
+            </Card>
+          </div>
+        )}
 
         <div style={{ height: 'var(--space-lg)' }} />
       </IonContent>
