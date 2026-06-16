@@ -103,6 +103,9 @@ export function VentaPage() {
     [lineasVehiculo]
   );
 
+  // Conteos para el resumen del footer (solo display).
+  const piezas = lineasVehiculo.reduce((acc, l) => acc + l.cantidad, 0);
+
   const monto = cobroOn ? (montoStr === '' ? total : parseFloat(montoStr) || 0) : 0;
   const saldo = Math.max(0, total - monto);
 
@@ -170,6 +173,30 @@ export function VentaPage() {
             <SyncStatusBadge showLabel={false} />
           </IonButtons>
         </IonToolbar>
+        {/* Franja offline-first permanente (ADR-0001) */}
+        <IonToolbar style={{ '--background': '#0A2566', '--min-height': '0' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px var(--space-md)',
+            }}
+          >
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#6E7FA8',
+                display: 'inline-block',
+              }}
+            />
+            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: '#AEBBD6' }}>
+              La venta se guarda en el equipo al instante
+            </span>
+          </div>
+        </IonToolbar>
       </IonHeader>
 
       <IonContent>
@@ -215,7 +242,9 @@ export function VentaPage() {
             {/* ── Del vehículo (H-04) ── */}
             <IonList>
               <IonListHeader>
-                <IonLabel>Del vehículo</IonLabel>
+                <IonLabel style={{ fontSize: 'var(--font-size-xs)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
+                  Del vehículo
+                </IonLabel>
               </IonListHeader>
 
               {!cliente && (
@@ -268,7 +297,9 @@ export function VentaPage() {
             {/* ── Pedido pendiente (H-05) ── */}
             <IonList>
               <IonListHeader>
-                <IonLabel>Levantar pedido (preventa)</IonLabel>
+                <IonLabel style={{ fontSize: 'var(--font-size-xs)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
+                  Levantar pedido (preventa)
+                </IonLabel>
               </IonListHeader>
 
               {pedidos.map((p, idx) => (
@@ -335,7 +366,9 @@ export function VentaPage() {
             {/* ── Cobro (H-07) ── */}
             <IonList>
               <IonListHeader>
-                <IonLabel>Cobro</IonLabel>
+                <IonLabel style={{ fontSize: 'var(--font-size-xs)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
+                  Cobro
+                </IonLabel>
               </IonListHeader>
               <IonItem>
                 <IonLabel>Registrar cobro ahora</IonLabel>
@@ -397,28 +430,72 @@ export function VentaPage() {
       </IonContent>
 
       <IonFooter>
-        <IonToolbar style={{ '--background': 'var(--color-surface)' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 var(--space-md)',
-              gap: '12px',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Total</div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-navy)', fontVariantNumeric: 'var(--numeric)' }}>
-                {money(total)}
-              </div>
+        <IonToolbar style={{ '--background': 'var(--color-bg)' }}>
+          <div style={{ padding: 'var(--space-sm) var(--space-md) var(--space-md)' }}>
+            {/* Resumen */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                marginBottom: 'var(--space-sm)',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 700,
+                  color: 'var(--color-text-secondary)',
+                  fontVariantNumeric: 'var(--numeric)',
+                }}
+              >
+                {lineasVehiculo.length} producto{lineasVehiculo.length !== 1 ? 's' : ''} · {piezas} pieza
+                {piezas !== 1 ? 's' : ''}
+              </span>
+              {cliente && (
+                <span
+                  style={{
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 700,
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  Lista {tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}
+                </span>
+              )}
             </div>
+
+            {/* CTA ancho completo con total integrado */}
             <IonButton
-              style={{ '--background': 'var(--color-primary)' }}
+              expand="block"
               disabled={!puedeGuardar}
               onClick={guardar}
+              style={{
+                '--background': 'var(--color-primary)',
+                '--border-radius': 'var(--radius-lg)',
+                '--box-shadow': '0 6px 16px -4px rgba(6, 6, 254, 0.45)',
+                '--padding-start': '22px',
+                '--padding-end': '22px',
+                height: '58px',
+                margin: 0,
+              }}
             >
-              {submitting ? <IonSpinner name="crescent" /> : 'Guardar venta'}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 800 }}>
+                  {submitting && <IonSpinner name="crescent" style={{ width: '18px', height: '18px' }} />}
+                  {submitting ? 'Guardando…' : 'Guardar venta'}
+                </span>
+                <span style={{ fontSize: '19px', fontWeight: 800, fontVariantNumeric: 'var(--numeric)' }}>
+                  {money(total)}
+                </span>
+              </div>
             </IonButton>
           </div>
         </IonToolbar>
