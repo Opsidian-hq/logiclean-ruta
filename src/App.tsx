@@ -31,6 +31,7 @@ import {
   cartOutline,
   mapOutline,
   walletOutline,
+  funnelOutline,
 } from 'ionicons/icons';
 
 /* Ionic Core CSS — DEBE importarse antes de cualquier componente Ionic */
@@ -55,12 +56,13 @@ import { SyncProvider } from './context/SyncContext';
 /* Páginas */
 import { LoginPage } from './pages/Login';
 import { CatalogoOfflinePage } from './pages/CatalogoOffline';
-import { RutaPage } from './pages/ruta/RutaPage';
+import { VisitasPage } from './pages/visitas/VisitasPage';
 import { InventarioPage } from './pages/venta/InventarioPage';
 import { VentaPage } from './pages/venta/VentaPage';
 import { GastosPage } from './pages/gastos/GastosPage';
 import { CatalogoPage } from './pages/admin/CatalogoPage';
 import { ClientesPage } from './pages/admin/ClientesPage';
+import { ProspectosPanelPage } from './pages/admin/ProspectosPanelPage';
 
 /* Guards */
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -82,8 +84,8 @@ function App() {
               {/* Ruta pública */}
               <Route exact path="/login" component={LoginPage} />
 
-              {/* Rutas vendedor: shell con tabs (ruta, venta, inventario, gastos, catálogo) */}
-              <Route path={['/ruta', '/catalogo', '/inventario', '/venta', '/gastos']}>
+              {/* Rutas vendedor: shell con tabs (visitas, venta, inventario, gastos, catálogo) */}
+              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos']}>
                 <ProtectedRoute requiredRol="vendedor">
                   <VendedorTabs />
                 </ProtectedRoute>
@@ -119,7 +121,7 @@ function VendedorTabs() {
   return (
     <IonTabs>
       <IonRouterOutlet>
-        <Route exact path="/ruta" component={RutaPage} />
+        <Route exact path="/visitas" component={VisitasPage} />
         <Route exact path="/catalogo" component={CatalogoOfflinePage} />
         <Route exact path="/inventario" component={InventarioPage} />
         <Route exact path="/venta" component={VentaPage} />
@@ -127,9 +129,9 @@ function VendedorTabs() {
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
-        <IonTabButton tab="ruta" href="/ruta">
+        <IonTabButton tab="visitas" href="/visitas">
           <IonIcon icon={mapOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Ruta</span>
+          <span style={{ color: '#fff', fontSize: '11px' }}>Visitas</span>
         </IonTabButton>
         <IonTabButton tab="venta" href="/venta">
           <IonIcon icon={cartOutline} style={{ color: '#fff' }} />
@@ -163,9 +165,14 @@ function AdminTabs() {
         </Route>
         <Route exact path="/admin/catalogo" component={CatalogoPage} />
         <Route exact path="/admin/clientes" component={ClientesPage} />
+        <Route exact path="/admin/prospectos" component={ProspectosPanelPage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
+        <IonTabButton tab="prospectos" href="/admin/prospectos">
+          <IonIcon icon={funnelOutline} style={{ color: '#fff' }} />
+          <span style={{ color: '#fff', fontSize: '11px' }}>Prospectos</span>
+        </IonTabButton>
         <IonTabButton tab="catalogo" href="/admin/catalogo">
           <IonIcon icon={gridOutline} style={{ color: '#fff' }} />
           <span style={{ color: '#fff', fontSize: '11px' }}>Catálogo</span>

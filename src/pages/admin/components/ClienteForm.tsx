@@ -229,7 +229,7 @@ export function ClienteForm({
           <IonList>
             {/* Ciclo de visita */}
             <IonItem>
-              <IonLabel position="stacked">Ciclo de visita (días)</IonLabel>
+              <IonLabel position="stacked">Punto del ciclo (visita actual)</IonLabel>
               <IonInput
                 type="number"
                 value={cicloVisita}

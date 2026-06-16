@@ -88,7 +88,7 @@ export function LoginPage() {
       if (rol === 'gerente') {
         history.replace('/admin');
       } else {
-        history.replace('/ruta');
+        history.replace('/visitas');
       }
     }
   }, [user, rol, history]);
