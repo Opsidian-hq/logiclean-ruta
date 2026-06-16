@@ -40,6 +40,10 @@
 }
 
 :root {
+  /* Sistema claro fijo: alto contraste para leer al sol (brief §2).
+     El brief no contempla modo oscuro. */
+  color-scheme: light;
+
   /* ── Paleta de color ─────────────────────────────────────── */
   --color-navy:    #001D51;   /* texto principal / encabezados   */
   --color-body:    #1C1C1E;   /* texto cuerpo                    */
@@ -81,7 +85,9 @@
   --ion-background-color:           var(--color-bg);
   --ion-text-color:                 var(--color-body);
   --ion-color-primary:              var(--color-primary);
+  --ion-color-primary-rgb:          6, 6, 254;
   --ion-color-primary-contrast:     #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
   --ion-color-primary-shade:        #0505d9;
   --ion-color-primary-tint:         #2020fe;
   --ion-toolbar-background:         var(--color-navy);
@@ -106,15 +112,6 @@
   /* ── Sombras ─────────────────────────────────────────────── */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* ── Modo oscuro (preparado para futuro) ──────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg:      #0a0a0a;
-    --color-surface: #1c1c1e;
-    --color-body:    #f5f5f7;
-  }
 }
 
 /* ── Reset básico ─────────────────────────────────────────── */
