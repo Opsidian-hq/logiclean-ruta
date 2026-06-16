@@ -37,6 +37,7 @@ export const PULL_TABLES: EntityTable[] = [
   'producto_base',
   'presentacion',
   'cliente',
+  'visita',
   'inventario_vehiculo',
   'gasto',
 ];
