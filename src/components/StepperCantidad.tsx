@@ -1,12 +1,14 @@
 /**
  * Logiclean Ruta — StepperCantidad
  *
- * Control de cantidad con botones −/+ y campo editable, pensado para uso táctil
- * (objetivos ≥ 48px, ADR-0001). Nunca baja del mínimo (0 por defecto).
+ * Control de cantidad −/+ del prototipo: una sola caja con borde fino, celdas
+ * táctiles de 46px y el número en azul-navy. El centro sigue siendo editable
+ * para capturar cantidades grandes sin perder la apariencia. Nunca baja del
+ * mínimo (0 por defecto).
  */
 
-import { IonButton, IonIcon, IonInput } from '@ionic/react';
-import { addOutline, removeOutline } from 'ionicons/icons';
+import { IonInput } from '@ionic/react';
+import type { CSSProperties } from 'react';
 
 interface StepperCantidadProps {
   value: number;
@@ -32,18 +34,44 @@ export function StepperCantidad({
     return v;
   };
 
+  const atMin = disabled || value <= min;
+  const atMax = disabled || (max != null && value >= max);
+
+  const cellStyle = (off: boolean): CSSProperties => ({
+    width: '46px',
+    height: '46px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: off ? 'var(--color-disabled)' : 'var(--color-primary)',
+    fontSize: '23px',
+    fontWeight: 700,
+    cursor: off ? 'default' : 'pointer',
+    userSelect: 'none',
+  });
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
-      <IonButton
-        fill="outline"
-        size="small"
-        disabled={disabled || value <= min}
-        onClick={() => onChange(clamp(value - step))}
-        style={{ minWidth: 'var(--touch-min)', minHeight: 'var(--touch-min)', margin: 0 }}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        border: '1.5px solid var(--color-stepper-border)',
+        borderRadius: '11px',
+        overflow: 'hidden',
+        background: 'var(--color-surface)',
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      <div
+        role="button"
         aria-label="Disminuir"
+        tabIndex={atMin ? -1 : 0}
+        onClick={() => !atMin && onChange(clamp(value - step))}
+        onKeyDown={(e) => e.key === 'Enter' && !atMin && onChange(clamp(value - step))}
+        style={cellStyle(atMin)}
       >
-        <IonIcon icon={removeOutline} slot="icon-only" />
-      </IonButton>
+        −
+      </div>
 
       <IonInput
         type="number"
@@ -54,25 +82,32 @@ export function StepperCantidad({
         step={String(step)}
         inputmode="decimal"
         disabled={disabled}
+        aria-label="Cantidad"
         style={{
-          width: '64px',
+          width: '38px',
+          minHeight: 'auto',
           textAlign: 'center',
+          fontSize: '17px',
+          fontWeight: 800,
+          color: 'var(--color-navy)',
           fontVariantNumeric: 'var(--numeric)',
-          '--padding-start': 'var(--space-xs)',
-          '--padding-end': 'var(--space-xs)',
+          '--padding-start': '0',
+          '--padding-end': '0',
+          '--padding-top': '0',
+          '--padding-bottom': '0',
         }}
       />
 
-      <IonButton
-        fill="outline"
-        size="small"
-        disabled={disabled || (max != null && value >= max)}
-        onClick={() => onChange(clamp(value + step))}
-        style={{ minWidth: 'var(--touch-min)', minHeight: 'var(--touch-min)', margin: 0 }}
+      <div
+        role="button"
         aria-label="Aumentar"
+        tabIndex={atMax ? -1 : 0}
+        onClick={() => !atMax && onChange(clamp(value + step))}
+        onKeyDown={(e) => e.key === 'Enter' && !atMax && onChange(clamp(value + step))}
+        style={cellStyle(atMax)}
       >
-        <IonIcon icon={addOutline} slot="icon-only" />
-      </IonButton>
+        +
+      </div>
     </div>
   );
 }

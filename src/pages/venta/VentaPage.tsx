@@ -19,10 +19,8 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonListHeader,
   IonSelect,
   IonSelectOption,
-  IonBadge,
   IonNote,
   IonText,
   IonInput,
@@ -36,16 +34,43 @@ import {
 } from '@ionic/react';
 import { addOutline, trashOutline } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useInventario } from '../../hooks/useInventario';
 import { useClientes } from '../../hooks/useClientes';
 import { useVenta } from '../../hooks/useVenta';
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
+import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
+import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
+import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { precioUnitario, importeLinea, totalVenta } from '../../lib/precios';
 import type { PedidoInput } from '../../lib/ventas';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
+
+// Etiqueta de sección en mayúsculas (prototipo).
+const sectionLabel: CSSProperties = {
+  fontSize: 'var(--font-size-xs)',
+  fontWeight: 800,
+  letterSpacing: '0.6px',
+  textTransform: 'uppercase',
+  color: 'var(--color-text-secondary)',
+};
+
+// Chip de unidad de venta junto al nombre del producto.
+const unidadChip: CSSProperties = {
+  background: 'var(--color-surface-muted)',
+  color: '#5B6678',
+  fontSize: '11px',
+  fontWeight: 800,
+  padding: '2px 6px',
+  borderRadius: '5px',
+  marginLeft: '6px',
+  whiteSpace: 'nowrap',
+};
 
 export function VentaPage() {
   const { rows, loading } = useInventario();
@@ -169,34 +194,12 @@ export function VentaPage() {
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Nueva venta</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatusBadge showLabel={false} />
+          <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
+            <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
         {/* Franja offline-first permanente (ADR-0001) */}
-        <IonToolbar style={{ '--background': '#0A2566', '--min-height': '0' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '7px var(--space-md)',
-            }}
-          >
-            <span
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#6E7FA8',
-                display: 'inline-block',
-              }}
-            />
-            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: '#AEBBD6' }}>
-              La venta se guarda en el equipo al instante
-            </span>
-          </div>
-        </IonToolbar>
+        <ConnectivityStrip text="La venta se guarda en el equipo al instante" />
       </IonHeader>
 
       <IonContent>
@@ -208,78 +211,158 @@ export function VentaPage() {
 
         {!loading && (
           <>
-            {/* ── Cliente ── */}
-            <IonList>
-              <IonItem>
-                <IonLabel position="stacked">Cliente *</IonLabel>
-                <IonSelect
-                  value={clienteId}
-                  placeholder="Selecciona un cliente"
-                  onIonChange={(e) => setClienteId(e.detail.value)}
-                >
-                  {clientes.map((c) => (
-                    <IonSelectOption key={c.id} value={c.id}>
-                      {c.nombre}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
-            </IonList>
+            <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* ── Cliente ── */}
+              <Card padding="11px 13px">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+                  {cliente ? (
+                    <ClienteAvatar nombre={cliente.nombre} />
+                  ) : (
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        flex: 'none',
+                        borderRadius: '11px',
+                        background: 'var(--color-surface-muted)',
+                        color: 'var(--color-disabled)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        fontWeight: 800,
+                      }}
+                    >
+                      ?
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <IonSelect
+                      aria-label="Cliente"
+                      label={cliente ? undefined : 'Cliente *'}
+                      labelPlacement="stacked"
+                      value={clienteId}
+                      placeholder="Selecciona un cliente"
+                      onIonChange={(e) => setClienteId(e.detail.value)}
+                      style={{
+                        minHeight: 'auto',
+                        fontSize: '16.5px',
+                        fontWeight: 700,
+                        color: 'var(--color-navy)',
+                        '--padding-start': '0',
+                        '--padding-top': '0',
+                        '--padding-bottom': '0',
+                      }}
+                    >
+                      {clientes.map((c) => (
+                        <IonSelectOption key={c.id} value={c.id}>
+                          {c.nombre}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                    {cliente && tipo && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '4px' }}>
+                        <Chip tone={tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
+                          {tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
+                        </Chip>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
 
-            {cliente && (
-              <div style={{ padding: 'var(--space-xs) var(--space-md) 0' }}>
-                <IonBadge
+              {/* ── Banner lista mayoreo ── */}
+              {cliente && tipo === 'mayoreo' && (
+                <div
                   style={{
-                    backgroundColor:
-                      tipo === 'mayoreo' ? 'var(--color-navy)' : 'var(--color-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    background: 'var(--color-navy)',
+                    borderRadius: '12px',
+                    padding: '11px 14px',
                   }}
                 >
-                  Lista: {tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
-                </IonBadge>
-              </div>
-            )}
-
-            {/* ── Del vehículo (H-04) ── */}
-            <IonList>
-              <IonListHeader>
-                <IonLabel style={{ fontSize: 'var(--font-size-xs)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
-                  Del vehículo
-                </IonLabel>
-              </IonListHeader>
-
-              {!cliente && (
-                <IonItem lines="none">
-                  <IonNote>Selecciona un cliente para ver los precios.</IonNote>
-                </IonItem>
+                  <span
+                    style={{
+                      width: '9px',
+                      height: '9px',
+                      borderRadius: '50%',
+                      background: 'var(--color-cyan)',
+                      display: 'inline-block',
+                      flex: 'none',
+                    }}
+                  />
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>
+                    Aplicando Lista mayoreo
+                  </span>
+                  <span
+                    className="numeric"
+                    style={{ marginLeft: 'auto', fontSize: 'var(--font-size-xs)', fontWeight: 700, color: '#9FC9FF' }}
+                  >
+                    precios por cliente
+                  </span>
+                </div>
               )}
 
-              {cliente && enVehiculo.length === 0 && (
-                <IonItem lines="none">
-                  <IonNote>
+              {/* ── Del vehículo (H-04) ── */}
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '2px',
+                  }}
+                >
+                  <span style={sectionLabel}>Del vehículo · se cobra hoy</span>
+                  {cliente && tipo && (
+                    <Chip tone={tipo === 'mayoreo' ? 'mayoreo' : 'primarySoft'}>
+                      {tipo === 'mayoreo' ? 'Lista mayoreo' : 'Lista menudeo'}
+                    </Chip>
+                  )}
+                </div>
+
+                {!cliente && (
+                  <IonNote style={{ display: 'block', padding: 'var(--space-sm) 0' }}>
+                    Selecciona un cliente para ver los precios.
+                  </IonNote>
+                )}
+
+                {cliente && enVehiculo.length === 0 && (
+                  <IonNote style={{ display: 'block', padding: 'var(--space-sm) 0' }}>
                     Sin inventario cargado. Carga el vehículo o levanta un pedido.
                   </IonNote>
-                </IonItem>
-              )}
+                )}
 
-              {cliente &&
-                tipo &&
-                enVehiculo.map((r) => {
-                  const precio = precioUnitario(r.presentacion, tipo);
-                  const cantidad = qty[r.presentacion.id] ?? 0;
-                  return (
-                    <IonItem key={r.presentacion.id}>
-                      <IonLabel>
-                        <h3 style={{ color: 'var(--color-navy)' }}>
-                          {r.presentacion.nombre}
-                        </h3>
-                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                          {money(precio)} c/u · disponibles: {r.cantidad}
-                          {cantidad > 0 && (
-                            <> · subtotal {money(importeLinea(cantidad, precio))}</>
-                          )}
-                        </p>
-                      </IonLabel>
-                      <div slot="end">
+                {cliente &&
+                  tipo &&
+                  enVehiculo.map((r) => {
+                    const precio = precioUnitario(r.presentacion, tipo);
+                    const cantidad = qty[r.presentacion.id] ?? 0;
+                    return (
+                      <div
+                        key={r.presentacion.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '11px',
+                          padding: '11px 0',
+                          borderBottom: '1px solid var(--color-divider)',
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-body)' }}>
+                            {r.presentacion.nombre}
+                            <span style={unidadChip}>{r.presentacion.unidad_venta}</span>
+                          </div>
+                          <div
+                            className="numeric"
+                            style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}
+                          >
+                            {money(precio)} c/u · disp. {r.cantidad}
+                          </div>
+                        </div>
                         <StepperCantidad
                           value={cantidad}
                           min={0}
@@ -288,39 +371,72 @@ export function VentaPage() {
                             setQty((prev) => ({ ...prev, [r.presentacion.id]: v }))
                           }
                         />
+                        <div
+                          className="numeric"
+                          style={{
+                            width: '70px',
+                            textAlign: 'right',
+                            fontSize: '16px',
+                            fontWeight: 800,
+                            color: 'var(--color-navy)',
+                          }}
+                        >
+                          {cantidad > 0 ? money(importeLinea(cantidad, precio)) : '—'}
+                        </div>
                       </div>
-                    </IonItem>
-                  );
-                })}
-            </IonList>
+                    );
+                  })}
+              </div>
+            </div>
 
             {/* ── Pedido pendiente (H-05) ── */}
             <IonList>
-              <IonListHeader>
-                <IonLabel style={{ fontSize: 'var(--font-size-xs)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
-                  Levantar pedido (preventa)
-                </IonLabel>
-              </IonListHeader>
+              <div style={{ padding: '14px var(--space-md) 6px' }}>
+                <span style={sectionLabel}>Levantar pedido (preventa)</span>
+              </div>
 
-              {pedidos.map((p, idx) => (
-                <IonItem key={idx}>
-                  <IonLabel>
-                    <h3>{nombrePresentacion(p.presentacion_id)}</h3>
-                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                      Cantidad: {p.cantidad}
-                      {p.fecha_compromiso && <> · compromiso: {p.fecha_compromiso}</>}
-                    </p>
-                  </IonLabel>
-                  <IonButton
-                    slot="end"
-                    fill="clear"
-                    color="danger"
-                    onClick={() => quitarPedido(idx)}
-                  >
-                    <IonIcon icon={trashOutline} slot="icon-only" />
-                  </IonButton>
-                </IonItem>
-              ))}
+              {pedidos.length > 0 && (
+                <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {pedidos.map((p, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        border: '1.5px solid var(--color-primary-line)',
+                        background: 'var(--color-primary-bg)',
+                        borderRadius: 'var(--radius-card)',
+                        padding: '12px 13px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <Chip tone="mayoreo" style={{ letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px' }}>
+                          Pedido pendiente
+                        </Chip>
+                        {p.fecha_compromiso && (
+                          <span className="numeric" style={{ fontSize: '12px', fontWeight: 800, color: 'var(--color-primary)' }}>
+                            entrega {p.fecha_compromiso}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '9px' }}>
+                        <span className="numeric" style={{ minWidth: '28px', fontSize: '15px', fontWeight: 800, color: 'var(--color-primary)' }}>
+                          {p.cantidad}×
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>
+                          {nombrePresentacion(p.presentacion_id)}
+                        </div>
+                        <IonButton fill="clear" color="danger" size="small" onClick={() => quitarPedido(idx)} aria-label="Quitar pedido">
+                          <IonIcon icon={trashOutline} slot="icon-only" />
+                        </IonButton>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '9px', paddingTop: '9px', borderTop: '1px dashed var(--color-primary-line)' }}>
+                        <span style={{ color: '#3E6B22', fontSize: '12.5px', fontWeight: 800 }}>✓ No baja inventario</span>
+                        <span style={{ color: '#C7965B', fontSize: '12px' }}>·</span>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '12.5px', fontWeight: 600 }}>se cobra al entregar</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <IonItem>
                 <IonLabel position="stacked">Presentación</IonLabel>
@@ -365,11 +481,9 @@ export function VentaPage() {
 
             {/* ── Cobro (H-07) ── */}
             <IonList>
-              <IonListHeader>
-                <IonLabel style={{ fontSize: 'var(--font-size-xs)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
-                  Cobro
-                </IonLabel>
-              </IonListHeader>
+              <div style={{ padding: '14px var(--space-md) 6px' }}>
+                <span style={sectionLabel}>Cobro</span>
+              </div>
               <IonItem>
                 <IonLabel>Registrar cobro ahora</IonLabel>
                 <IonToggle
@@ -466,37 +580,14 @@ export function VentaPage() {
             </div>
 
             {/* CTA ancho completo con total integrado */}
-            <IonButton
-              expand="block"
+            <PrimaryCTA
               disabled={!puedeGuardar}
+              loading={submitting}
               onClick={guardar}
-              style={{
-                '--background': 'var(--color-primary)',
-                '--border-radius': 'var(--radius-lg)',
-                '--box-shadow': '0 6px 16px -4px rgba(6, 6, 254, 0.45)',
-                '--padding-start': '22px',
-                '--padding-end': '22px',
-                height: '58px',
-                margin: 0,
-              }}
+              trailing={money(total)}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 800 }}>
-                  {submitting && <IonSpinner name="crescent" style={{ width: '18px', height: '18px' }} />}
-                  {submitting ? 'Guardando…' : 'Guardar venta'}
-                </span>
-                <span style={{ fontSize: '19px', fontWeight: 800, fontVariantNumeric: 'var(--numeric)' }}>
-                  {money(total)}
-                </span>
-              </div>
-            </IonButton>
+              {submitting ? 'Guardando…' : 'Guardar venta'}
+            </PrimaryCTA>
           </div>
         </IonToolbar>
       </IonFooter>
