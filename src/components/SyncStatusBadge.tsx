@@ -35,8 +35,8 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     padding: '4px 10px',
-    borderRadius: '20px',
-    fontSize: '13px',
+    borderRadius: 'var(--radius-pill, 20px)',
+    fontSize: 'var(--font-size-sm, 13px)',
     fontWeight: 600,
     minHeight: 'var(--touch-min, 48px)',
     cursor: 'default',
@@ -56,7 +56,7 @@ export function SyncStatusBadge({ showLabel = true }: SyncStatusBadgeProps) {
         style={{
           ...styles.container,
           backgroundColor: 'var(--color-error, #D92D20)',
-          color: '#fff',
+          color: 'var(--color-on-dark, #fff)',
         }}
         title="Sin conexión a internet"
       >
@@ -78,7 +78,7 @@ export function SyncStatusBadge({ showLabel = true }: SyncStatusBadgeProps) {
         style={{
           ...styles.container,
           backgroundColor: 'var(--color-amber, #F79009)',
-          color: '#fff',
+          color: 'var(--color-on-dark, #fff)',
         }}
         title="Sincronizando con el servidor..."
       >
@@ -94,8 +94,8 @@ export function SyncStatusBadge({ showLabel = true }: SyncStatusBadgeProps) {
       <div
         style={{
           ...styles.container,
-          backgroundColor: 'var(--color-amber, #F79009)',
-          color: '#fff',
+          backgroundColor: 'var(--color-error, #D92D20)',
+          color: 'var(--color-on-dark, #fff)',
           cursor: 'pointer',
         }}
         title="Error al sincronizar. Haz clic para reintentar."
@@ -122,7 +122,7 @@ export function SyncStatusBadge({ showLabel = true }: SyncStatusBadgeProps) {
         style={{
           ...styles.container,
           backgroundColor: 'var(--color-amber, #F79009)',
-          color: '#fff',
+          color: 'var(--color-on-dark, #fff)',
           cursor: 'pointer',
         }}
         title={`${pendingCount} operación(es) pendiente(s). Haz clic para sincronizar.`}

@@ -60,7 +60,7 @@ export function VisitasPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Visitas</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -88,13 +88,13 @@ export function VisitasPage() {
         {segmento === 'hoy' && (
           <>
             {ruta.loading && (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <IonSpinner name="crescent" />
               </div>
             )}
 
             {!ruta.loading && ruta.error && (
-              <div style={{ padding: '24px' }}>
+              <div style={{ padding: 'var(--space-lg)' }}>
                 <IonText color="danger">
                   <p>Error al cargar la ruta: {ruta.error}</p>
                 </IonText>
@@ -102,7 +102,7 @@ export function VisitasPage() {
             )}
 
             {!ruta.loading && !ruta.error && ruta.clientes.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <IonText color="medium">
                   <p>No hay clientes en la ruta de hoy.</p>
                 </IonText>
@@ -129,7 +129,7 @@ export function VisitasPage() {
                       <h2 style={{ fontWeight: 600, color: 'var(--color-navy)' }}>
                         {c.nombre}
                       </h2>
-                      <p style={{ fontSize: '12px', color: '#6B7280' }}>
+                      <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                         {c.tipo}
                         {c.dia_ruta && <> · {c.dia_ruta}</>}
                         {c.fecha_proxima_visita && <> · visita: {c.fecha_proxima_visita}</>}
@@ -155,13 +155,13 @@ export function VisitasPage() {
         {segmento === 'semana' && (
           <>
             {seg.loading && (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <IonSpinner name="crescent" />
               </div>
             )}
 
             {!seg.loading && seg.error && (
-              <div style={{ padding: '24px' }}>
+              <div style={{ padding: 'var(--space-lg)' }}>
                 <IonText color="danger">
                   <p>Error al cargar el seguimiento: {seg.error}</p>
                 </IonText>
@@ -169,7 +169,7 @@ export function VisitasPage() {
             )}
 
             {!seg.loading && !seg.error && seg.prospectos.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <IonText color="medium">
                   <p>Sin prospectos por vencer esta semana.</p>
                 </IonText>
@@ -187,7 +187,7 @@ export function VisitasPage() {
                         style={{
                           width: '10px',
                           height: '40px',
-                          borderRadius: '4px',
+                          borderRadius: 'var(--radius-sm)',
                           backgroundColor: COLOR_VENCIMIENTO[venc],
                         }}
                       />
@@ -195,7 +195,7 @@ export function VisitasPage() {
                         <h2 style={{ fontWeight: 600, color: 'var(--color-navy)' }}>
                           {c.nombre}
                         </h2>
-                        <p style={{ fontSize: '12px', color: '#6B7280' }}>
+                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                           Visita {c.ciclo_visita} · próxima: {c.fecha_proxima_visita}
                         </p>
                       </IonLabel>

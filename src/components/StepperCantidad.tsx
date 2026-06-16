@@ -33,13 +33,13 @@ export function StepperCantidad({
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
       <IonButton
         fill="outline"
         size="small"
         disabled={disabled || value <= min}
         onClick={() => onChange(clamp(value - step))}
-        style={{ minWidth: '40px', minHeight: '40px', margin: 0 }}
+        style={{ minWidth: 'var(--touch-min)', minHeight: 'var(--touch-min)', margin: 0 }}
         aria-label="Disminuir"
       >
         <IonIcon icon={removeOutline} slot="icon-only" />
@@ -57,8 +57,9 @@ export function StepperCantidad({
         style={{
           width: '64px',
           textAlign: 'center',
-          '--padding-start': '4px',
-          '--padding-end': '4px',
+          fontVariantNumeric: 'var(--numeric)',
+          '--padding-start': 'var(--space-xs)',
+          '--padding-end': 'var(--space-xs)',
         }}
       />
 
@@ -67,7 +68,7 @@ export function StepperCantidad({
         size="small"
         disabled={disabled || (max != null && value >= max)}
         onClick={() => onChange(clamp(value + step))}
-        style={{ minWidth: '40px', minHeight: '40px', margin: 0 }}
+        style={{ minWidth: 'var(--touch-min)', minHeight: 'var(--touch-min)', margin: 0 }}
         aria-label="Aumentar"
       >
         <IonIcon icon={addOutline} slot="icon-only" />

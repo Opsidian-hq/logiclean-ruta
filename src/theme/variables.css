@@ -3,7 +3,47 @@
  * Fuente: docs/brief-sistema-diseno-logiclean.md
  * ============================================================ */
 
+/* ── Tipografías (§5 del brief) ───────────────────────────── */
+/* Aaux Next: interfaz/cuerpo, peso ≥ medio (la Light no se usa). */
+/* Groovy Smooth: solo momentos de marca (splash / encabezado). */
+@font-face {
+  font-family: 'Aaux Next';
+  src: url('/fonts/AauxNext-Medium.woff2') format('woff2'),
+       url('/fonts/AauxNext-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aaux Next';
+  src: url('/fonts/AauxNext-Bold.woff2') format('woff2'),
+       url('/fonts/AauxNext-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aaux Next';
+  src: url('/fonts/AauxNext-Black.woff2') format('woff2'),
+       url('/fonts/AauxNext-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Groovy Smooth';
+  src: url('/fonts/GroovySmooth.woff2') format('woff2'),
+       url('/fonts/GroovySmooth.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* Sistema claro fijo: alto contraste para leer al sol (brief §2).
+     El brief no contempla modo oscuro. */
+  color-scheme: light;
+
   /* ── Paleta de color ─────────────────────────────────────── */
   --color-navy:    #001D51;   /* texto principal / encabezados   */
   --color-body:    #1C1C1E;   /* texto cuerpo                    */
@@ -15,19 +55,39 @@
   --color-amber:   #F79009;   /* pendiente sync                  */
   --color-error:   #D92D20;   /* error sync                      */
 
+  /* ── Neutros (§4 — la marca solo da casi-negro/casi-blanco) ─ */
+  --color-text-secondary: #6B7280;  /* texto secundario / hints  */
+  --color-border:         #E5E7EB;  /* bordes inputs / items     */
+  --color-disabled:       #9CA3AF;  /* estados deshabilitados    */
+  --color-surface-muted:  #EEF0F4;  /* relleno neutro / chip     */
+  --color-on-dark:        #FFFFFF;  /* texto/icono sobre oscuro  */
+
+  /* ── Color funcional — texto de estado sobre claro (§4) ───── */
+  --color-pending-text:   #B54708;  /* "pendiente" sobre claro   */
+  --color-error-text:     #B42318;  /* "error" sobre claro       */
+  --color-error-soft-bg:  #FEF2F2;  /* fondo suave de error      */
+
   /* ── Interacción ─────────────────────────────────────────── */
   --touch-min: 48px;          /* mínimo de toque (ADR-0001)      */
 
   /* ── Tipografía ──────────────────────────────────────────── */
   --font-ui:        'Aaux Next', system-ui, sans-serif;
   --font-brand:     'Groovy Smooth', cursive;
-  --font-size-base: 17px;
+  --font-size-base: 17px;     /* base de cuerpo (§5: ~17–18px)   */
+  --font-size-sm:   13px;
+  --font-size-xs:   12px;
+  --font-size-2xs:  11px;     /* etiquetas de tabs               */
+  --font-weight-base: 500;    /* ≥ medio: legible al sol (§5)    */
+  --font-weight-bold: 700;
+  --numeric: tabular-nums;    /* cifras tabulares (precios/cant.)*/
 
   /* ── Ionic overrides ─────────────────────────────────────── */
   --ion-background-color:           var(--color-bg);
   --ion-text-color:                 var(--color-body);
   --ion-color-primary:              var(--color-primary);
+  --ion-color-primary-rgb:          6, 6, 254;
   --ion-color-primary-contrast:     #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
   --ion-color-primary-shade:        #0505d9;
   --ion-color-primary-tint:         #2020fe;
   --ion-toolbar-background:         var(--color-navy);
@@ -41,24 +101,17 @@
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
+  --space-2xl: 40px;
 
   /* ── Bordes ──────────────────────────────────────────────── */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 16px;
+  --radius-pill: 20px;        /* chips / badges                  */
 
   /* ── Sombras ─────────────────────────────────────────────── */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* ── Modo oscuro (preparado para futuro) ──────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg:      #0a0a0a;
-    --color-surface: #1c1c1e;
-    --color-body:    #f5f5f7;
-  }
 }
 
 /* ── Reset básico ─────────────────────────────────────────── */
@@ -69,6 +122,7 @@
 body {
   font-family: var(--font-ui);
   font-size:   var(--font-size-base);
+  font-weight: var(--font-weight-base);
   color:       var(--color-body);
   background:  var(--color-bg);
   margin: 0;
@@ -80,4 +134,9 @@ body {
   min-width:  var(--touch-min);
   display:    flex;
   align-items: center;
+}
+
+/* ── Numerales tabulares para precios y cantidades (§5) ────── */
+.numeric {
+  font-variant-numeric: var(--numeric);
 }

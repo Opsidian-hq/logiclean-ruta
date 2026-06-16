@@ -91,7 +91,7 @@ export function CatalogoPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Catálogo</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -105,18 +105,18 @@ export function CatalogoPage() {
           value={search}
           onIonInput={(e) => setSearch(e.detail.value ?? '')}
           placeholder="Buscar producto..."
-          style={{ '--background': '#fff' }}
+          style={{ '--background': 'var(--color-surface)' }}
         />
 
         {/* Estados de carga */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
           </div>
         )}
 
         {!loading && error && (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: 'var(--space-lg)' }}>
             <IonText color="danger">
               <p>Error al cargar el catálogo: {error}</p>
             </IonText>
@@ -124,7 +124,7 @@ export function CatalogoPage() {
         )}
 
         {!loading && !error && filtrados.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonText color="medium">
               <p>
                 {search
@@ -145,14 +145,14 @@ export function CatalogoPage() {
                     <h2 style={{ fontWeight: 700, color: 'var(--color-navy)' }}>
                       {producto.nombre}
                     </h2>
-                    <p style={{ fontSize: '13px', color: '#6B7280' }}>
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                       {producto.unidad_compra}
                       {producto.precio_preferencial != null && (
                         <> · Precio pref: ${producto.precio_preferencial.toFixed(2)}</>
                       )}
                     </p>
                     {/* Presentaciones resumidas */}
-                    <p style={{ fontSize: '12px', marginTop: '4px' }}>
+                    <p style={{ fontSize: 'var(--font-size-xs)', marginTop: 'var(--space-xs)' }}>
                       {producto.presentaciones.length > 0
                         ? producto.presentaciones.map((p) => p.nombre).join(' · ')
                         : 'Sin presentaciones'}

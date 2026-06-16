@@ -92,7 +92,7 @@ export function PresentacionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate style={{ padding: '8px 0' }}>
+    <form onSubmit={handleSubmit} noValidate style={{ padding: 'var(--space-sm) 0' }}>
       {/* Nombre */}
       <IonItem>
         <IonLabel position="stacked">Nombre de la presentación *</IonLabel>
@@ -105,7 +105,7 @@ export function PresentacionForm({
       </IonItem>
       {errores.nombre && (
         <IonText color="danger">
-          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.nombre}</p>
+          <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.nombre}</p>
         </IonText>
       )}
 
@@ -121,7 +121,7 @@ export function PresentacionForm({
       </IonItem>
       {errores.unidad_venta && (
         <IonText color="danger">
-          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.unidad_venta}</p>
+          <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.unidad_venta}</p>
         </IonText>
       )}
 
@@ -139,7 +139,7 @@ export function PresentacionForm({
       </IonItem>
       {errores.factor_conversion && (
         <IonText color="danger">
-          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.factor_conversion}</p>
+          <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.factor_conversion}</p>
         </IonText>
       )}
 
@@ -158,7 +158,7 @@ export function PresentacionForm({
       </IonItem>
       {errores.precio_mayoreo && (
         <IonText color="danger">
-          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.precio_mayoreo}</p>
+          <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.precio_mayoreo}</p>
         </IonText>
       )}
 
@@ -177,12 +177,12 @@ export function PresentacionForm({
       </IonItem>
       {errores.precio_menudeo && (
         <IonText color="danger">
-          <p style={{ marginLeft: '16px', fontSize: '13px' }}>{errores.precio_menudeo}</p>
+          <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.precio_menudeo}</p>
         </IonText>
       )}
 
       {/* Acciones */}
-      <div style={{ display: 'flex', gap: '12px', padding: '16px 0', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: '12px', padding: 'var(--space-md) 0', justifyContent: 'flex-end' }}>
         <IonButton fill="outline" color="medium" onClick={onCancel} type="button">
           Cancelar
         </IonButton>

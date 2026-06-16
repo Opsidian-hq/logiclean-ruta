@@ -71,7 +71,7 @@ export function GastosPage() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Gastos de ruta</IonTitle>
           <IonButtons slot="end">
             <SyncStatusBadge showLabel={false} />
@@ -162,7 +162,7 @@ export function GastosPage() {
             />
           </IonItem>
 
-          <div style={{ padding: '12px 16px' }}>
+          <div style={{ padding: '12px var(--space-md)' }}>
             <IonButton
               expand="block"
               disabled={!puedeGuardar}
@@ -181,7 +181,7 @@ export function GastosPage() {
           </IonListHeader>
 
           {loading && (
-            <div style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>
               <IonSpinner name="crescent" />
             </div>
           )}
@@ -197,12 +197,12 @@ export function GastosPage() {
               <IonItem key={g.id}>
                 <IonLabel>
                   <h3 style={{ color: 'var(--color-navy)' }}>{g.categoria}</h3>
-                  <p style={{ fontSize: '12px', color: '#6B7280' }}>
+                  <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                     {g.forma_pago}
                     {g.descripcion && <> · {g.descripcion}</>}
                   </p>
                 </IonLabel>
-                <IonText slot="end" style={{ fontWeight: 600 }}>
+                <IonText slot="end" style={{ fontWeight: 600, fontVariantNumeric: 'var(--numeric)' }}>
                   {money(g.monto)}
                 </IonText>
               </IonItem>
@@ -212,7 +212,7 @@ export function GastosPage() {
             <IonItem lines="none">
               <IonLabel>
                 <IonText color="medium">
-                  <p style={{ fontSize: '13px', margin: 0 }}>
+                  <p style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}>
                     Efectivo: <strong>{money(totales.efectivo)}</strong> ·
                     Transferencia: <strong>{money(totales.transferencia)}</strong>
                   </p>
@@ -222,7 +222,7 @@ export function GastosPage() {
           )}
         </IonList>
 
-        <div style={{ height: '24px' }} />
+        <div style={{ height: 'var(--space-lg)' }} />
       </IonContent>
 
       <IonToast

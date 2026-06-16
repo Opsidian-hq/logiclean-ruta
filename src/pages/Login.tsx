@@ -29,15 +29,15 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    padding: '24px',
+    padding: 'var(--space-lg)',
     backgroundColor: 'var(--color-bg, #FAFAFA)',
   },
   card: {
     width: '100%',
     maxWidth: '400px',
     backgroundColor: 'var(--color-surface, #FFFFFF)',
-    borderRadius: '16px',
-    padding: '32px 24px',
+    borderRadius: 'var(--radius-lg)',
+    padding: 'var(--space-xl) var(--space-lg)',
     boxShadow: '0 4px 24px rgba(0, 29, 81, 0.10)',
   },
   brand: {
@@ -45,22 +45,22 @@ const styles = {
     fontSize: '32px',
     color: 'var(--color-navy, #001D51)',
     textAlign: 'center' as const,
-    marginBottom: '8px',
+    marginBottom: 'var(--space-sm)',
     lineHeight: 1.2,
   },
   subtitle: {
     fontSize: '14px',
-    color: '#6B7280',
+    color: 'var(--color-text-secondary, #6B7280)',
     textAlign: 'center' as const,
-    marginBottom: '32px',
+    marginBottom: 'var(--space-xl)',
   },
   errorBox: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: 'var(--color-error-soft-bg, #FEF2F2)',
     border: '1px solid var(--color-error, #D92D20)',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    marginBottom: '16px',
-    color: 'var(--color-error, #D92D20)',
+    borderRadius: 'var(--radius-md)',
+    padding: '12px var(--space-md)',
+    marginBottom: 'var(--space-md)',
+    color: 'var(--color-error-text, #B42318)',
     fontSize: '14px',
   },
   button: {
@@ -68,7 +68,7 @@ const styles = {
     '--border-radius': '10px',
     '--padding-top': '14px',
     '--padding-bottom': '14px',
-    marginTop: '24px',
+    marginTop: 'var(--space-lg)',
     width: '100%',
     minHeight: 'var(--touch-min, 48px)',
   },
@@ -122,7 +122,7 @@ export function LoginPage() {
               <IonItem
                 style={{
                   '--background': 'transparent',
-                  '--border-color': '#E5E7EB',
+                  '--border-color': 'var(--color-border)',
                   marginBottom: '12px',
                 }}
               >
@@ -144,7 +144,7 @@ export function LoginPage() {
               <IonItem
                 style={{
                   '--background': 'transparent',
-                  '--border-color': '#E5E7EB',
+                  '--border-color': 'var(--color-border)',
                 }}
               >
                 <IonLabel position="stacked" style={{ color: 'var(--color-navy)' }}>
@@ -168,7 +168,7 @@ export function LoginPage() {
                 disabled={loading || !email.trim() || !password.trim()}
               >
                 {loading ? (
-                  <IonSpinner name="crescent" style={{ color: '#fff' }} />
+                  <IonSpinner name="crescent" style={{ color: 'var(--color-on-dark)' }} />
                 ) : (
                   'Entrar'
                 )}

@@ -130,24 +130,24 @@ function VendedorTabs() {
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
         <IonTabButton tab="visitas" href="/visitas">
-          <IonIcon icon={mapOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Visitas</span>
+          <IonIcon icon={mapOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Visitas</span>
         </IonTabButton>
         <IonTabButton tab="venta" href="/venta">
-          <IonIcon icon={cartOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Venta</span>
+          <IonIcon icon={cartOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Venta</span>
         </IonTabButton>
         <IonTabButton tab="inventario" href="/inventario">
-          <IonIcon icon={cubeOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Inventario</span>
+          <IonIcon icon={cubeOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inventario</span>
         </IonTabButton>
         <IonTabButton tab="gastos" href="/gastos">
-          <IonIcon icon={walletOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Gastos</span>
+          <IonIcon icon={walletOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Gastos</span>
         </IonTabButton>
         <IonTabButton tab="catalogo" href="/catalogo">
-          <IonIcon icon={gridOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Catálogo</span>
+          <IonIcon icon={gridOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Catálogo</span>
         </IonTabButton>
       </IonTabBar>
     </IonTabs>
@@ -170,16 +170,16 @@ function AdminTabs() {
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
         <IonTabButton tab="prospectos" href="/admin/prospectos">
-          <IonIcon icon={funnelOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Prospectos</span>
+          <IonIcon icon={funnelOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Prospectos</span>
         </IonTabButton>
         <IonTabButton tab="catalogo" href="/admin/catalogo">
-          <IonIcon icon={gridOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Catálogo</span>
+          <IonIcon icon={gridOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Catálogo</span>
         </IonTabButton>
         <IonTabButton tab="clientes" href="/admin/clientes">
-          <IonIcon icon={peopleOutline} style={{ color: '#fff' }} />
-          <span style={{ color: '#fff', fontSize: '11px' }}>Clientes</span>
+          <IonIcon icon={peopleOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
         </IonTabButton>
       </IonTabBar>
     </IonTabs>

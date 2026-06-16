@@ -82,10 +82,10 @@ export function FichaProspecto({
   return (
     <>
       <IonHeader>
-        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': '#fff' }}>
+        <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>{cliente.nombre}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onClose} style={{ color: '#fff' }}>
+            <IonButton onClick={onClose} style={{ color: 'var(--color-on-dark)' }}>
               Cerrar
             </IonButton>
           </IonButtons>
@@ -94,11 +94,11 @@ export function FichaProspecto({
 
       <IonContent>
         {/* Punto del ciclo */}
-        <div style={{ padding: '16px' }}>
+        <div style={{ padding: 'var(--space-md)' }}>
           <IonBadge style={{ backgroundColor: 'var(--color-primary)' }}>
             Visita {etapa} de {CICLO_OBJETIVO}
           </IonBadge>
-          <div style={{ marginTop: '8px', fontSize: '13px', color: '#6B7280' }}>
+          <div style={{ marginTop: 'var(--space-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
             {cliente.tipo}
             {cliente.dia_ruta && <> · día de ruta: {cliente.dia_ruta}</>}
             {cliente.fecha_proxima_visita && (
@@ -114,7 +114,7 @@ export function FichaProspecto({
           </IonListHeader>
 
           {loading && (
-            <div style={{ textAlign: 'center', padding: '16px' }}>
+            <div style={{ textAlign: 'center', padding: 'var(--space-md)' }}>
               <IonSpinner name="crescent" />
             </div>
           )}
@@ -132,9 +132,9 @@ export function FichaProspecto({
                   <h3 style={{ color: 'var(--color-navy)' }}>
                     Visita {v.numero_ciclo} · {v.fecha}
                   </h3>
-                  {v.nota && <p style={{ fontSize: '13px' }}>{v.nota}</p>}
+                  {v.nota && <p style={{ fontSize: 'var(--font-size-sm)' }}>{v.nota}</p>}
                   {v.siguiente_paso && (
-                    <p style={{ fontSize: '12px', color: '#6B7280' }}>
+                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                       Siguiente paso: {v.siguiente_paso}
                     </p>
                   )}
@@ -177,7 +177,7 @@ export function FichaProspecto({
             />
           </IonItem>
 
-          <div style={{ padding: '16px' }}>
+          <div style={{ padding: 'var(--space-md)' }}>
             <IonButton
               expand="block"
               disabled={saving}
@@ -187,7 +187,7 @@ export function FichaProspecto({
               {saving ? <IonSpinner name="crescent" /> : 'Registrar visita y avanzar ciclo'}
             </IonButton>
             <IonText color="medium">
-              <p style={{ fontSize: '12px', textAlign: 'center' }}>
+              <p style={{ fontSize: 'var(--font-size-xs)', textAlign: 'center' }}>
                 El contador pasará a visita {etapa + 1} de {CICLO_OBJETIVO}.
               </p>
             </IonText>
