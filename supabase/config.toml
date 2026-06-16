@@ -1,0 +1,55 @@
+# ============================================================
+# Logiclean Ruta — Configuración del proyecto Supabase CLI
+#
+# Las migraciones (supabase/migrations) son la ÚNICA fuente de
+# verdad del esquema. Nunca se cambia la BD remota a mano.
+#
+# Flujo:
+#   supabase link --project-ref <ref>   # enlazar el proyecto remoto
+#   supabase db push                    # aplicar 001..004 a remoto
+#   supabase db reset                   # rehacer la BD local + seed
+#
+# Ver README → "Aplicar migraciones en Supabase".
+# ============================================================
+
+# Identificador local del proyecto (NO es el project-ref remoto;
+# ese se pasa con `supabase link --project-ref`).
+project_id = "logiclean-ruta"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# Versión mayor de Postgres del proyecto Supabase Cloud (plan free).
+major_version = 15
+
+[db.migrations]
+# Orden de aplicación = orden lexicográfico del prefijo <timestamp>.
+enabled = true
+
+[db.seed]
+# Tras `supabase db reset`, carga el catálogo de ejemplo.
+enabled = true
+sql_paths = ["./seed/catalog.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# Se ajusta por entorno; en producción son las URLs reales del cliente.
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false

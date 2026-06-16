@@ -7,7 +7,7 @@
 -- Esta migración documenta cómo asignar el rol a un usuario
 -- nuevo usando la API de Admin de Supabase o el dashboard.
 -- No hay roles de Postgres adicionales: toda la lógica de
--- autorización se implementa en RLS (002_rls.sql).
+-- autorización se implementa en RLS (20260611100002_rls.sql).
 -- ============================================================
 
 -- ------------------------------------------------------------

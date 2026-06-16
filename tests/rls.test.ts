@@ -2,12 +2,12 @@
  * Logiclean Ruta — Tests T4: Políticas RLS
  *
  * Estos tests son de especificación/documentación, NO ejecutan contra
- * Supabase real. Verifican que el archivo 002_rls.sql contiene las
+ * Supabase real. Verifican que el archivo 20260611100002_rls.sql contiene las
  * cláusulas SQL correctas para cada política de seguridad.
  *
  * Un test por política RLS. Cada test:
  *  1. Describe la regla (qué usuario ve qué)
- *  2. Lee 002_rls.sql y verifica que contiene la cláusula correcta
+ *  2. Lee 20260611100002_rls.sql y verifica que contiene la cláusula correcta
  *
  * Para tests de integración contra Supabase real, usar
  * supabase test (CLI de Supabase) en un entorno CI dedicado.
@@ -19,7 +19,7 @@ import { join } from 'path';
 
 // ── Cargar el archivo de migraciones RLS ──────────────────────
 
-const rlsFilePath = join(__dirname, '../supabase/migrations/002_rls.sql');
+const rlsFilePath = join(__dirname, '../supabase/migrations/20260611100002_rls.sql');
 const rlsSQL = readFileSync(rlsFilePath, 'utf-8');
 
 // ── Utilidad helper ───────────────────────────────────────────
@@ -50,7 +50,7 @@ function testCommentExists(testId: string): boolean {
 
 // ── Suite de tests ────────────────────────────────────────────
 
-describe('T4 — Políticas RLS (verificación de 002_rls.sql)', () => {
+describe('T4 — Políticas RLS (verificación de 20260611100002_rls.sql)', () => {
 
   // ── Prerrequisito: función helper es_gerente() ─────────────
 

@@ -2,7 +2,7 @@
  * Logiclean Ruta — Schema de Dexie (IndexedDB)
  *
  * Espejo del modelo remoto (Supabase/Postgres).
- * Los cambios aquí deben reflejarse en 001_schema.sql.
+ * Los cambios aquí deben reflejarse en 20260611100001_schema.sql.
  *
  * Convenciones:
  * - PKs: campo `id` (UUID string), siempre ++id NO aplica aquí

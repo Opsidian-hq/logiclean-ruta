@@ -71,10 +71,12 @@ logiclean-ruta/
 │  └─ main.tsx                   # Entry point
 │
 ├─ supabase/
-│  ├─ migrations/
-│  │  ├─ 001_schema.sql          # Todas las tablas del modelo
-│  │  ├─ 002_rls.sql             # Políticas RLS por tabla
-│  │  └─ 003_roles.sql           # Trigger auto-vendedor + vista roles
+│  ├─ config.toml                # Proyecto Supabase CLI (migraciones + seed)
+│  ├─ migrations/                # Nombradas <timestamp>_nombre.sql (formato CLI)
+│  │  ├─ 20260611100001_schema.sql   # Todas las tablas del modelo
+│  │  ├─ 20260611100002_rls.sql      # Políticas RLS por tabla
+│  │  ├─ 20260611100003_roles.sql    # Trigger auto-vendedor + vista roles
+│  │  └─ 20260615100004_grants.sql   # GRANTs de tabla a `authenticated`
 │  └─ seed/
 │     └─ catalog.sql             # 3 productos con presentaciones
 │
@@ -128,19 +130,48 @@ Variables solo para scripts (NUNCA al cliente):
 - `SUPABASE_DB_URL` — Connection string para pg_dump
 - `SUPABASE_ANON_KEY` — Para keepalive.sh
 
-### 4. Aplicar migraciones en Supabase
+### 4. Aplicar migraciones en Supabase (CLI — fuente de verdad)
 
-Ejecutar en el SQL editor de Supabase en orden:
-1. `supabase/migrations/001_schema.sql`
-2. `supabase/migrations/002_rls.sql`
-3. `supabase/migrations/003_roles.sql`
+Las migraciones **son la única fuente de verdad del esquema**; nunca se cambia
+la BD remota a mano. El esquema se reconstruye idéntico con la Supabase CLI.
+
+Requiere la [Supabase CLI](https://supabase.com/docs/guides/cli) instalada.
+
+```bash
+# 1. Enlazar el repo con tu proyecto remoto (pide la DB password)
+supabase link --project-ref <tu-project-ref>
+
+# 2. Aplicar las migraciones 001..004 en orden a la BD remota
+supabase db push
+```
+
+`supabase db push` aplica, en orden de timestamp, las cuatro migraciones de
+`supabase/migrations/` y registra cada versión en
+`supabase_migrations.schema_migrations`. Un entorno nuevo queda idéntico sin
+pasos manuales.
+
+> **Proyecto ya provisionado a mano (one-time).** Si las migraciones 001-004 ya
+> se aplicaron por el SQL Editor (como en la verificación del hito de Inc 0), la
+> tabla `schema_migrations` está vacía y `db push` intentaría reaplicarlas y
+> fallaría (`CREATE POLICY` no es idempotente). Márcalas como aplicadas una sola
+> vez antes del primer push:
+> ```bash
+> supabase migration repair --status applied 20260611100001 20260611100002 \
+>   20260611100003 20260615100004
+> ```
 
 ### 5. Cargar seed de ejemplo
 
+El seed (`supabase/seed/catalog.sql`) está declarado en `config.toml` y se
+carga automáticamente al rehacer la BD **local**:
+
 ```bash
-# En el SQL editor de Supabase
-# Ejecutar: supabase/seed/catalog.sql
+supabase db reset      # rehace la BD local: migraciones 001..004 + seed
 ```
+
+Para sembrar un proyecto **remoto**, ejecuta el contenido de
+`supabase/seed/catalog.sql` una vez vía `supabase db push` no aplica seeds
+(solo migraciones); usa `psql "$SUPABASE_DB_URL" -f supabase/seed/catalog.sql`.
 
 ### 6. Desarrollo local
 
@@ -173,7 +204,8 @@ El rol se determina por `auth.users.raw_user_meta_data->>'rol'` (valores: `'vend
 | **PKs UUID en cliente** | `crypto.randomUUID()` — sync idempotente sin colisiones |
 | **Baja lógica** | `activo = false`, nunca `DELETE` físico en catálogo y clientes |
 | **Migraciones = fuente de verdad** | Nunca cambiar la BD remota a mano |
-| **Cada política RLS = un caso de prueba** | Comentarios `-- Test T4-XXX` en 002_rls.sql |
+| **Cada política RLS = un caso de prueba** | Comentarios `-- Test T4-XXX` en `20260611100002_rls.sql` |
+| **Migraciones con formato CLI** | `<timestamp>_nombre.sql`; aplicar con `supabase db push`, nunca a mano |
 | **`service_role` nunca en cliente** | Solo en variables de CI/CD con acceso restringido |
 | **`INVENTARIO_VEHICULO.cantidad`** | Contador que se decrementa (no bitácora) |
 | **Sin `VISITA_PROGRAMADA`** | Decisión descartada |
@@ -227,7 +259,7 @@ npm run test:coverage     # Con cobertura
 ```
 
 - `tests/sync.test.ts` — T1: cola offline, idempotencia, reconexión, retry
-- `tests/rls.test.ts` — T4: verificación de cláusulas RLS en 002_rls.sql (44 tests)
+- `tests/rls.test.ts` — T4: verificación de cláusulas RLS en `20260611100002_rls.sql` (44 tests)
 
 ---
 

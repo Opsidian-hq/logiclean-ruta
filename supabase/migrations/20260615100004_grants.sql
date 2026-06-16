@@ -14,7 +14,7 @@
 --   • Se otorga SOLO a `authenticated`. NO a `anon`: el modelo offline-first
 --     (ADR-0001) lee el catálogo con sesión válida y lo cachea en Dexie;
 --     nunca se sirve del servidor sin login. La RLS de catálogo ya exige
---     auth.uid() IS NOT NULL (002_rls.sql).
+--     auth.uid() IS NOT NULL (20260611100002_rls.sql).
 --   • Se otorga SELECT/INSERT/UPDATE/DELETE de forma amplia y se deja que la
 --     RLS haga el filtrado fino por fila y por rol. Donde no hay política
 --     (p. ej. DELETE en cliente = baja lógica), la RLS sigue bloqueando aunque

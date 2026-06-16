@@ -31,6 +31,12 @@ dist-ssr
 # Backups locales generados por scripts/backup.sh
 backup_logiclean_*.sql
 
+# Supabase CLI — artefactos locales (el ref del proyecto y el stack local
+# nunca se commitean; la fuente de verdad es supabase/migrations + config.toml)
+supabase/.branches
+supabase/.temp
+supabase/.env
+
 # Capacitor
 android/
 ios/
