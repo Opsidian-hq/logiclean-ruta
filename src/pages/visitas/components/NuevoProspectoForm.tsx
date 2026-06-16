@@ -19,9 +19,10 @@ import {
   IonSegment,
   IonSegmentButton,
   IonText,
-  IonSpinner,
 } from '@ionic/react';
 import { useState } from 'react';
+import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
+import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import type { CrearProspectoArgs } from '../../../hooks/useSeguimiento';
 
 interface NuevoProspectoFormProps {
@@ -67,6 +68,7 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
             </IonButton>
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
@@ -123,14 +125,9 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
           </IonItem>
 
           <div style={{ padding: 'var(--space-md)' }}>
-            <IonButton
-              expand="block"
-              disabled={saving}
-              style={{ '--background': 'var(--color-primary)' }}
-              onClick={handleCrear}
-            >
-              {saving ? <IonSpinner name="crescent" /> : 'Crear prospecto'}
-            </IonButton>
+            <PrimaryCTA loading={saving} disabled={saving} onClick={handleCrear}>
+              {saving ? 'Guardando…' : 'Crear prospecto'}
+            </PrimaryCTA>
           </div>
         </IonList>
       </IonContent>
