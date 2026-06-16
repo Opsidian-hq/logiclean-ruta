@@ -33,6 +33,7 @@ import {
   walletOutline,
   funnelOutline,
   receiptOutline,
+  businessOutline,
 } from 'ionicons/icons';
 
 /* Ionic Core CSS — DEBE importarse antes de cualquier componente Ionic */
@@ -65,6 +66,7 @@ import { CatalogoPage } from './pages/admin/CatalogoPage';
 import { ClientesPage } from './pages/admin/ClientesPage';
 import { ProspectosPanelPage } from './pages/admin/ProspectosPanelPage';
 import { CortePage } from './pages/admin/CortePage';
+import { RegistrosNegocioPage } from './pages/admin/RegistrosNegocioPage';
 
 /* Guards */
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -169,6 +171,7 @@ function AdminTabs() {
         <Route exact path="/admin/clientes" component={ClientesPage} />
         <Route exact path="/admin/prospectos" component={ProspectosPanelPage} />
         <Route exact path="/admin/corte" component={CortePage} />
+        <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
@@ -187,6 +190,10 @@ function AdminTabs() {
         <IonTabButton tab="corte" href="/admin/corte">
           <IonIcon icon={receiptOutline} style={{ color: 'var(--color-on-dark)' }} />
           <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Corte</span>
+        </IonTabButton>
+        <IonTabButton tab="negocio" href="/admin/negocio">
+          <IonIcon icon={businessOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Negocio</span>
         </IonTabButton>
       </IonTabBar>
     </IonTabs>

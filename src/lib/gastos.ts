@@ -22,15 +22,25 @@ export const CATEGORIAS_RUTA = [
   'Alimentos',
 ] as const;
 
+/** Categorías sugeridas para gastos de backoffice (más "Otro" libre en la UI). */
+export const CATEGORIAS_BACKOFFICE = [
+  'Insumos',
+  'Etiquetas',
+  'Envases',
+  'Renta',
+  'Servicios',
+] as const;
+
 export interface RegistrarGastoInput {
-  vendedorId: string;
+  /** Obligatorio para gastos de ruta; ignorado (null) en backoffice. */
+  vendedorId?: string | null;
   categoria: string;
   monto: number;
   forma_pago: 'efectivo' | 'transferencia';
   /** ISO date (YYYY-MM-DD); por defecto hoy. */
   fecha?: string;
   descripcion?: string;
-  /** Tipo de gasto; en Inc 1 siempre 'ruta'. */
+  /** Tipo de gasto. 'ruta' (vendedor) o 'backoffice' (negocio). */
   tipo?: 'ruta' | 'backoffice';
 }
 
@@ -47,10 +57,14 @@ export async function registrarGasto(input: RegistrarGastoInput): Promise<Gasto>
 
   if (!categoria.trim()) throw new Error('La categoría es obligatoria.');
   if (!(monto > 0)) throw new Error('El monto debe ser mayor que 0.');
+  if (tipo === 'ruta' && !vendedorId) {
+    throw new Error('Un gasto de ruta requiere un vendedor.');
+  }
 
   const gasto: Gasto = {
     id: generateUUID(),
-    vendedor_id: vendedorId,
+    // Backoffice = salida del negocio, sin vendedor (modelo-datos §gastos).
+    vendedor_id: tipo === 'backoffice' ? null : vendedorId,
     tipo,
     categoria: categoria.trim(),
     fecha,
