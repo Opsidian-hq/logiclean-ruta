@@ -112,6 +112,23 @@
   /* ── Sombras ─────────────────────────────────────────────── */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-cta: 0 6px 16px -4px rgba(6, 6, 254, 0.45);
+
+  /* ── Composición de pantallas (fidelidad al prototipo) ─────
+     Derivados de docs/prototipo/*.html. No cambian la paleta de
+     marca; sólo dan superficies, divisores y acentos de UI. */
+  --color-navy-strip:     #0A2566;   /* franja de conectividad     */
+  --color-strip-text:     #AEBBD6;   /* texto sobre la franja      */
+  --color-strip-dot:      #6E7FA8;   /* punto offline en la franja */
+  --color-card-border:    #E9EDF3;   /* borde de tarjeta blanca    */
+  --color-divider:        #EEF1F5;   /* divisor entre líneas       */
+  --color-stepper-border: #D7DCE5;   /* borde del control −/+      */
+  --color-primary-soft:   #EAF0FF;   /* avatar / relleno azul suave*/
+  --color-primary-line:   #C9D4FF;   /* borde punteado azul        */
+  --color-primary-bg:     #F6F8FF;   /* fondo azul muy suave       */
+
+  --radius-card: 14px;               /* tarjetas de contenido      */
+  --cta-height:  58px;               /* alto del botón primario    */
 }
 
 /* ── Reset básico ─────────────────────────────────────────── */

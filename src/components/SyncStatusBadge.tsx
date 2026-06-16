@@ -1,159 +1,133 @@
 /**
  * Logiclean Ruta — SyncStatusBadge
  *
- * Indicador permanente del estado de sincronización.
- * Visible siempre en la UI (toolbar o footer).
- *
- * Estados:
- *  - offline:  🔴 Sin conexión (N pendiente/s)
- *  - syncing:  🔄 Sincronizando...
- *  - error:    🟡 Error de sync
- *  - idle:     🟢 Sincronizado
+ * Chip permanente de estado de sincronización para el header navy.
+ * Reproduce los cuatro estados del prototipo:
+ *  - offline:        ▢ Sin conexión   (relleno translúcido, punto gris)
+ *  - syncing:        ◐ Sincronizando… (ámbar, spinner)
+ *  - pending:        ● N pendiente(s) (ámbar)
+ *  - error:          ✕ Error de sync  (rojo)
+ *  - idle/synced:    ✓ Sincronizado   (lime)
  */
 
-import { IonIcon, IonSpinner } from '@ionic/react';
-import {
-  cloudOfflineOutline,
-  cloudDoneOutline,
-  cloudUploadOutline,
-  warningOutline,
-} from 'ionicons/icons';
+import type { CSSProperties } from 'react';
 import { useSyncContext } from '../context/SyncContext';
 
-// ── Tipos ─────────────────────────────────────────────────────
-
 interface SyncStatusBadgeProps {
-  /** Mostrar etiqueta de texto junto al ícono */
+  /** Mostrar la etiqueta de texto junto al indicador. */
   showLabel?: boolean;
 }
 
-// ── Estilos inline (evitar dependencia de CSS externo) ────────
+const chip: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '7px',
+  padding: '6px 10px',
+  borderRadius: '8px',
+  fontSize: '12.5px',
+  fontWeight: 800,
+  whiteSpace: 'nowrap',
+  lineHeight: 1,
+  userSelect: 'none',
+};
 
-const styles = {
-  container: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '4px 10px',
-    borderRadius: 'var(--radius-pill, 20px)',
-    fontSize: 'var(--font-size-sm, 13px)',
-    fontWeight: 600,
-    minHeight: 'var(--touch-min, 48px)',
-    cursor: 'default',
-    userSelect: 'none' as const,
-  },
-} as const;
-
-// ── Componente ────────────────────────────────────────────────
+const dot = (color: string): CSSProperties => ({
+  width: '8px',
+  height: '8px',
+  borderRadius: '50%',
+  background: color,
+  display: 'inline-block',
+  flex: 'none',
+});
 
 export function SyncStatusBadge({ showLabel = true }: SyncStatusBadgeProps) {
   const { isOnline, pendingCount, syncStatus, lastSyncedAt, syncNow } = useSyncContext();
 
-  // ── Estado: sin conexión ─────────────────────────────────
+  // ── Sin conexión ─────────────────────────────────────────
   if (!isOnline) {
     return (
-      <div
-        style={{
-          ...styles.container,
-          backgroundColor: 'var(--color-error, #D92D20)',
-          color: 'var(--color-on-dark, #fff)',
-        }}
-        title="Sin conexión a internet"
-      >
-        <IonIcon icon={cloudOfflineOutline} />
+      <div style={{ ...chip, background: 'rgba(255,255,255,.14)', color: '#CDD8EE' }} title="Sin conexión a internet">
+        <span style={dot('#9AA9C8')} />
         {showLabel && (
           <span>
             Sin conexión
-            {pendingCount > 0 && ` · ${pendingCount} pendiente${pendingCount !== 1 ? 's' : ''}`}
+            {pendingCount > 0 && ` · ${pendingCount}`}
           </span>
         )}
       </div>
     );
   }
 
-  // ── Estado: sincronizando ────────────────────────────────
+  // ── Sincronizando ────────────────────────────────────────
   if (syncStatus === 'syncing') {
     return (
-      <div
-        style={{
-          ...styles.container,
-          backgroundColor: 'var(--color-amber, #F79009)',
-          color: 'var(--color-on-dark, #fff)',
-        }}
-        title="Sincronizando con el servidor..."
-      >
-        <IonSpinner name="crescent" style={{ width: '16px', height: '16px' }} />
-        {showLabel && <span>Sincronizando...</span>}
+      <div style={{ ...chip, background: 'var(--color-amber)', color: '#231A05' }} title="Sincronizando con el servidor…">
+        <div
+          style={{
+            width: '13px',
+            height: '13px',
+            borderRadius: '50%',
+            border: '2.5px solid rgba(35,26,5,.30)',
+            borderTopColor: '#231A05',
+            animation: 'lc-spin .8s linear infinite',
+          }}
+        />
+        {showLabel && <span>Sincronizando…</span>}
       </div>
     );
   }
 
-  // ── Estado: error ────────────────────────────────────────
+  // ── Error de sincronización ──────────────────────────────
   if (syncStatus === 'error') {
     return (
       <div
-        style={{
-          ...styles.container,
-          backgroundColor: 'var(--color-error, #D92D20)',
-          color: 'var(--color-on-dark, #fff)',
-          cursor: 'pointer',
-        }}
-        title="Error al sincronizar. Haz clic para reintentar."
+        style={{ ...chip, background: 'var(--color-error)', color: '#fff', cursor: 'pointer' }}
+        title="Error al sincronizar. Toca para reintentar."
         onClick={syncNow}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && syncNow()}
       >
-        <IonIcon icon={warningOutline} />
+        <span style={{ fontWeight: 800 }}>✕</span>
         {showLabel && (
           <span>
-            Error sync
-            {pendingCount > 0 && ` · ${pendingCount} pendiente${pendingCount !== 1 ? 's' : ''}`}
+            Error de sync
+            {pendingCount > 0 && ` · ${pendingCount}`}
           </span>
         )}
       </div>
     );
   }
 
-  // ── Estado: pendiente (online pero sin procesar) ─────────
+  // ── Pendiente (en línea, aún sin subir) ──────────────────
   if (pendingCount > 0) {
     return (
       <div
-        style={{
-          ...styles.container,
-          backgroundColor: 'var(--color-amber, #F79009)',
-          color: 'var(--color-on-dark, #fff)',
-          cursor: 'pointer',
-        }}
-        title={`${pendingCount} operación(es) pendiente(s). Haz clic para sincronizar.`}
+        style={{ ...chip, background: 'var(--color-amber)', color: '#231A05', cursor: 'pointer' }}
+        title={`${pendingCount} operación(es) pendiente(s). Toca para sincronizar.`}
         onClick={syncNow}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && syncNow()}
       >
-        <IonIcon icon={cloudUploadOutline} />
+        <span style={dot('#231A05')} />
         {showLabel && (
-          <span>{pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}</span>
+          <span>
+            {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
+          </span>
         )}
       </div>
     );
   }
 
-  // ── Estado: sincronizado (idle, 0 pendientes) ────────────
+  // ── Sincronizado ─────────────────────────────────────────
   const lastSync = lastSyncedAt
     ? `Último sync: ${lastSyncedAt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`
     : 'Sincronizado';
 
   return (
-    <div
-      style={{
-        ...styles.container,
-        backgroundColor: 'var(--color-lime, #63F714)',
-        color: 'var(--color-navy, #001D51)',
-      }}
-      title={lastSync}
-    >
-      <IonIcon icon={cloudDoneOutline} />
+    <div style={{ ...chip, background: 'var(--color-lime)', color: 'var(--color-navy)' }} title={lastSync}>
+      <span style={{ fontWeight: 800 }}>✓</span>
       {showLabel && <span>Sincronizado</span>}
     </div>
   );

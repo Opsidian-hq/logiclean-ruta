@@ -12,11 +12,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonBadge,
-  IonNote,
   IonButtons,
   IonButton,
   IonIcon,
@@ -28,7 +23,12 @@ import { logOutOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useCatalog } from '../hooks/useCatalog';
 import { SyncStatusBadge } from '../components/SyncStatusBadge';
+import { ConnectivityStrip } from '../components/ui/ConnectivityStrip';
+import { Card } from '../components/ui/Card';
+import { Chip } from '../components/ui/Chip';
 import { useAuthContext } from '../context/AuthContext';
+
+const money = (n: number) => `$${n.toFixed(2)}`;
 
 // ── Componente ────────────────────────────────────────────────
 
@@ -46,13 +46,14 @@ export function CatalogoOfflinePage() {
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Catálogo</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatusBadge showLabel={false} />
+          <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
+            <SyncStatusBadge />
             <IonButton onClick={() => signOut()} title="Cerrar sesión">
               <IonIcon icon={logOutOutline} style={{ color: 'var(--color-on-dark)' }} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip text="Catálogo guardado en el equipo · disponible sin conexión" />
       </IonHeader>
 
       <IonContent>
@@ -96,66 +97,105 @@ export function CatalogoOfflinePage() {
 
         {/* Lista de productos */}
         {!loading && !error && filtrados.length > 0 && (
-          <IonList>
+          <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {filtrados.map((producto) => (
-              <div key={producto.id} style={{ marginBottom: 'var(--space-sm)' }}>
+              <Card key={producto.id} padding="0" style={{ overflow: 'hidden' }}>
                 {/* Encabezado del producto */}
-                <IonItem
+                <div
                   style={{
-                    '--background': 'var(--color-navy)',
-                    '--color': 'var(--color-on-dark)',
-                    '--padding-start': 'var(--space-md)',
+                    background: 'var(--color-navy)',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '11px',
                   }}
-                  lines="none"
                 >
-                  <IonLabel>
-                    <h2 style={{ color: 'var(--color-on-dark)', fontWeight: 'var(--font-weight-bold)' }}>{producto.nombre}</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--font-size-sm)' }}>
-                      Unidad de compra: {producto.unidad_compra}
-                      {producto.precio_preferencial != null && (
-                        <> · Precio pref: ${producto.precio_preferencial.toFixed(2)}</>
-                      )}
-                    </p>
-                  </IonLabel>
-                  <IonBadge
-                    slot="end"
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '16.5px', fontWeight: 800, color: '#fff' }}>{producto.nombre}</div>
+                    <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                      Compra: {producto.unidad_compra}
+                      {producto.precio_preferencial != null && <> · pref {money(producto.precio_preferencial)}</>}
+                    </div>
+                  </div>
+                  <span
+                    className="numeric"
                     style={{
-                      backgroundColor: 'var(--color-cyan)',
+                      flex: 'none',
+                      background: 'var(--color-cyan)',
                       color: 'var(--color-navy)',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      padding: '3px 9px',
+                      borderRadius: '7px',
                     }}
                   >
                     {producto.presentaciones.length} pres.
-                  </IonBadge>
-                </IonItem>
+                  </span>
+                </div>
 
                 {/* Presentaciones del producto */}
-                {producto.presentaciones.length === 0 && (
-                  <IonItem>
-                    <IonNote>Sin presentaciones activas</IonNote>
-                  </IonItem>
-                )}
+                <div style={{ padding: '4px 14px' }}>
+                  {producto.presentaciones.length === 0 && (
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', padding: '11px 0' }}>
+                      Sin presentaciones activas
+                    </div>
+                  )}
 
-                {producto.presentaciones.map((pres) => (
-                  <IonItem key={pres.id} style={{ '--padding-start': 'var(--space-xl)' }}>
-                    <IonLabel>
-                      <h3>{pres.nombre}</h3>
-                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                        {pres.unidad_venta} · factor {pres.factor_conversion}
-                      </p>
-                    </IonLabel>
-                    <div slot="end" style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontVariantNumeric: 'var(--numeric)' }}>
-                        May: ${pres.precio_mayoreo.toFixed(2)}
+                  {producto.presentaciones.map((pres, idx) => (
+                    <div
+                      key={pres.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '11px',
+                        padding: '11px 0',
+                        borderBottom:
+                          idx < producto.presentaciones.length - 1 ? '1px solid var(--color-divider)' : 'none',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-body)' }}>
+                          {pres.nombre}
+                          <span
+                            style={{
+                              background: 'var(--color-surface-muted)',
+                              color: '#5B6678',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              padding: '2px 6px',
+                              borderRadius: '5px',
+                              marginLeft: '6px',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {pres.unidad_venta}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                          factor {pres.factor_conversion}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontVariantNumeric: 'var(--numeric)' }}>
-                        Men: ${pres.precio_menudeo.toFixed(2)}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Chip tone="mayoreo">May</Chip>
+                          <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                            {money(pres.precio_mayoreo)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Chip tone="menudeo">Men</Chip>
+                          <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                            {money(pres.precio_menudeo)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </IonItem>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </Card>
             ))}
-          </IonList>
+          </div>
         )}
       </IonContent>
     </IonPage>

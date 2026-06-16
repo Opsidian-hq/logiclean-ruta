@@ -23,7 +23,6 @@ import {
   IonList,
   IonItem,
   IonLabel,
-  IonBadge,
   IonSearchbar,
   IonSelect,
   IonSelectOption,
@@ -41,6 +40,8 @@ import {
 import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
 import { useClientes } from '../../hooks/useClientes';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
+import { Chip } from '../../components/ui/Chip';
 import { ClienteForm } from './components/ClienteForm';
 import { db } from '../../db/index';
 import type { Cliente, Vendedor } from '../../db/schema';
@@ -92,19 +93,16 @@ export function ClientesPage() {
     return v ? v.nombre : 'Sin asignar';
   };
 
-  const getBadgeColor = (estado: string) => {
-    return estado === 'activo' ? 'success' : 'warning';
-  };
-
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Clientes</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatusBadge showLabel={false} />
+          <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
+            <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
@@ -183,8 +181,16 @@ export function ClientesPage() {
                     <h2 style={{ fontWeight: 700, color: 'var(--color-navy)' }}>
                       {cliente.nombre}
                     </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '5px 0', flexWrap: 'wrap' }}>
+                      <Chip tone={cliente.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
+                        {cliente.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
+                      </Chip>
+                      <Chip tone={cliente.estado === 'activo' ? 'primarySoft' : 'amber'}>
+                        {cliente.estado === 'activo' ? 'Activo' : 'Prospecto'}
+                      </Chip>
+                    </div>
                     <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                      {getNombreVendedor(cliente.vendedor_id)} · {cliente.tipo}
+                      {getNombreVendedor(cliente.vendedor_id)}
                       {cliente.dia_ruta && ` · ${cliente.dia_ruta}`}
                     </p>
                     {cliente.fecha_proxima_visita && (
@@ -193,13 +199,6 @@ export function ClientesPage() {
                       </IonNote>
                     )}
                   </IonLabel>
-                  <IonBadge
-                    slot="end"
-                    color={getBadgeColor(cliente.estado)}
-                    style={{ textTransform: 'capitalize' }}
-                  >
-                    {cliente.estado}
-                  </IonBadge>
                 </IonItem>
 
                 <IonItemOptions side="end">

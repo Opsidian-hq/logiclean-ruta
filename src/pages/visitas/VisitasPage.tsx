@@ -15,14 +15,9 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonButton,
   IonSegment,
   IonSegmentButton,
   IonLabel,
-  IonList,
-  IonItem,
-  IonBadge,
-  IonNote,
   IonText,
   IonSpinner,
   IonIcon,
@@ -35,17 +30,50 @@ import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useRutaDelDia } from '../../hooks/useRutaDelDia';
 import { useSeguimiento } from '../../hooks/useSeguimiento';
-import { clasificarVencimiento } from '../../lib/prospectos';
+import { clasificarVencimiento, CICLO_OBJETIVO } from '../../lib/prospectos';
+import type { Vencimiento } from '../../lib/prospectos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
+import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
+import { CicloBar } from '../../components/ui/CicloBar';
 import { FichaProspecto } from './components/FichaProspecto';
 import { NuevoProspectoForm } from './components/NuevoProspectoForm';
 import type { Cliente } from '../../db/schema';
 
-const COLOR_VENCIMIENTO: Record<string, string> = {
+const BARRA_URGENCIA: Record<Vencimiento, string> = {
   vencido: 'var(--color-error)',
   por_vencer: 'var(--color-amber)',
-  al_dia: 'var(--color-lime)',
+  al_dia: '#E3E7EE',
 };
+
+// Días entre hoy y la fecha (local). Negativo = vencida.
+function diasHasta(fechaISO?: string | null): number | null {
+  if (!fechaISO) return null;
+  const [y, m, d] = fechaISO.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const objetivo = new Date(y, m - 1, d);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return Math.round((objetivo.getTime() - hoy.getTime()) / 86_400_000);
+}
+
+// Texto + tono del chip de urgencia, a partir de la fecha de próxima visita.
+function urgenciaChip(c: Cliente): { tone: 'error' | 'amber' | 'neutral'; label: string } {
+  const dias = diasHasta(c.fecha_proxima_visita);
+  if (dias == null) return { tone: 'neutral', label: 'Sin fecha' };
+  if (dias < 0) return { tone: 'error', label: `Vencida · ${-dias} día${-dias !== 1 ? 's' : ''}` };
+  if (dias === 0) return { tone: 'amber', label: 'Vence hoy' };
+  if (dias === 1) return { tone: 'amber', label: 'Vence mañana' };
+  if (clasificarVencimiento(c) === 'por_vencer') return { tone: 'amber', label: `Vence en ${dias} días` };
+  return { tone: 'neutral', label: `En ${dias} días` };
+}
+
+const GRUPOS: { clave: Vencimiento; titulo: string; color: string }[] = [
+  { clave: 'vencido', titulo: 'Vencidas', color: 'var(--color-error-text)' },
+  { clave: 'por_vencer', titulo: 'Por vencer esta semana', color: 'var(--color-pending-text)' },
+  { clave: 'al_dia', titulo: 'Al día', color: 'var(--color-text-secondary)' },
+];
 
 export function VisitasPage() {
   const [segmento, setSegmento] = useState<'hoy' | 'semana'>('hoy');
@@ -62,10 +90,11 @@ export function VisitasPage() {
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonTitle>Visitas</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatusBadge showLabel={false} />
+          <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
+            <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
+        <ConnectivityStrip />
         <IonToolbar>
           <IonSegment
             value={segmento}
@@ -110,43 +139,53 @@ export function VisitasPage() {
             )}
 
             {!ruta.loading && !ruta.error && ruta.clientes.length > 0 && (
-              <IonList>
+              <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {ruta.clientes.map((c) => (
-                  <IonItem key={c.id}>
-                    <IonBadge
-                      slot="start"
-                      style={{
-                        backgroundColor:
-                          c.estado === 'prospecto'
-                            ? 'var(--color-amber)'
-                            : 'var(--color-lime)',
-                        color: 'var(--color-navy)',
-                      }}
-                    >
-                      {c.estado}
-                    </IonBadge>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: 600, color: 'var(--color-navy)' }}>
-                        {c.nombre}
-                      </h2>
-                      <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                        {c.tipo}
-                        {c.dia_ruta && <> · {c.dia_ruta}</>}
-                        {c.fecha_proxima_visita && <> · visita: {c.fecha_proxima_visita}</>}
-                      </p>
-                    </IonLabel>
-                    <IonButton
-                      slot="end"
-                      size="small"
-                      style={{ '--background': 'var(--color-primary)' }}
-                      onClick={() => history.push(`/venta?cliente=${c.id}`)}
-                    >
-                      <IonIcon icon={cartOutline} slot="start" />
-                      Vender
-                    </IonButton>
-                  </IonItem>
+                  <Card key={c.id} padding="13px 14px">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '11px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.1 }}>
+                          {c.nombre}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '6px', flexWrap: 'wrap' }}>
+                          <Chip tone={c.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
+                            {c.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
+                          </Chip>
+                          <Chip tone={c.estado === 'prospecto' ? 'amber' : 'primarySoft'}>
+                            {c.estado === 'prospecto' ? 'Prospecto' : 'Cliente'}
+                          </Chip>
+                          {c.dia_ruta && (
+                            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{c.dia_ruta}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => history.push(`/venta?cliente=${c.id}`)}
+                        style={{
+                          flex: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          minHeight: '44px',
+                          padding: '0 16px',
+                          border: 'none',
+                          borderRadius: '12px',
+                          background: 'var(--color-primary)',
+                          color: '#fff',
+                          fontSize: '15px',
+                          fontWeight: 800,
+                          boxShadow: 'var(--shadow-cta)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <IonIcon icon={cartOutline} style={{ fontSize: '18px' }} />
+                        Vender
+                      </button>
+                    </div>
+                  </Card>
                 ))}
-              </IonList>
+              </div>
             )}
           </>
         )}
@@ -177,37 +216,82 @@ export function VisitasPage() {
             )}
 
             {!seg.loading && !seg.error && seg.prospectos.length > 0 && (
-              <IonList>
-                {seg.prospectos.map((c) => {
-                  const venc = clasificarVencimiento(c);
+              <>
+                <div style={{ padding: '18px var(--space-md) 12px' }}>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-navy)', lineHeight: 1.12, letterSpacing: '-0.2px' }}>
+                    ¿A quién visitar esta semana?
+                  </div>
+                  <div className="numeric" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '6px' }}>
+                    {seg.prospectos.length} prospecto{seg.prospectos.length !== 1 ? 's' : ''} en seguimiento
+                  </div>
+                </div>
+
+                {GRUPOS.map(({ clave, titulo, color }) => {
+                  const items = seg.prospectos.filter((c) => clasificarVencimiento(c) === clave);
+                  if (items.length === 0) return null;
                   return (
-                    <IonItem key={c.id} button onClick={() => setFichaCliente(c)}>
+                    <div key={clave}>
                       <div
-                        slot="start"
                         style={{
-                          width: '10px',
-                          height: '40px',
-                          borderRadius: 'var(--radius-sm)',
-                          backgroundColor: COLOR_VENCIMIENTO[venc],
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          letterSpacing: '0.8px',
+                          textTransform: 'uppercase',
+                          color,
+                          padding: '14px var(--space-md) 6px',
                         }}
-                      />
-                      <IonLabel>
-                        <h2 style={{ fontWeight: 600, color: 'var(--color-navy)' }}>
-                          {c.nombre}
-                        </h2>
-                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                          Visita {c.ciclo_visita} · próxima: {c.fecha_proxima_visita}
-                        </p>
-                      </IonLabel>
-                      {venc === 'vencido' && (
-                        <IonNote slot="end" color="danger" style={{ fontWeight: 600 }}>
-                          Vencido
-                        </IonNote>
-                      )}
-                    </IonItem>
+                      >
+                        {titulo} · {items.length}
+                      </div>
+                      {items.map((c) => {
+                        const chip = urgenciaChip(c);
+                        const etapa = Math.min(c.ciclo_visita, CICLO_OBJETIVO);
+                        return (
+                          <div
+                            key={c.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setFichaCliente(c)}
+                            onKeyDown={(e) => e.key === 'Enter' && setFichaCliente(c)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'stretch',
+                              background: 'var(--color-surface)',
+                              borderBottom: '1px solid var(--color-divider)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div style={{ width: '5px', flex: 'none', background: BARRA_URGENCIA[clave] }} />
+                            <div
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                padding: '13px 14px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '7px',
+                              }}
+                            >
+                              <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.05 }}>
+                                {c.nombre}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                                <CicloBar actual={etapa} objetivo={CICLO_OBJETIVO} />
+                                <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-body)', whiteSpace: 'nowrap' }}>
+                                  Visita {etapa} de {CICLO_OBJETIVO}
+                                </span>
+                                <span style={{ marginLeft: 'auto' }}>
+                                  <Chip tone={chip.tone}>{chip.label}</Chip>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   );
                 })}
-              </IonList>
+              </>
             )}
 
             {/* FAB: nuevo prospecto */}
