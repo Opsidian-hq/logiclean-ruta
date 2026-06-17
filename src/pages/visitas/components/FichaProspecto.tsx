@@ -18,6 +18,7 @@ import {
   IonTextarea,
   IonText,
   IonSpinner,
+  IonActionSheet,
 } from '@ionic/react';
 import { useEffect, useMemo, useState } from 'react';
 import { CICLO_OBJETIVO } from '../../../lib/prospectos';
@@ -33,15 +34,26 @@ interface FichaProspectoProps {
   cliente: Cliente;
   cargarVisitas: (clienteId: string) => Promise<Visita[]>;
   onRegistrar: (args: RegistrarVisitaArgs) => Promise<unknown>;
+  /** Reprograma la próxima visita (H-09) sin registrar visita ni avanzar ciclo. */
+  onReprogramar?: (fechaProxima: string) => Promise<unknown>;
   onClose: () => void;
+}
+
+/** ISO date (local) desplazada `n` días desde hoy. */
+function fechaRelativa(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
 }
 
 export function FichaProspecto({
   cliente,
   cargarVisitas,
   onRegistrar,
+  onReprogramar,
   onClose,
 }: FichaProspectoProps) {
+  const [reprogOpen, setReprogOpen] = useState(false);
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [loading, setLoading] = useState(true);
   const [nota, setNota] = useState('');
@@ -85,6 +97,12 @@ export function FichaProspecto({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleReprogramar = async (fecha: string) => {
+    if (!onReprogramar) return;
+    await onReprogramar(fecha);
+    onClose();
   };
 
   return (
@@ -145,6 +163,31 @@ export function FichaProspecto({
               La mayoría compra en la 3.ª o 4.ª visita. Cada visita acerca el cierre.
             </div>
           </Card>
+
+          {/* Reprogramar próxima visita (H-09) */}
+          {onReprogramar && (
+            <button
+              type="button"
+              onClick={() => setReprogOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                minHeight: '46px',
+                width: '100%',
+                border: '1.5px solid var(--color-primary)',
+                borderRadius: '12px',
+                background: 'var(--color-surface)',
+                color: 'var(--color-primary)',
+                fontSize: '15px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              ↻ Reprogramar próxima visita
+            </button>
+          )}
 
           {/* Siguiente paso acordado */}
           {pasoVigente && (
@@ -254,6 +297,18 @@ export function FichaProspecto({
           {saving ? 'Guardando…' : 'Guardar visita'}
         </PrimaryCTA>
       </div>
+
+      <IonActionSheet
+        isOpen={reprogOpen}
+        onDidDismiss={() => setReprogOpen(false)}
+        header="Reprogramar próxima visita"
+        buttons={[
+          { text: 'Para hoy', handler: () => { handleReprogramar(fechaRelativa(0)); } },
+          { text: 'Mañana', handler: () => { handleReprogramar(fechaRelativa(1)); } },
+          { text: 'En 1 semana', handler: () => { handleReprogramar(fechaRelativa(7)); } },
+          { text: 'Cancelar', role: 'cancel' },
+        ]}
+      />
     </>
   );
 }

@@ -91,6 +91,7 @@ export function VentaPage() {
   const [cobroOn, setCobroOn] = useState(true);
   const [formaPago, setFormaPago] = useState<'efectivo' | 'transferencia'>('efectivo');
   const [montoStr, setMontoStr] = useState('');
+  const [requiereFactura, setRequiereFactura] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   // Borrador del pedido pendiente
@@ -165,6 +166,7 @@ export function VentaPage() {
     setCobroOn(true);
     setFormaPago('efectivo');
     setMontoStr('');
+    setRequiereFactura(false);
     setPedPres('');
     setPedCant(1);
     setPedFecha('');
@@ -180,6 +182,7 @@ export function VentaPage() {
       })),
       pedidos,
       cobro: cobroOn && monto > 0 ? { monto, forma_pago: formaPago } : null,
+      requiereFactura,
     });
     setToast(
       res.saldo > 0
@@ -537,6 +540,22 @@ export function VentaPage() {
                 </>
               )}
             </IonList>
+
+            {/* ── Requiere factura (H-06) ── */}
+            <div style={{ padding: '0 var(--space-md)' }}>
+              <Card padding="11px 13px">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>Requiere factura</div>
+                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>Precio de lista + IVA</div>
+                  </div>
+                  <IonToggle
+                    checked={requiereFactura}
+                    onIonChange={(e) => setRequiereFactura(e.detail.checked)}
+                  />
+                </div>
+              </Card>
+            </div>
 
             <div style={{ height: 'var(--space-lg)' }} />
           </>

@@ -314,6 +314,9 @@ export function VisitasPage() {
             cliente={fichaCliente}
             cargarVisitas={seg.visitasDeCliente}
             onRegistrar={seg.registrarVisita}
+            onReprogramar={(fechaProxima) =>
+              seg.reprogramarVisita({ cliente: fichaCliente, fechaProxima })
+            }
             onClose={() => setFichaCliente(null)}
           />
         )}
