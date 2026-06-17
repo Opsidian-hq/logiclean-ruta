@@ -12,10 +12,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import { generateUUID } from '../lib/uuid';
-import { toDexieRow } from '../db/normalize';
-import { enqueueOperation } from '../sync/queue';
-import { syncEngine } from '../sync/SyncEngine';
+import {
+  guardarCliente,
+  reasignarCliente,
+  desactivarCliente as desactivarClienteLib,
+} from '../lib/clientes';
 import type { Cliente } from '../db/schema';
 
 // ── Tipos de retorno ──────────────────────────────────────────
@@ -83,27 +84,7 @@ export function useClientes(): UseClientesReturn {
 
   const saveCliente = useCallback(
     async (data: Omit<Cliente, 'id'> & { id?: string }): Promise<Cliente> => {
-      const cliente: Cliente = {
-        id: data.id ?? generateUUID(),
-        vendedor_id: data.vendedor_id,
-        nombre: data.nombre,
-        tipo: data.tipo,
-        estado: data.estado,
-        ciclo_visita: data.ciclo_visita ?? 1,
-        dia_ruta: data.dia_ruta,
-        fecha_proxima_visita: data.fecha_proxima_visita,
-        activo: data.activo ?? true,
-      };
-
-      await db.cliente.put(toDexieRow(cliente));
-
-      const queueItem = await enqueueOperation(
-        'cliente',
-        'upsert',
-        cliente as unknown as Record<string, unknown>
-      );
-      await syncEngine.enqueueAndSync(queueItem);
-
+      const cliente = await guardarCliente(data);
       await loadFromLocal();
       return cliente;
     },
@@ -112,18 +93,7 @@ export function useClientes(): UseClientesReturn {
 
   const reasignarVendedor = useCallback(
     async (clienteId: string, nuevoVendedorId: string): Promise<void> => {
-      await db.cliente.update(clienteId, { vendedor_id: nuevoVendedorId });
-
-      const cliente = await db.cliente.get(clienteId);
-      if (cliente) {
-        const queueItem = await enqueueOperation(
-          'cliente',
-          'upsert',
-          { ...cliente, vendedor_id: nuevoVendedorId } as unknown as Record<string, unknown>
-        );
-        await syncEngine.enqueueAndSync(queueItem);
-      }
-
+      await reasignarCliente(clienteId, nuevoVendedorId);
       await loadFromLocal();
     },
     [loadFromLocal]
@@ -131,19 +101,7 @@ export function useClientes(): UseClientesReturn {
 
   const desactivarCliente = useCallback(
     async (id: string): Promise<void> => {
-      // Baja lógica: activo = false (nunca DELETE)
-      await db.cliente.update(id, { activo: false });
-
-      const cliente = await db.cliente.get(id);
-      if (cliente) {
-        const queueItem = await enqueueOperation(
-          'cliente',
-          'upsert',
-          { ...cliente, activo: false } as unknown as Record<string, unknown>
-        );
-        await syncEngine.enqueueAndSync(queueItem);
-      }
-
+      await desactivarClienteLib(id);
       await loadFromLocal();
     },
     [loadFromLocal]

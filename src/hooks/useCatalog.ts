@@ -13,10 +13,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import { generateUUID } from '../lib/uuid';
-import { toDexieRow } from '../db/normalize';
-import { enqueueOperation } from '../sync/queue';
-import { syncEngine } from '../sync/SyncEngine';
+import {
+  guardarProducto,
+  desactivarProducto as desactivarProductoLib,
+  guardarPresentacion,
+  desactivarPresentacion as desactivarPresentacionLib,
+} from '../lib/catalogo';
 import type { ProductoBase, Presentacion } from '../db/schema';
 
 // ── Tipos de retorno ──────────────────────────────────────────
@@ -98,26 +100,7 @@ export function useCatalog(): UseCatalogReturn {
 
   const saveProducto = useCallback(
     async (data: Omit<ProductoBase, 'id'> & { id?: string }): Promise<ProductoBase> => {
-      const producto: ProductoBase = {
-        id: data.id ?? generateUUID(),
-        nombre: data.nombre,
-        unidad_compra: data.unidad_compra,
-        precio_preferencial: data.precio_preferencial,
-        activo: data.activo ?? true,
-      };
-
-      // Guardar en Dexie (local) — booleanos a 1/0 para que el índice indexe
-      await db.producto_base.put(toDexieRow(producto));
-
-      // Encolar para sync al servidor
-      const queueItem = await enqueueOperation(
-        'producto_base',
-        'upsert',
-        producto as unknown as Record<string, unknown>
-      );
-      await syncEngine.enqueueAndSync(queueItem);
-
-      // Refrescar vista
+      const producto = await guardarProducto(data);
       await loadFromLocal();
       return producto;
     },
@@ -126,19 +109,7 @@ export function useCatalog(): UseCatalogReturn {
 
   const desactivarProducto = useCallback(
     async (id: string): Promise<void> => {
-      // Baja lógica: activo = false (nunca DELETE)
-      await db.producto_base.update(id, { activo: false });
-
-      const producto = await db.producto_base.get(id);
-      if (producto) {
-        const queueItem = await enqueueOperation(
-          'producto_base',
-          'upsert',
-          { ...producto, activo: false } as unknown as Record<string, unknown>
-        );
-        await syncEngine.enqueueAndSync(queueItem);
-      }
-
+      await desactivarProductoLib(id);
       await loadFromLocal();
     },
     [loadFromLocal]
@@ -146,26 +117,7 @@ export function useCatalog(): UseCatalogReturn {
 
   const savePresentacion = useCallback(
     async (data: Omit<Presentacion, 'id'> & { id?: string }): Promise<Presentacion> => {
-      const presentacion: Presentacion = {
-        id: data.id ?? generateUUID(),
-        producto_base_id: data.producto_base_id,
-        nombre: data.nombre,
-        unidad_venta: data.unidad_venta,
-        factor_conversion: data.factor_conversion,
-        precio_mayoreo: data.precio_mayoreo,
-        precio_menudeo: data.precio_menudeo,
-        activo: data.activo ?? true,
-      };
-
-      await db.presentacion.put(toDexieRow(presentacion));
-
-      const queueItem = await enqueueOperation(
-        'presentacion',
-        'upsert',
-        presentacion as unknown as Record<string, unknown>
-      );
-      await syncEngine.enqueueAndSync(queueItem);
-
+      const presentacion = await guardarPresentacion(data);
       await loadFromLocal();
       return presentacion;
     },
@@ -174,18 +126,7 @@ export function useCatalog(): UseCatalogReturn {
 
   const desactivarPresentacion = useCallback(
     async (id: string): Promise<void> => {
-      await db.presentacion.update(id, { activo: false });
-
-      const pres = await db.presentacion.get(id);
-      if (pres) {
-        const queueItem = await enqueueOperation(
-          'presentacion',
-          'upsert',
-          { ...pres, activo: false } as unknown as Record<string, unknown>
-        );
-        await syncEngine.enqueueAndSync(queueItem);
-      }
-
+      await desactivarPresentacionLib(id);
       await loadFromLocal();
     },
     [loadFromLocal]
