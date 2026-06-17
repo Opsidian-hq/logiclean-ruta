@@ -39,6 +39,7 @@ import { Chip } from '../../components/ui/Chip';
 import { CicloBar } from '../../components/ui/CicloBar';
 import { FichaProspecto } from './components/FichaProspecto';
 import { NuevoProspectoForm } from './components/NuevoProspectoForm';
+import { pedidosPendientesVista, entregarPedido } from '../../lib/pedidos';
 import type { Cliente } from '../../db/schema';
 
 const BARRA_URGENCIA: Record<Vencimiento, string> = {
@@ -321,6 +322,12 @@ export function VisitasPage() {
               const id = fichaCliente.id;
               setFichaCliente(null);
               history.push(`/cobranza/${id}`);
+            }}
+            cargarPedidos={pedidosPendientesVista}
+            onEntregarPedido={async (pedidoId) => {
+              await entregarPedido({ pedidoId });
+              // El pedido entregado es ahora una venta; refrescar ruta y semana.
+              await Promise.all([ruta.refresh(), seg.refresh()]);
             }}
             onClose={() => setFichaCliente(null)}
           />

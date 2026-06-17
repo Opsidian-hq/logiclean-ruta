@@ -21,7 +21,11 @@ vi.mock('../src/sync/SyncEngine', () => ({
   },
 }));
 
-import { entregarPedido, pedidosPendientesDeCliente } from '../src/lib/pedidos';
+import {
+  entregarPedido,
+  pedidosPendientesDeCliente,
+  pedidosPendientesVista,
+} from '../src/lib/pedidos';
 import { db } from '../src/db/index';
 import { toDexieRow } from '../src/db/normalize';
 import type { Cliente, Presentacion, PedidoPendiente } from '../src/db/schema';
@@ -151,5 +155,16 @@ describe('[H-05·2] entregar pedido pendiente: se convierte en venta y se cierra
 
     await entregarPedido({ pedidoId: 'ped-1' });
     expect(await pedidosPendientesDeCliente('cli-1')).toHaveLength(0);
+  });
+
+  it('PEDIDO-108: la vista resuelve el nombre de la presentación para la UI', async () => {
+    await sembrarCliente('menudeo');
+    await sembrarPedido(3);
+
+    const vista = await pedidosPendientesVista('cli-1');
+    expect(vista).toHaveLength(1);
+    expect(vista[0].nombre).toBe('Multiusos 1 L');
+    expect(vista[0].cantidad).toBe(3);
+    expect(vista[0].fecha_compromiso).toBe('2026-06-20');
   });
 });

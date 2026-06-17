@@ -49,6 +49,38 @@ export async function pedidosPendientesDeCliente(
   return pedidos.filter((p) => p.estado === 'pendiente');
 }
 
+/** Pedido pendiente con el nombre de su presentación resuelto (para la UI). */
+export interface PedidoPendienteVista {
+  id: string;
+  presentacion_id: string;
+  nombre: string;
+  cantidad: number;
+  fecha_compromiso?: string;
+}
+
+/**
+ * Pedidos pendientes de un cliente con el nombre de la presentación resuelto
+ * desde el catálogo local. Útil para listarlos en la ficha del cliente (H-05).
+ */
+export async function pedidosPendientesVista(
+  clienteId: string
+): Promise<PedidoPendienteVista[]> {
+  const pendientes = await pedidosPendientesDeCliente(clienteId);
+  const vista = await Promise.all(
+    pendientes.map(async (p) => {
+      const pres = await db.presentacion.get(p.presentacion_id);
+      return {
+        id: p.id,
+        presentacion_id: p.presentacion_id,
+        nombre: pres?.nombre ?? p.presentacion_id,
+        cantidad: p.cantidad,
+        fecha_compromiso: p.fecha_compromiso ?? undefined,
+      };
+    })
+  );
+  return vista;
+}
+
 /**
  * Entrega un pedido pendiente: lo convierte en venta (precio congelado por la
  * lista del cliente) y marca el pendiente como `surtido`.
