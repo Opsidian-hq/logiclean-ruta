@@ -75,8 +75,9 @@ Copiados literalmente del PRD v1.2. Son los mismos que QA verificará en Fase 5;
 
 ## Fuera de alcance
 No implementar en este bundle:
-- **Cobranza (H-07), corte semanal (H-10/H-11), gastos (H-12), dashboard del gerente (H-15), administración de catálogo/clientes (H-13/H-14):** son incrementos posteriores, no estos dos flujos.
-- **Ruta del día (H-08) y reprogramar visita (H-09):** fuera de este bundle (Inc 1/Inc 3 según plan).
+- **Cobranza (H-07):** diferido por falta de diseño aprobado en Fase 3. Se construye en **Inc 5** (`inc-5/cobranza`) con su propio handoff (`handoff-logiclean-cobranza.md`) y prototipo aprobado (`Cobranza_en_ruta.html`). La trazabilidad de QA en Fase 5 cubre H-07 desde Inc 5, no desde este incremento.
+- **Corte semanal (H-10/H-11), gastos backoffice (H-12b), dashboard del gerente (H-15), administración de catálogo/clientes (H-13/H-14):** son incrementos posteriores (Inc 3, Inc 4).
+- **Ruta del día (H-08) y reprogramar visita (H-09):** H-08 está en Inc 1; H-09 en Inc 3.
 - **Emisión y timbrado de CFDI con PAC:** fuera del MVP. H-06 solo marca y calcula a precio de lista + IVA; **no timbra**.
 - **Optimización de secuencia de ruta** y **registro/medición de merma de envasado:** fuera del MVP.
 - **Factor de conversión bidón→presentación y reconciliación con La Moderna:** pertenecen al corte (Inc 3), no a estos flujos.
