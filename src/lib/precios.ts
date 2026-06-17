@@ -42,6 +42,29 @@ export function totalVenta(
   return redondear(total);
 }
 
+// ── Facturación (H-06): precio de lista + IVA ─────────────────
+//
+// El MVP **registra, no timbra**. Cuando la venta se marca "requiere factura",
+// el monto se calcula a precio de lista + IVA (PRD v1.2, H-06). El destino
+// fiscal/no fiscal se deduce del cruce requiere_factura × forma_pago en el
+// modelo; aquí solo se aplica el IVA al subtotal de lista.
+
+/** Tasa de IVA aplicable a ventas facturables (16%). */
+export const IVA_TASA = 0.16;
+
+/** IVA sobre un subtotal de lista. */
+export function calcularIVA(subtotal: number): number {
+  return redondear(subtotal * IVA_TASA);
+}
+
+/**
+ * Total de la venta según facturación: si requiere factura, subtotal + IVA;
+ * si no, el subtotal tal cual.
+ */
+export function totalConFactura(subtotal: number, requiereFactura: boolean): number {
+  return requiereFactura ? redondear(subtotal + calcularIVA(subtotal)) : redondear(subtotal);
+}
+
 /** Redondeo monetario a 2 decimales evitando ruido de punto flotante. */
 export function redondear(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;

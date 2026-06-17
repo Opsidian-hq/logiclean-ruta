@@ -16,7 +16,7 @@ import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
-import { precioUnitario, totalVenta } from './precios';
+import { precioUnitario, totalVenta, calcularIVA, totalConFactura } from './precios';
 import { decrementar } from './inventario';
 import type {
   Presentacion,
@@ -69,6 +69,10 @@ export interface RegistrarVentaResult {
   lineas: LineaVenta[];
   pedidos: PedidoPendiente[];
   cobro: Cobro | null;
+  /** Subtotal a precio de lista (suma de líneas, sin IVA). */
+  subtotal: number;
+  /** IVA aplicado (0 si la venta no requiere factura, H-06). */
+  iva: number;
   /** total − cobrado; >0 = queda saldo (crédito). */
   saldo: number;
 }
@@ -103,7 +107,10 @@ export async function registrarVenta(
     precio_unitario: precioUnitario(l.presentacion, cliente.tipo),
   }));
 
-  const total = totalVenta(lineas);
+  // Subtotal a precio de lista; si requiere factura, el monto es lista + IVA (H-06).
+  const subtotal = totalVenta(lineas);
+  const iva = requiereFactura ? calcularIVA(subtotal) : 0;
+  const total = totalConFactura(subtotal, requiereFactura);
 
   const venta: Venta = {
     id: ventaId,
@@ -164,7 +171,7 @@ export async function registrarVenta(
 
   const saldo = Math.max(0, total - (cobroCreado?.monto ?? 0));
 
-  return { venta, lineas, pedidos: pedidosCreados, cobro: cobroCreado, saldo };
+  return { venta, lineas, pedidos: pedidosCreados, cobro: cobroCreado, subtotal, iva, saldo };
 }
 
 // ── Persistencia local + cola (sin disparar sync) ─────────────

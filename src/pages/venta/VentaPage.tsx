@@ -43,7 +43,7 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
-import { precioUnitario, importeLinea, totalVenta } from '../../lib/precios';
+import { precioUnitario, importeLinea, totalVenta, calcularIVA, totalConFactura } from '../../lib/precios';
 import type { PedidoInput } from '../../lib/ventas';
 import type { RegistrarVentaResult } from '../../lib/ventas';
 import { money } from '../../lib/money';
@@ -124,7 +124,7 @@ export function VentaPage() {
       }));
   }, [enVehiculo, qty, tipo]);
 
-  const total = useMemo(
+  const subtotal = useMemo(
     () =>
       totalVenta(
         lineasVehiculo.map((l) => ({
@@ -134,6 +134,10 @@ export function VentaPage() {
       ),
     [lineasVehiculo]
   );
+
+  // Si la venta requiere factura, el monto es precio de lista + IVA (H-06).
+  const iva = requiereFactura ? calcularIVA(subtotal) : 0;
+  const total = totalConFactura(subtotal, requiereFactura);
 
   // Conteos para el resumen del footer (solo display).
   const piezas = lineasVehiculo.reduce((acc, l) => acc + l.cantidad, 0);
@@ -216,6 +220,7 @@ export function VentaPage() {
           tipo={tipo}
           productosResumen={productosResumen}
           total={total}
+          iva={iva}
           submitting={submitting}
           onConfirm={confirmarCobro}
           onBack={() => setFase('carrito')}
@@ -235,6 +240,8 @@ export function VentaPage() {
           clienteNombre={cliente.nombre}
           tipo={tipo}
           total={resultado.venta.total}
+          subtotal={resultado.subtotal}
+          iva={resultado.iva}
           montoCobrado={resultado.cobro?.monto ?? 0}
           formaPago={formaPago}
           saldo={resultado.saldo}
