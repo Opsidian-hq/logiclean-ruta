@@ -317,6 +317,11 @@ export function VisitasPage() {
             onReprogramar={(fechaProxima) =>
               seg.reprogramarVisita({ cliente: fichaCliente, fechaProxima })
             }
+            onCobrarSaldo={() => {
+              const id = fichaCliente.id;
+              setFichaCliente(null);
+              history.push(`/cobranza/${id}`);
+            }}
             onClose={() => setFichaCliente(null)}
           />
         )}

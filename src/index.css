@@ -26,3 +26,19 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Shimmer de los skeletons de carga (prototipo) */
+@keyframes lc-shim {
+  0% {
+    background-position: -360px 0;
+  }
+  100% {
+    background-position: 360px 0;
+  }
+}
+
+.lc-sk {
+  background: linear-gradient(90deg, #eef1f6 0px, #f7f9fc 180px, #eef1f6 360px);
+  background-size: 720px 100%;
+  animation: lc-shim 1.3s linear infinite;
+}
