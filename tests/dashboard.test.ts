@@ -73,3 +73,49 @@ describe('construirDashboard', () => {
     expect(d.alertas.some((a) => a.includes('2 prospectos'))).toBe(true);
   });
 });
+
+// ── [H-15·2 / H-15·3] reinicio de flujo al cortar; cartera continua ──
+describe('[H-15·2] al generar corte: el flujo se reinicia, la cartera no', () => {
+  // El dashboard deriva el flujo (ventas/caja) SOLO de los snapshots del
+  // periodo en curso. Recién generado un corte, el periodo arranca sin
+  // snapshots → flujo en cero. La cartera (embudo/adherencia/activa) se pasa
+  // aparte y refleja estado vivo y continuo, sin reiniciarse.
+
+  it('DASH-004: periodo recién cortado → ventas y caja en cero (flujo reiniciado)', () => {
+    const d = construirDashboard({
+      porVendedor: [], // nuevo periodo: aún sin cortes acumulados
+      embudo,
+      adherencia: adher,
+      vencidos: 0,
+    });
+    expect(d.ventasTotal).toBe(0);
+    expect(d.cajaEfectivo).toBe(0);
+    expect(d.cajaTransferencia).toBe(0);
+    expect(d.porVendedor).toHaveLength(0);
+  });
+
+  it('DASH-005: la cartera sigue viva tras el corte (no se reinicia)', () => {
+    const d = construirDashboard({
+      porVendedor: [], // flujo reiniciado
+      embudo, // embudo/adherencia continúan
+      adherencia: adher,
+      vencidos: 0,
+    });
+    // Cartera continua: el embudo y la adherencia se conservan.
+    expect(d.carteraActiva).toBe(embudo.convertidos);
+    expect(d.embudo).toEqual(embudo);
+    expect(d.adherencia).toEqual(adher);
+  });
+
+  it('DASH-006: el siguiente periodo solo acumula los nuevos snapshots', () => {
+    // Tras el corte, una venta del nuevo periodo entra sola al flujo.
+    const d = construirDashboard({
+      porVendedor: [sv('v1', 'Ana', snap(120, 120, 0))],
+      embudo,
+      adherencia: adher,
+      vencidos: 0,
+    });
+    expect(d.ventasTotal).toBe(120);
+    expect(d.cajaEfectivo).toBe(120);
+  });
+});
