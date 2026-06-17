@@ -23,6 +23,11 @@ import { syncEngine } from '../sync/SyncEngine';
 import type { SyncState } from '../sync/SyncEngine';
 import type { SyncQueueItem } from '../sync/queue';
 import { useAuthContext } from './AuthContext';
+import {
+  solicitarAlmacenamientoPersistente,
+  estimarAlmacenamiento,
+} from '../lib/storage';
+import { StorageWarningBanner } from '../components/StorageWarningBanner';
 
 // ── Tipos ─────────────────────────────────────────────────────
 
@@ -43,6 +48,8 @@ interface SyncProviderProps {
 
 export function SyncProvider({ children }: SyncProviderProps) {
   const [syncState, setSyncState] = useState<SyncState>(syncEngine.getState());
+  const [lowStorage, setLowStorage] = useState(false);
+  const [storageDismissed, setStorageDismissed] = useState(false);
   const { user } = useAuthContext();
 
   // Suscribirse a cambios del motor de sync
@@ -56,6 +63,24 @@ export function SyncProvider({ children }: SyncProviderProps) {
 
     return unsubscribe;
   }, []);
+
+  // Resiliencia offline en iPhone (T2, ADR-0002):
+  // 1) Solicitar almacenamiento persistente al arrancar (reduce purga de iOS).
+  useEffect(() => {
+    solicitarAlmacenamientoPersistente();
+  }, []);
+
+  // 3) Estimar el almacenamiento al montar y tras cada sync; si supera el 80%
+  //    de la cuota, mostrar el aviso (no bloquea la operación).
+  useEffect(() => {
+    let activo = true;
+    estimarAlmacenamiento().then((est) => {
+      if (activo && est) setLowStorage(est.bajo);
+    });
+    return () => {
+      activo = false;
+    };
+  }, [syncState.lastSyncedAt]);
 
   // Hidratar la BD local al iniciar sesión (el evento `online` no se dispara
   // en una carga normal con conexión, así que el pull inicial vive aquí).
@@ -76,6 +101,15 @@ export function SyncProvider({ children }: SyncProviderProps) {
 
   return (
     <SyncContext.Provider value={value}>
+      {lowStorage && !storageDismissed && (
+        <StorageWarningBanner
+          onSincronizar={() => {
+            syncEngine.syncNow();
+            setStorageDismissed(true);
+          }}
+          onDismiss={() => setStorageDismissed(true)}
+        />
+      )}
       {children}
     </SyncContext.Provider>
   );

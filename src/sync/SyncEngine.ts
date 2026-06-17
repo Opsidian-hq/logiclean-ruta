@@ -50,12 +50,20 @@ export class SyncEngine {
     // Escuchar cambios de conectividad
     window.addEventListener('online', this.handleOnline);
     window.addEventListener('offline', this.handleOffline);
+    // Sync agresiva en primer plano (T2): al volver a primer plano, subir lo
+    // pendiente de inmediato para acotar la ventana "guardado local, sin subir".
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    }
   }
 
   /** Liberar listeners al desmontar */
   destroy() {
     window.removeEventListener('online', this.handleOnline);
     window.removeEventListener('offline', this.handleOffline);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    }
     this.listeners.clear();
   }
 
@@ -212,6 +220,18 @@ export class SyncEngine {
 
   private handleOffline = () => {
     this.setState({ isOnline: false, syncStatus: 'idle' });
+  };
+
+  /**
+   * Al recuperar visibilidad (app vuelve a primer plano), dispara sync. En iOS
+   * (PWA) no hay background sync, así que este es el momento clave para subir lo
+   * pendiente. `syncNow` ya es idempotente: si ya está corriendo, no duplica.
+   */
+  private handleVisibilityChange = async () => {
+    if (typeof document === 'undefined') return;
+    if (document.visibilityState !== 'visible' || !this.state.isOnline) return;
+    await this.syncNow();
+    await this.hydrateNow();
   };
 
   private setState(partial: Partial<SyncState>) {
