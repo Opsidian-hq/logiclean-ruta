@@ -55,19 +55,21 @@ import './theme/variables.css';
 import { AuthProvider } from './context/AuthContext';
 import { SyncProvider } from './context/SyncContext';
 
-/* Páginas */
+/* Páginas — Login eager (entrada); el resto en chunks diferidos por ruta */
 import { LoginPage } from './pages/Login';
-import { CatalogoOfflinePage } from './pages/CatalogoOffline';
-import { VisitasPage } from './pages/visitas/VisitasPage';
-import { InventarioPage } from './pages/venta/InventarioPage';
-import { VentaPage } from './pages/venta/VentaPage';
-import { CobrarSaldoPage } from './pages/cobranza/CobrarSaldoPage';
-import { GastosPage } from './pages/gastos/GastosPage';
-import { CatalogoPage } from './pages/admin/CatalogoPage';
-import { ClientesPage } from './pages/admin/ClientesPage';
-import { DashboardPage } from './pages/admin/DashboardPage';
-import { CortePage } from './pages/admin/CortePage';
-import { RegistrosNegocioPage } from './pages/admin/RegistrosNegocioPage';
+import { lazyPage } from './components/lazyPage';
+
+const CatalogoOfflinePage = lazyPage(() => import('./pages/CatalogoOffline'), 'CatalogoOfflinePage');
+const VisitasPage = lazyPage(() => import('./pages/visitas/VisitasPage'), 'VisitasPage');
+const InventarioPage = lazyPage(() => import('./pages/venta/InventarioPage'), 'InventarioPage');
+const VentaPage = lazyPage(() => import('./pages/venta/VentaPage'), 'VentaPage');
+const CobrarSaldoPage = lazyPage(() => import('./pages/cobranza/CobrarSaldoPage'), 'CobrarSaldoPage');
+const GastosPage = lazyPage(() => import('./pages/gastos/GastosPage'), 'GastosPage');
+const CatalogoPage = lazyPage(() => import('./pages/admin/CatalogoPage'), 'CatalogoPage');
+const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'ClientesPage');
+const DashboardPage = lazyPage(() => import('./pages/admin/DashboardPage'), 'DashboardPage');
+const CortePage = lazyPage(() => import('./pages/admin/CortePage'), 'CortePage');
+const RegistrosNegocioPage = lazyPage(() => import('./pages/admin/RegistrosNegocioPage'), 'RegistrosNegocioPage');
 
 /* Guards */
 import { ProtectedRoute } from './components/ProtectedRoute';
