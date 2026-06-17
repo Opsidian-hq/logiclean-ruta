@@ -61,6 +61,7 @@ import { CatalogoOfflinePage } from './pages/CatalogoOffline';
 import { VisitasPage } from './pages/visitas/VisitasPage';
 import { InventarioPage } from './pages/venta/InventarioPage';
 import { VentaPage } from './pages/venta/VentaPage';
+import { CobrarSaldoPage } from './pages/cobranza/CobrarSaldoPage';
 import { GastosPage } from './pages/gastos/GastosPage';
 import { CatalogoPage } from './pages/admin/CatalogoPage';
 import { ClientesPage } from './pages/admin/ClientesPage';
@@ -89,7 +90,7 @@ function App() {
               <Route exact path="/login" component={LoginPage} />
 
               {/* Rutas vendedor: shell con tabs (visitas, venta, inventario, gastos, catálogo) */}
-              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos']}>
+              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza']}>
                 <ProtectedRoute requiredRol="vendedor">
                   <VendedorTabs />
                 </ProtectedRoute>
@@ -129,6 +130,7 @@ function VendedorTabs() {
         <Route exact path="/catalogo" component={CatalogoOfflinePage} />
         <Route exact path="/inventario" component={InventarioPage} />
         <Route exact path="/venta" component={VentaPage} />
+        <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
         <Route exact path="/gastos" component={GastosPage} />
       </IonRouterOutlet>
 

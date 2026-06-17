@@ -36,6 +36,8 @@ interface FichaProspectoProps {
   onRegistrar: (args: RegistrarVisitaArgs) => Promise<unknown>;
   /** Reprograma la próxima visita (H-09) sin registrar visita ni avanzar ciclo. */
   onReprogramar?: (fechaProxima: string) => Promise<unknown>;
+  /** Abre el cobro de saldo previo del cliente (Flujo C · P3). */
+  onCobrarSaldo?: () => void;
   onClose: () => void;
 }
 
@@ -51,6 +53,7 @@ export function FichaProspecto({
   cargarVisitas,
   onRegistrar,
   onReprogramar,
+  onCobrarSaldo,
   onClose,
 }: FichaProspectoProps) {
   const [reprogOpen, setReprogOpen] = useState(false);
@@ -186,6 +189,32 @@ export function FichaProspecto({
               }}
             >
               ↻ Reprogramar próxima visita
+            </button>
+          )}
+
+          {/* Cobrar saldo previo (Flujo C · P3) */}
+          {onCobrarSaldo && (
+            <button
+              type="button"
+              onClick={onCobrarSaldo}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                minHeight: '46px',
+                width: '100%',
+                border: 'none',
+                borderRadius: '12px',
+                background: 'var(--color-primary)',
+                color: '#fff',
+                fontSize: '15px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-cta)',
+              }}
+            >
+              Cobrar saldo
             </button>
           )}
 

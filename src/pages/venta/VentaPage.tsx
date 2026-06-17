@@ -22,10 +22,7 @@ import {
   IonSelect,
   IonSelectOption,
   IonNote,
-  IonText,
   IonInput,
-  IonSegment,
-  IonSegmentButton,
   IonToggle,
   IonIcon,
   IonSpinner,
@@ -35,7 +32,7 @@ import {
 import { addOutline, trashOutline } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useHistory } from 'react-router-dom';
 import { useInventario } from '../../hooks/useInventario';
 import { useClientes } from '../../hooks/useClientes';
 import { useVenta } from '../../hooks/useVenta';
@@ -48,8 +45,14 @@ import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { precioUnitario, importeLinea, totalVenta } from '../../lib/precios';
 import type { PedidoInput } from '../../lib/ventas';
+import type { RegistrarVentaResult } from '../../lib/ventas';
+import { money } from '../../lib/money';
+import { CobroVentaStep, type DecisionCobro } from '../cobranza/CobroVentaStep';
+import { ConfirmacionCobro } from '../cobranza/ConfirmacionCobro';
+import type { FormaPago } from '../../lib/cobros';
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+/** Fases del flujo de venta: carrito (Flujo A) → cobro (P1) → confirmación (P2). */
+type Fase = 'carrito' | 'cobro' | 'confirmacion';
 
 // Etiqueta de sección en mayúsculas (prototipo).
 const sectionLabel: CSSProperties = {
@@ -77,6 +80,7 @@ export function VentaPage() {
   const { clientes } = useClientes();
   const { registrarVenta, submitting } = useVenta();
   const location = useLocation();
+  const history = useHistory();
 
   const [clienteId, setClienteId] = useState<string>('');
 
@@ -88,11 +92,13 @@ export function VentaPage() {
   }, [location.search]);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [pedidos, setPedidos] = useState<PedidoInput[]>([]);
-  const [cobroOn, setCobroOn] = useState(true);
-  const [formaPago, setFormaPago] = useState<'efectivo' | 'transferencia'>('efectivo');
-  const [montoStr, setMontoStr] = useState('');
   const [requiereFactura, setRequiereFactura] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Flujo C: fase del paso de cobro y resultado de la operación guardada.
+  const [fase, setFase] = useState<Fase>('carrito');
+  const [resultado, setResultado] = useState<RegistrarVentaResult | null>(null);
+  const [decision, setDecision] = useState<DecisionCobro | null>(null);
 
   // Borrador del pedido pendiente
   const [pedPres, setPedPres] = useState<string>('');
@@ -132,8 +138,13 @@ export function VentaPage() {
   // Conteos para el resumen del footer (solo display).
   const piezas = lineasVehiculo.reduce((acc, l) => acc + l.cantidad, 0);
 
-  const monto = cobroOn ? (montoStr === '' ? total : parseFloat(montoStr) || 0) : 0;
-  const saldo = Math.max(0, total - monto);
+  const productosResumen = useMemo(() => {
+    const ps = lineasVehiculo.length;
+    const pd = pedidos.length;
+    const partes = [`${ps} producto${ps !== 1 ? 's' : ''}`];
+    if (pd > 0) partes.push(`${pd} pedido${pd !== 1 ? 's' : ''}`);
+    return partes.join(' · ');
+  }, [lineasVehiculo.length, pedidos.length]);
 
   const nombrePresentacion = (id: string) =>
     rows.find((r) => r.presentacion.id === id)?.presentacion.nombre ?? id;
@@ -163,16 +174,17 @@ export function VentaPage() {
     setClienteId('');
     setQty({});
     setPedidos([]);
-    setCobroOn(true);
-    setFormaPago('efectivo');
-    setMontoStr('');
     setRequiereFactura(false);
     setPedPres('');
     setPedCant(1);
     setPedFecha('');
+    setFase('carrito');
+    setResultado(null);
+    setDecision(null);
   };
 
-  const guardar = async () => {
+  // P1: el vendedor eligió cómo cobrar → se guarda venta + cobro y pasa a P2.
+  const confirmarCobro = async (d: DecisionCobro) => {
     if (!cliente || !tipo) return;
     const res = await registrarVenta({
       cliente: { id: cliente.id, tipo },
@@ -181,16 +193,65 @@ export function VentaPage() {
         cantidad: l.cantidad,
       })),
       pedidos,
-      cobro: cobroOn && monto > 0 ? { monto, forma_pago: formaPago } : null,
+      cobro: d.modo === 'credito' ? null : { monto: d.monto, forma_pago: d.forma_pago },
       requiereFactura,
     });
-    setToast(
-      res.saldo > 0
-        ? `Venta guardada (en cola). Saldo pendiente: ${money(res.saldo)}`
-        : 'Venta y cobro guardados (en cola).'
-    );
-    reset();
+    setResultado(res);
+    setDecision(d);
+    setFase('confirmacion');
   };
+
+  // P2: regreso a la ruta del día; se descarta el estado en memoria.
+  const volverARuta = () => {
+    reset();
+    history.push('/visitas');
+  };
+
+  // ── P1 · "¿Cómo cobramos?" (paso de cobro tras confirmar el carrito) ──
+  if (fase === 'cobro' && cliente && tipo) {
+    return (
+      <IonPage>
+        <CobroVentaStep
+          clienteNombre={cliente.nombre}
+          tipo={tipo}
+          productosResumen={productosResumen}
+          total={total}
+          submitting={submitting}
+          onConfirm={confirmarCobro}
+          onBack={() => setFase('carrito')}
+        />
+      </IonPage>
+    );
+  }
+
+  // ── P2 · Confirmación de venta con cobro registrado ──
+  if (fase === 'confirmacion' && resultado && cliente && tipo) {
+    const formaPago: FormaPago | null =
+      decision && decision.modo !== 'credito' ? decision.forma_pago : null;
+    return (
+      <IonPage>
+        <ConfirmacionCobro
+          ventaId={resultado.venta.id}
+          clienteNombre={cliente.nombre}
+          tipo={tipo}
+          total={resultado.venta.total}
+          montoCobrado={resultado.cobro?.monto ?? 0}
+          formaPago={formaPago}
+          saldo={resultado.saldo}
+          onVolverRuta={volverARuta}
+          onVerFicha={
+            resultado.saldo > 0
+              ? () => {
+                  const id = cliente.id;
+                  reset();
+                  history.push(`/cobranza/${id}`);
+                }
+              : undefined
+          }
+        />
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage>
@@ -271,6 +332,28 @@ export function VentaPage() {
                       </div>
                     )}
                   </div>
+                  {/* Acceso a cobrar saldo previo desde la ficha del cliente (P3). */}
+                  {cliente && (
+                    <button
+                      type="button"
+                      onClick={() => history.push(`/cobranza/${cliente.id}`)}
+                      style={{
+                        flex: 'none',
+                        minHeight: '44px',
+                        padding: '0 12px',
+                        border: '1.5px solid var(--color-primary)',
+                        borderRadius: '12px',
+                        background: 'var(--color-surface)',
+                        color: 'var(--color-primary)',
+                        fontSize: '13.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Cobrar saldo
+                    </button>
+                  )}
                 </div>
               </Card>
 
@@ -482,64 +565,7 @@ export function VentaPage() {
               </div>
             </IonList>
 
-            {/* ── Cobro (H-07) ── */}
-            <IonList>
-              <div style={{ padding: '14px var(--space-md) 6px' }}>
-                <span style={sectionLabel}>Cobro</span>
-              </div>
-              <IonItem>
-                <IonLabel>Registrar cobro ahora</IonLabel>
-                <IonToggle
-                  checked={cobroOn}
-                  onIonChange={(e) => setCobroOn(e.detail.checked)}
-                />
-              </IonItem>
-
-              {cobroOn && (
-                <>
-                  <IonItem>
-                    <IonSegment
-                      value={formaPago}
-                      onIonChange={(e) =>
-                        setFormaPago(
-                          (e.detail.value as 'efectivo' | 'transferencia') ?? 'efectivo'
-                        )
-                      }
-                    >
-                      <IonSegmentButton value="efectivo">
-                        <IonLabel>Efectivo</IonLabel>
-                      </IonSegmentButton>
-                      <IonSegmentButton value="transferencia">
-                        <IonLabel>Transferencia</IonLabel>
-                      </IonSegmentButton>
-                    </IonSegment>
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="stacked">
-                      Monto cobrado (total {money(total)})
-                    </IonLabel>
-                    <IonInput
-                      type="number"
-                      inputmode="decimal"
-                      value={montoStr}
-                      placeholder={total.toFixed(2)}
-                      onIonInput={(e) => setMontoStr(e.detail.value ?? '')}
-                      min="0"
-                      step="0.01"
-                    />
-                  </IonItem>
-                  <IonItem lines="none">
-                    <IonNote slot="end">
-                      {saldo > 0 ? (
-                        <IonText color="warning">Saldo: {money(saldo)}</IonText>
-                      ) : (
-                        <IonText color="success">Sin saldo</IonText>
-                      )}
-                    </IonNote>
-                  </IonItem>
-                </>
-              )}
-            </IonList>
+            {/* El cobro (H-07) ocurre en el paso siguiente: "¿Cómo cobramos?". */}
 
             {/* ── Requiere factura (H-06) ── */}
             <div style={{ padding: '0 var(--space-md)' }}>
@@ -598,14 +624,13 @@ export function VentaPage() {
               )}
             </div>
 
-            {/* CTA ancho completo con total integrado */}
+            {/* CTA ancho completo: avanza al paso de cobro (P1). */}
             <PrimaryCTA
               disabled={!puedeGuardar}
-              loading={submitting}
-              onClick={guardar}
+              onClick={() => setFase('cobro')}
               trailing={money(total)}
             >
-              {submitting ? 'Guardando…' : 'Guardar venta'}
+              Continuar al cobro
             </PrimaryCTA>
           </div>
         </IonToolbar>
