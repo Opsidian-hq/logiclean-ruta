@@ -38,6 +38,10 @@ interface ConfirmacionCobroProps {
   clienteNombre: string;
   tipo: 'mayoreo' | 'menudeo';
   total: number;
+  /** Subtotal de lista (sin IVA). Si se omite, no se muestra desglose. */
+  subtotal?: number;
+  /** IVA aplicado (venta facturable, H-06). 0 = sin desglose de IVA. */
+  iva?: number;
   /** Monto cobrado; 0 si la venta quedó a crédito. */
   montoCobrado: number;
   /** Forma de pago del cobro; null si fue a crédito (sin cobro). */
@@ -67,6 +71,8 @@ export function ConfirmacionCobro({
   clienteNombre,
   tipo,
   total,
+  subtotal,
+  iva = 0,
   montoCobrado,
   formaPago,
   saldo,
@@ -157,7 +163,11 @@ export function ConfirmacionCobro({
 
           {/* Resumen de la operación */}
           <Card padding="6px 14px">
-            {filaResumen('Total de la venta', <span className="numeric" style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--color-navy)' }}>{money(total)}</span>)}
+            {iva > 0 && subtotal != null &&
+              filaResumen('Subtotal (lista)', <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-body)' }}>{money(subtotal)}</span>)}
+            {iva > 0 &&
+              filaResumen('IVA (16%)', <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-body)' }}>{money(iva)}</span>)}
+            {filaResumen(iva > 0 ? 'Total con factura' : 'Total de la venta', <span className="numeric" style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--color-navy)' }}>{money(total)}</span>)}
             {filaResumen(
               'Forma de pago',
               formaPago ? (

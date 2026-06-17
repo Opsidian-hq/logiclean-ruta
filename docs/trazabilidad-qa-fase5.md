@@ -2,13 +2,14 @@
 
 > Estado: **actualizado 2026-06-17** · Cruza los criterios de aceptación del **PRD v1.2 §5–§6** contra los casos de prueba en `tests/`.
 > Leyenda: ✓ cubierto · ◐ parcial · ✗ hueco · **(F)** hueco de funcionalidad (falta la lógica, no solo el test) · **(T)** hueco solo de prueba (la lógica existe).
-> **Cambio (2026-06-17):** cerrados H-05·2 (lógica nueva + tests), H-13, H-14 y H-15·2/3. Quedan abiertos H-06·1 (IVA) y H-09·1 (ad-hoc), pendientes de decisión de alcance.
+> **Cambio (2026-06-17):** cerrados H-05·2 (lógica nueva + tests), H-13, H-14, H-15·2/3 y **H-06·1** (IVA recalculado: el sponsor decidió que el MVP sí recalcula). Queda abierto solo H-09·1 (inserción ad-hoc, *Should*).
 
 ## Resumen
 
 - **Criterios Must con cobertura completa:** H-01, H-02, H-03, H-04, **H-05**, H-07, H-08, H-10, H-11, H-12, **H-13**, **H-14**, H-15.
+- **Should cubiertos:** **H-06** (IVA), H-09 (reprogramar).
 - **Riesgos técnicos de máximo cuidado — ya blindados:** **T1** (sync idempotente) `T1-001…004` ✓ · **T4** (RLS por tabla) `T4-*` ✓.
-- **Huecos abiertos:** 2 — **H-06·1** (cálculo IVA, *Should*) y **H-09·1** (inserción ad-hoc, *Should*). Ambos requieren decisión de alcance con el PM/sponsor.
+- **Huecos abiertos:** 1 — **H-09·1** (inserción ad-hoc, *Should*).
 
 ## Matriz por historia
 
@@ -24,7 +25,7 @@
 | | Confirmar → baja inventario + nota | ✓ | `VENTA-001/003`, `VENTA-006` | |
 | **H-05** Must | Pedido no disponible → se registra con datos | ✓ | `VENTA-004` | |
 | | **Pedido entregado → se convierte en venta y se cierra** | ✓ | `PEDIDO-101…107` | `lib/pedidos.ts` `entregarPedido`: crea venta+línea (precio congelado), baja inventario, marca `surtido` |
-| **H-06** Should | Marca facturable → etiquetada + **monto a precio lista + IVA** | ✗ **(F)** | — | `requiere_factura` se guarda como flag, pero **no hay cálculo de IVA**; el total no se recalcula. *Abierto: decisión de alcance.* |
+| **H-06** Should | Marca facturable → etiquetada + **monto a precio lista + IVA** | ✓ | `PRECIO-004/005`, `VENTA-008/009/010` | `lib/precios.ts` `totalConFactura`; el total de la venta facturable = subtotal + IVA (16%) |
 | **H-07** Must | Cobro captura monto + forma de pago | ✓ | `COBRO-101/102/103/104` | |
 | | Total/parcial/crédito → saldo refleja pendiente | ✓ | `COBRO-201…205` | |
 | | Liquidación en varios momentos → cada cobro su forma | ✓ | `COBRO-301/302/401/402/403` | |
@@ -55,7 +56,8 @@
 - **H-14** — lógica de clientes extraída a `lib/clientes.ts` + `CLI-101…105`.
 - **H-15·2/3** — `DASH-004…006` (reinicio de flujo / continuidad de cartera).
 
+- **H-06·1** — `lib/precios.ts` `totalConFactura`/`calcularIVA`; la venta facturable recalcula el total a precio de lista + IVA (16%) en el modelo y se refleja en P1/P2 de la venta. Tests `PRECIO-004/005`, `VENTA-008/009/010`. *(Decisión del sponsor 2026-06-17: el MVP recalcula IVA.)*
+
 ## Huecos abiertos (requieren decisión de alcance)
 
-1. **H-06·1 — Cálculo a precio de lista + IVA para venta facturable** *(Should)*. Hoy solo se guarda el flag y la UI rotula "Precio de lista + IVA", pero el monto no se recalcula. **Decidir con el sponsor/PM:** ¿el MVP recalcula IVA o el flag solo etiqueta para el proceso externo? Alinear PRD ↔ código según la respuesta.
-2. **H-09·1 — Inserción ad-hoc** de visita/pedido en la jornada *(Should)*. Reprogramar está cubierto (`REPROG-*`); falta el caso de inserción ad-hoc dentro de la ruta del día.
+1. **H-09·1 — Inserción ad-hoc** de visita/pedido en la jornada *(Should)*. Reprogramar está cubierto (`REPROG-*`); falta el caso de inserción ad-hoc dentro de la ruta del día.

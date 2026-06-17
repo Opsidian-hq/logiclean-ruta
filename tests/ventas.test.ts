@@ -167,4 +167,45 @@ describe('registrarVenta', () => {
       })
     ).rejects.toThrow(/no tiene líneas ni pedidos/);
   });
+
+  it('VENTA-008: venta facturable → total = subtotal + IVA (H-06)', async () => {
+    await cargarInventario(10);
+    const res = await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'mayoreo' },
+      lineasVehiculo: [{ presentacion: PRES, cantidad: 3 }], // subtotal 300
+      requiereFactura: true,
+    });
+    expect(res.subtotal).toBe(300);
+    expect(res.iva).toBe(48); // 16% de 300
+    expect(res.venta.total).toBe(348);
+
+    const ventaDB = await db.venta.get(res.venta.id);
+    expect(ventaDB?.requiere_factura).toBe(true);
+    expect(ventaDB?.total).toBe(348);
+  });
+
+  it('VENTA-009: facturable con cobro total cubre el monto con IVA; saldo 0', async () => {
+    await cargarInventario(10);
+    const res = await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'mayoreo' },
+      lineasVehiculo: [{ presentacion: PRES, cantidad: 3 }],
+      requiereFactura: true,
+      cobro: { monto: 348, forma_pago: 'efectivo' },
+    });
+    expect(res.cobro?.tipo).toBe('total');
+    expect(res.saldo).toBe(0);
+  });
+
+  it('VENTA-010: venta no facturable no aplica IVA', async () => {
+    await cargarInventario(10);
+    const res = await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'mayoreo' },
+      lineasVehiculo: [{ presentacion: PRES, cantidad: 3 }],
+    });
+    expect(res.iva).toBe(0);
+    expect(res.venta.total).toBe(300);
+  });
 });

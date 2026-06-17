@@ -52,6 +52,8 @@ interface CobroVentaStepProps {
   tipo: 'mayoreo' | 'menudeo';
   productosResumen: string;
   total: number;
+  /** IVA incluido en el total cuando la venta requiere factura (H-06). 0 si no. */
+  iva?: number;
   /** Skeleton mientras carga el saldo del cliente (cálculo local breve). */
   loading?: boolean;
   submitting?: boolean;
@@ -73,6 +75,7 @@ export function CobroVentaStep({
   tipo,
   productosResumen,
   total,
+  iva = 0,
   loading = false,
   submitting = false,
   onConfirm,
@@ -141,6 +144,11 @@ export function CobroVentaStep({
                   {clienteNombre} · {productosResumen}
                 </span>
               </div>
+              {iva > 0 && (
+                <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-text-secondary)', marginTop: '6px' }}>
+                  Incluye IVA (16%) · {money(iva)}
+                </div>
+              )}
             </div>
 
             {/* 3 opciones de cobro */}
