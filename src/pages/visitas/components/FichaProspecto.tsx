@@ -28,6 +28,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { CicloBar } from '../../../components/ui/CicloBar';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import type { RegistrarVisitaArgs } from '../../../hooks/useSeguimiento';
+import type { PedidoPendienteVista } from '../../../lib/pedidos';
 import type { Cliente, Visita } from '../../../db/schema';
 
 interface FichaProspectoProps {
@@ -38,6 +39,10 @@ interface FichaProspectoProps {
   onReprogramar?: (fechaProxima: string) => Promise<unknown>;
   /** Abre el cobro de saldo previo del cliente (Flujo C · P3). */
   onCobrarSaldo?: () => void;
+  /** Carga los pedidos pendientes del cliente (H-05). */
+  cargarPedidos?: (clienteId: string) => Promise<PedidoPendienteVista[]>;
+  /** Entrega un pedido pendiente: lo convierte en venta y lo cierra (H-05). */
+  onEntregarPedido?: (pedidoId: string) => Promise<unknown>;
   onClose: () => void;
 }
 
@@ -54,6 +59,8 @@ export function FichaProspecto({
   onRegistrar,
   onReprogramar,
   onCobrarSaldo,
+  cargarPedidos,
+  onEntregarPedido,
   onClose,
 }: FichaProspectoProps) {
   const [reprogOpen, setReprogOpen] = useState(false);
@@ -63,6 +70,8 @@ export function FichaProspecto({
   const [siguientePaso, setSiguientePaso] = useState('');
   const [fechaProxima, setFechaProxima] = useState('');
   const [saving, setSaving] = useState(false);
+  const [pedidos, setPedidos] = useState<PedidoPendienteVista[]>([]);
+  const [entregando, setEntregando] = useState<string | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -76,6 +85,28 @@ export function FichaProspecto({
       activo = false;
     };
   }, [cliente.id, cargarVisitas]);
+
+  useEffect(() => {
+    if (!cargarPedidos) return;
+    let activo = true;
+    cargarPedidos(cliente.id).then((ps) => {
+      if (activo) setPedidos(ps);
+    });
+    return () => {
+      activo = false;
+    };
+  }, [cliente.id, cargarPedidos]);
+
+  const entregarPedido = async (pedidoId: string) => {
+    if (!onEntregarPedido) return;
+    setEntregando(pedidoId);
+    try {
+      await onEntregarPedido(pedidoId);
+      setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+    } finally {
+      setEntregando(null);
+    }
+  };
 
   const etapa = Math.min(cliente.ciclo_visita, CICLO_OBJETIVO);
 
@@ -216,6 +247,68 @@ export function FichaProspecto({
             >
               Cobrar saldo
             </button>
+          )}
+
+          {/* Pedidos pendientes (H-05): entregar = convertir en venta */}
+          {pedidos.length > 0 && (
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: '#8A94A6', marginBottom: '8px' }}>
+                Pedidos pendientes · {pedidos.length}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pedidos.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      border: '1.5px solid var(--color-primary-line)',
+                      background: 'var(--color-primary-bg)',
+                      borderRadius: '14px',
+                      padding: '12px 13px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <span className="numeric" style={{ minWidth: '28px', fontSize: '15px', fontWeight: 800, color: 'var(--color-primary)' }}>
+                      {p.cantidad}×
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>{p.nombre}</div>
+                      {p.fecha_compromiso && (
+                        <div className="numeric" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                          entrega {p.fecha_compromiso}
+                        </div>
+                      )}
+                    </div>
+                    {onEntregarPedido && (
+                      <button
+                        type="button"
+                        onClick={() => entregarPedido(p.id)}
+                        disabled={entregando === p.id}
+                        style={{
+                          flex: 'none',
+                          minHeight: '44px',
+                          padding: '0 15px',
+                          border: 'none',
+                          borderRadius: '12px',
+                          background: 'var(--color-primary)',
+                          color: '#fff',
+                          fontSize: '14.5px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          opacity: entregando === p.id ? 0.7 : 1,
+                        }}
+                      >
+                        {entregando === p.id ? 'Entregando…' : 'Entregar'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '8px' }}>
+                Al entregar, el pedido se convierte en venta y se cierra.
+              </div>
+            </div>
           )}
 
           {/* Siguiente paso acordado */}

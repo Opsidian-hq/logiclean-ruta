@@ -2,14 +2,14 @@
 
 > Estado: **actualizado 2026-06-17** · Cruza los criterios de aceptación del **PRD v1.2 §5–§6** contra los casos de prueba en `tests/`.
 > Leyenda: ✓ cubierto · ◐ parcial · ✗ hueco · **(F)** hueco de funcionalidad (falta la lógica, no solo el test) · **(T)** hueco solo de prueba (la lógica existe).
-> **Cambio (2026-06-17):** cerrados H-05·2 (lógica nueva + tests), H-13, H-14, H-15·2/3 y **H-06·1** (IVA recalculado: el sponsor decidió que el MVP sí recalcula). Queda abierto solo H-09·1 (inserción ad-hoc, *Should*).
+> **Cambio (2026-06-17):** cerrados H-05·2 (lógica + UI de entrega en la ficha), H-13, H-14, H-15·2/3, **H-06·1** (IVA recalculado) y **H-09·1** (inserción ad-hoc). **Todos los criterios del PRD v1.2 quedan cubiertos.**
 
 ## Resumen
 
 - **Criterios Must con cobertura completa:** H-01, H-02, H-03, H-04, **H-05**, H-07, H-08, H-10, H-11, H-12, **H-13**, **H-14**, H-15.
-- **Should cubiertos:** **H-06** (IVA), H-09 (reprogramar).
+- **Should cubiertos:** **H-06** (IVA), **H-09** (reprogramar + inserción ad-hoc).
 - **Riesgos técnicos de máximo cuidado — ya blindados:** **T1** (sync idempotente) `T1-001…004` ✓ · **T4** (RLS por tabla) `T4-*` ✓.
-- **Huecos abiertos:** 1 — **H-09·1** (inserción ad-hoc, *Should*).
+- **Huecos abiertos:** ninguno. ✅
 
 ## Matriz por historia
 
@@ -24,14 +24,14 @@
 | **H-04** Must | Lista de precios correcta (may/men) | ✓ | `PRECIO-001/002`, `VENTA-001/002` | |
 | | Confirmar → baja inventario + nota | ✓ | `VENTA-001/003`, `VENTA-006` | |
 | **H-05** Must | Pedido no disponible → se registra con datos | ✓ | `VENTA-004` | |
-| | **Pedido entregado → se convierte en venta y se cierra** | ✓ | `PEDIDO-101…107` | `lib/pedidos.ts` `entregarPedido`: crea venta+línea (precio congelado), baja inventario, marca `surtido` |
+| | **Pedido entregado → se convierte en venta y se cierra** | ✓ | `PEDIDO-101…108` | `lib/pedidos.ts` `entregarPedido` + UI en la ficha del cliente (sección "Pedidos pendientes" → Entregar) |
 | **H-06** Should | Marca facturable → etiquetada + **monto a precio lista + IVA** | ✓ | `PRECIO-004/005`, `VENTA-008/009/010` | `lib/precios.ts` `totalConFactura`; el total de la venta facturable = subtotal + IVA (16%) |
 | **H-07** Must | Cobro captura monto + forma de pago | ✓ | `COBRO-101/102/103/104` | |
 | | Total/parcial/crédito → saldo refleja pendiente | ✓ | `COBRO-201…205` | |
 | | Liquidación en varios momentos → cada cobro su forma | ✓ | `COBRO-301/302/401/402/403` | |
 | **H-08** Must | Ruta del día → clientes/prospectos de hoy | ✓ | `RUTA-001…005` | |
 | **H-09** Should | Visita movida de día → aparece en ruta destino | ✓ | `REPROG-001/002/003` | |
-| | Insertar pedido/visita ad-hoc en la jornada | ◐ **(T)** | — | sin caso dedicado de inserción ad-hoc |
+| | Insertar pedido/visita ad-hoc en la jornada (hoy o a otra fecha) | ✓ | `REPROG-004/005` | `reprogramarVisita` a hoy → entra en `clientesDeHoy`; a otra fecha → no |
 | **H-10** Must | Corte: ventas/cobranza/gastos/inv vendido-devuelto | ✓ | `CORTE-001…006` | |
 | | Cobranza desglosada por forma de pago | ✓ | `CORTE-001` | |
 | | Gastos ruta bajan bolsa; backoffice salidas de caja | ✓ | `CORTE-001/002`, `GASTO-004`, `BACK-001/002` | |
@@ -57,7 +57,9 @@
 - **H-15·2/3** — `DASH-004…006` (reinicio de flujo / continuidad de cartera).
 
 - **H-06·1** — `lib/precios.ts` `totalConFactura`/`calcularIVA`; la venta facturable recalcula el total a precio de lista + IVA (16%) en el modelo y se refleja en P1/P2 de la venta. Tests `PRECIO-004/005`, `VENTA-008/009/010`. *(Decisión del sponsor 2026-06-17: el MVP recalcula IVA.)*
+- **H-09·1** — inserción ad-hoc vía `reprogramarVisita` (a hoy → entra en la ruta del día; a otra fecha → cae en esa jornada). Tests `REPROG-004/005`. La afordancia de UI ya existe en la ficha ("Reprogramar próxima visita → Para hoy").
+- **H-05·2 (UI)** — sección "Pedidos pendientes" en la ficha del cliente con acción **Entregar** (convierte el pedido en venta y lo cierra). `lib/pedidos.ts` `pedidosPendientesVista`, test `PEDIDO-108`.
 
-## Huecos abiertos (requieren decisión de alcance)
+## Huecos abiertos
 
-1. **H-09·1 — Inserción ad-hoc** de visita/pedido en la jornada *(Should)*. Reprogramar está cubierto (`REPROG-*`); falta el caso de inserción ad-hoc dentro de la ruta del día.
+Ninguno. Todos los criterios de aceptación del PRD v1.2 quedan cubiertos por al menos un caso de prueba.
