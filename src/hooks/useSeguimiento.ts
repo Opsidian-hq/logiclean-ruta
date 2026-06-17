@@ -11,12 +11,14 @@ import { prospectosDeLaSemana } from '../lib/prospectos';
 import {
   crearProspecto as crearProspectoLib,
   registrarVisita as registrarVisitaLib,
+  reprogramarVisita as reprogramarVisitaLib,
   visitasDeCliente,
 } from '../lib/visitas';
 import type {
   CrearProspectoInput,
   RegistrarVisitaInput,
   RegistrarVisitaResult,
+  ReprogramarVisitaInput,
 } from '../lib/visitas';
 import { useAuthContext } from '../context/AuthContext';
 import type { Cliente, Visita } from '../db/schema';
@@ -30,6 +32,7 @@ export interface UseSeguimientoReturn {
   error: string | null;
   crearProspecto: (args: CrearProspectoArgs) => Promise<Cliente>;
   registrarVisita: (args: RegistrarVisitaArgs) => Promise<RegistrarVisitaResult>;
+  reprogramarVisita: (args: ReprogramarVisitaInput) => Promise<Cliente>;
   visitasDeCliente: (clienteId: string) => Promise<Visita[]>;
   refresh: () => Promise<void>;
 }
@@ -87,12 +90,22 @@ export function useSeguimiento(): UseSeguimientoReturn {
     [vendedorId, loadFromLocal]
   );
 
+  const reprogramarVisita = useCallback(
+    async (args: ReprogramarVisitaInput): Promise<Cliente> => {
+      const cliente = await reprogramarVisitaLib(args);
+      await loadFromLocal();
+      return cliente;
+    },
+    [loadFromLocal]
+  );
+
   return {
     prospectos,
     loading,
     error,
     crearProspecto,
     registrarVisita,
+    reprogramarVisita,
     visitasDeCliente,
     refresh,
   };

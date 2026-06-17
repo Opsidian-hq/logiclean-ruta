@@ -120,6 +120,44 @@ export async function registrarVisita(
   return { visita, cliente: clienteActualizado };
 }
 
+// ── Reprogramar / insertar visita (H-09) ─────────────────────
+
+export interface ReprogramarVisitaInput {
+  cliente: Cliente;
+  /** Nueva fecha de próxima visita (ISO date). Hoy = entra en la ruta de hoy. */
+  fechaProxima: string;
+  /** Opcional: reasignar el día de ruta (texto libre) para moverla de ruta. */
+  diaRuta?: string | null;
+}
+
+/**
+ * Mueve la próxima visita de un cliente a otra fecha (o a hoy) sin registrar
+ * una visita ni avanzar el ciclo. Sirve para insertar/reprogramar cuando surge
+ * un pedido fuera de la ruta planeada (H-09): al ponerla en hoy aparece en la
+ * ruta del día; en otra fecha, cae en esa jornada.
+ */
+export async function reprogramarVisita(
+  input: ReprogramarVisitaInput
+): Promise<Cliente> {
+  const { cliente, fechaProxima, diaRuta } = input;
+  if (!fechaProxima) throw new Error('Falta la nueva fecha de visita.');
+
+  const actualizado: Cliente = {
+    ...cliente,
+    fecha_proxima_visita: fechaProxima,
+    dia_ruta: diaRuta !== undefined ? diaRuta?.trim() || null : cliente.dia_ruta,
+  };
+
+  await db.cliente.put(toDexieRow(actualizado));
+  const item = await enqueueOperation(
+    'cliente',
+    'upsert',
+    actualizado as unknown as Record<string, unknown>
+  );
+  await syncEngine.enqueueAndSync(item);
+  return actualizado;
+}
+
 /** Visitas de un cliente, de la más reciente a la más antigua. */
 export async function visitasDeCliente(clienteId: string): Promise<Visita[]> {
   const visitas = await db.visita
