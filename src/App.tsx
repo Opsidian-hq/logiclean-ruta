@@ -31,7 +31,7 @@ import {
   cartOutline,
   mapOutline,
   walletOutline,
-  funnelOutline,
+  homeOutline,
   receiptOutline,
   businessOutline,
 } from 'ionicons/icons';
@@ -64,7 +64,7 @@ import { VentaPage } from './pages/venta/VentaPage';
 import { GastosPage } from './pages/gastos/GastosPage';
 import { CatalogoPage } from './pages/admin/CatalogoPage';
 import { ClientesPage } from './pages/admin/ClientesPage';
-import { ProspectosPanelPage } from './pages/admin/ProspectosPanelPage';
+import { DashboardPage } from './pages/admin/DashboardPage';
 import { CortePage } from './pages/admin/CortePage';
 import { RegistrosNegocioPage } from './pages/admin/RegistrosNegocioPage';
 
@@ -165,19 +165,19 @@ function AdminTabs() {
     <IonTabs>
       <IonRouterOutlet>
         <Route exact path="/admin">
-          <Redirect to="/admin/catalogo" />
+          <Redirect to="/admin/dashboard" />
         </Route>
+        <Route exact path="/admin/dashboard" component={DashboardPage} />
         <Route exact path="/admin/catalogo" component={CatalogoPage} />
         <Route exact path="/admin/clientes" component={ClientesPage} />
-        <Route exact path="/admin/prospectos" component={ProspectosPanelPage} />
         <Route exact path="/admin/corte" component={CortePage} />
         <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
-        <IonTabButton tab="prospectos" href="/admin/prospectos">
-          <IonIcon icon={funnelOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Prospectos</span>
+        <IonTabButton tab="dashboard" href="/admin/dashboard">
+          <IonIcon icon={homeOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inicio</span>
         </IonTabButton>
         <IonTabButton tab="catalogo" href="/admin/catalogo">
           <IonIcon icon={gridOutline} style={{ color: 'var(--color-on-dark)' }} />
