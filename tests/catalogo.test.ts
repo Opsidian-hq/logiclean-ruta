@@ -103,6 +103,38 @@ describe('[H-13] gestión del catálogo', () => {
     expect(activos.find((p) => p.id === prod.id)).toBeUndefined();
   });
 
+  it('CAT-106: producto recién dado de alta aparece en la consulta de activos (D-005)', async () => {
+    // Reproduce el caso de QA: alta de "Trapeador Microseda 1pz" con su
+    // presentación. El producto debe quedar indexado como activo (activo=1)
+    // para que la lista del catálogo (where activo=1) lo muestre sin recargar.
+    const prod = await guardarProducto({
+      nombre: 'Trapeador Microseda 1pz',
+      unidad_compra: 'docena',
+      activo: true,
+    });
+    await guardarPresentacion({
+      producto_base_id: prod.id,
+      nombre: 'Trapeador pieza',
+      unidad_venta: 'pieza',
+      factor_conversion: 1,
+      precio_mayoreo: 45,
+      precio_menudeo: 65,
+      activo: true,
+    });
+
+    // La lista del catálogo usa exactamente esta consulta.
+    const activos = await db.producto_base.where('activo').equals(1).toArray();
+    expect(activos.find((p) => p.id === prod.id)).toBeDefined();
+
+    const presActivas = await db.presentacion
+      .where('producto_base_id')
+      .equals(prod.id)
+      .filter((p) => Boolean(p.activo))
+      .toArray();
+    expect(presActivas).toHaveLength(1);
+    expect(presActivas[0].unidad_venta).toBe('pieza');
+  });
+
   it('CAT-105: baja de presentación = desactiva (no borra)', async () => {
     const prod = await guardarProducto({ nombre: 'P', unidad_compra: 'bidon', activo: true });
     const pres = await guardarPresentacion({

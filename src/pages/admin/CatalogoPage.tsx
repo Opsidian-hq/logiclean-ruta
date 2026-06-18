@@ -92,11 +92,16 @@ export function CatalogoPage() {
         message: editandoExistente ? 'Cambios guardados' : 'Producto guardado',
         color: 'success',
       });
-    } catch {
+    } catch (err) {
       // El insert falló (p. ej. validación o BD local): feedback explícito en
       // vez de cerrar el modal en silencio. El modal queda abierto para reintentar.
+      // Logging explícito para diagnosticar la causa raíz del fallo (D-005).
+      console.error('[Catalogo] alta/edición de producto falló:', err);
+      const detalle = err instanceof Error ? err.message : '';
       setToast({
-        message: 'No se pudo guardar el producto. Intenta de nuevo.',
+        message: detalle
+          ? `No se pudo guardar el producto: ${detalle}`
+          : 'No se pudo guardar el producto. Intenta de nuevo.',
         color: 'danger',
       });
     }

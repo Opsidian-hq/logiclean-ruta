@@ -5,7 +5,7 @@
  * Usado dentro de ProductoForm.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   IonItem,
   IonLabel,
@@ -72,8 +72,7 @@ export function PresentacionForm({
   // el usuario interactuó con el formulario (sin efecto ni setState).
   const errores = touched ? validar(draft) : {};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     setTouched(true);
     const errs = validar(draft);
     if (Object.keys(errs).length > 0) {
@@ -92,7 +91,12 @@ export function PresentacionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate style={{ padding: 'var(--space-sm) 0' }}>
+    // NO es un <form>: este sub-formulario vive embebido dentro del <form> de
+    // ProductoForm. Un <form> anidado hace que el submit de "Agregar
+    // presentación" burbujee y dispare también el submit del producto con un
+    // estado de presentaciones aún sin actualizar (D-005). Se usa un <div> y un
+    // botón type="button" para aislar la acción.
+    <div style={{ padding: 'var(--space-sm) 0' }}>
       {/* Nombre */}
       <IonItem>
         <IonLabel position="stacked">Nombre de la presentación *</IonLabel>
@@ -187,12 +191,13 @@ export function PresentacionForm({
           Cancelar
         </IonButton>
         <IonButton
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           style={{ '--background': 'var(--color-primary)' }}
         >
           {inicial?.id ? 'Actualizar presentación' : 'Agregar presentación'}
         </IonButton>
       </div>
-    </form>
+    </div>
   );
 }
