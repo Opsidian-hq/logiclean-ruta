@@ -163,11 +163,19 @@ body {
    se distingue por un subrayado de acento (cian), no por el color del
    texto. El inactivo es blanco con opacidad reducida (visible pero
    secundario). Contraste vs navy #001D51: activo (#FFF) ≈ 15:1 (AAA),
-   inactivo (blanco 55%) ≈ 5.7:1 (AA). Aplicar a TODO segmento sobre navy. */
+   inactivo (blanco 55%) ≈ 5.7:1 (AA). Aplicar a TODO segmento sobre navy.
+
+   IMPORTANTE: --color/--color-checked deben ir en `ion-segment-button`, no
+   en el `ion-segment` padre. Ionic los redefine en el :host del botón (activo
+   = azul primario, inactivo = gris), así que fijarlos en el padre NO surte
+   efecto y los tabs salían azul/gris sobre navy. */
 .segment-on-navy {
   --background: rgba(255, 255, 255, 0.12);
+}
+.segment-on-navy ion-segment-button {
   --color: rgba(255, 255, 255, 0.55);          /* inactivo: blanco atenuado */
   --color-checked: #FFFFFF;                    /* activo: blanco pleno */
+  --color-hover: #FFFFFF;
   --indicator-color: var(--color-cyan);        /* subrayado de acento */
 }
 /* Subrayado de acento de 3px en el tab activo (refuerza el indicador MD). */
