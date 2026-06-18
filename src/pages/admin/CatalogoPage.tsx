@@ -33,6 +33,7 @@ import {
   IonItemOption,
   IonFab,
   IonFabButton,
+  IonToast,
 } from '@ionic/react';
 import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
 import { useCatalog } from '../../hooks/useCatalog';
@@ -60,6 +61,7 @@ export function CatalogoPage() {
     (ProductoBase & { presentaciones?: Presentacion[] }) | null
   >(null);
   const [confirmBaja, setConfirmBaja] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; color: 'success' | 'danger' } | null>(null);
 
   const filtrados = productos.filter((p) =>
     p.nombre.toLowerCase().includes(search.toLowerCase())
@@ -69,24 +71,46 @@ export function CatalogoPage() {
     productoData: Omit<ProductoBase, 'id'> & { id?: string },
     presentacionesData: (Omit<Presentacion, 'id'> & { id?: string })[]
   ) => {
-    await saveProducto(productoData);
+    const editandoExistente = !!productoData.id && !!editando;
+    try {
+      await saveProducto(productoData);
 
-    // Guardar presentaciones
-    for (const pres of presentacionesData) {
-      await savePresentacion({
-        ...pres,
-        producto_base_id: productoData.id!,
+      // Guardar presentaciones
+      for (const pres of presentacionesData) {
+        await savePresentacion({
+          ...pres,
+          producto_base_id: productoData.id!,
+        });
+      }
+
+      setModalOpen(false);
+      setEditando(null);
+      // Refrescar la lista para que el producto recién guardado aparezca sin
+      // navegación manual, y confirmar al gerente que la operación se guardó.
+      await refresh();
+      setToast({
+        message: editandoExistente ? 'Cambios guardados' : 'Producto guardado',
+        color: 'success',
+      });
+    } catch {
+      // El insert falló (p. ej. validación o BD local): feedback explícito en
+      // vez de cerrar el modal en silencio. El modal queda abierto para reintentar.
+      setToast({
+        message: 'No se pudo guardar el producto. Intenta de nuevo.',
+        color: 'danger',
       });
     }
-
-    setModalOpen(false);
-    setEditando(null);
-    await refresh();
   };
 
   const handleBaja = async (id: string) => {
-    await desactivarProducto(id);
-    setConfirmBaja(null);
+    try {
+      await desactivarProducto(id);
+      setConfirmBaja(null);
+      setToast({ message: 'Producto dado de baja', color: 'success' });
+    } catch {
+      setConfirmBaja(null);
+      setToast({ message: 'No se pudo dar de baja el producto. Intenta de nuevo.', color: 'danger' });
+    }
   };
 
   return (
@@ -244,6 +268,15 @@ export function CatalogoPage() {
               },
             },
           ]}
+        />
+
+        {/* Feedback explícito de guardado / baja (D-005) */}
+        <IonToast
+          isOpen={!!toast}
+          message={toast?.message ?? ''}
+          color={toast?.color}
+          duration={2500}
+          onDidDismiss={() => setToast(null)}
         />
       </IonContent>
     </IonPage>

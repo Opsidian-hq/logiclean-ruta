@@ -42,6 +42,7 @@ import {
   saldoDerivado,
   sumaCobros,
   tipoCobro,
+  clientesConSaldo,
 } from '../src/lib/cobros';
 import { registrarVenta } from '../src/lib/ventas';
 import { db } from '../src/db/index';
@@ -299,5 +300,58 @@ describe('registrarCobroCliente: asignación FIFO sobre ventas con saldo', () =>
     await expect(
       registrarCobroCliente({ clienteId: CLIENTE, monto: 50, forma_pago: 'efectivo' })
     ).rejects.toThrow(/no tiene saldo pendiente/);
+  });
+});
+
+// ── [D-002] cobros pendientes: clientes con saldo fuera de la ruta ────
+
+describe('[D-002] clientesConSaldo lista clientes con deuda (sin importar visita)', () => {
+  /** Inserta una venta para un cliente arbitrario (distinto del CLIENTE base). */
+  async function sembrarVentaCliente(
+    id: string,
+    clienteId: string,
+    total: number,
+    fecha: string
+  ): Promise<void> {
+    await db.venta.put({
+      id,
+      vendedor_id: VENDEDOR,
+      cliente_id: clienteId,
+      fecha,
+      requiere_factura: false,
+      total,
+    });
+  }
+
+  it('COBRO-501: devuelve solo clientes con saldo > 0, de mayor a menor', async () => {
+    // Cliente A: debe 500. Cliente B: liquidado (saldo 0). Cliente C: debe 200.
+    await sembrarVentaCliente('va', 'cli-A', 500, '2026-06-01T10:00:00Z');
+    await sembrarVentaCliente('vb', 'cli-B', 300, '2026-06-01T10:00:00Z');
+    await registrarCobro({ ventaId: 'vb', monto: 300, forma_pago: 'efectivo' });
+    await sembrarVentaCliente('vc', 'cli-C', 200, '2026-06-01T10:00:00Z');
+
+    const clientes = [
+      { id: 'cli-A', nombre: 'Abarrotes A', tipo: 'mayoreo' as const },
+      { id: 'cli-B', nombre: 'Bodega B', tipo: 'menudeo' as const },
+      { id: 'cli-C', nombre: 'Cafetería C', tipo: 'menudeo' as const },
+    ];
+
+    const pendientes = await clientesConSaldo(clientes);
+
+    // B (liquidado) queda fuera; A y C presentes, ordenados por saldo desc.
+    expect(pendientes.map((p) => p.clienteId)).toEqual(['cli-A', 'cli-C']);
+    expect(pendientes[0].saldoTotal).toBe(500);
+    expect(pendientes[0].ventasPendientes).toBe(1);
+    expect(pendientes[1].saldoTotal).toBe(200);
+  });
+
+  it('COBRO-502: lista vacía cuando nadie debe', async () => {
+    await sembrarVentaCliente('vx', 'cli-X', 100, '2026-06-01T10:00:00Z');
+    await registrarCobro({ ventaId: 'vx', monto: 100, forma_pago: 'efectivo' });
+
+    const pendientes = await clientesConSaldo([
+      { id: 'cli-X', nombre: 'Cliente X', tipo: 'menudeo' as const },
+    ]);
+    expect(pendientes).toEqual([]);
   });
 });

@@ -23,7 +23,7 @@ import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
-import type { Cobro, Venta } from '../db/schema';
+import type { Cliente, Cobro, Venta } from '../db/schema';
 
 export type FormaPago = 'efectivo' | 'transferencia';
 
@@ -126,6 +126,43 @@ export async function desgloseCliente(clienteId: string): Promise<DesgloseClient
     ventas: detalle,
     historial,
   };
+}
+
+/** Un cliente con saldo pendiente (vista para "Cobros pendientes", D-002). */
+export interface ClienteConSaldo {
+  clienteId: string;
+  nombre: string;
+  tipo: Cliente['tipo'];
+  /** Saldo total pendiente (Σ saldos de venta). Siempre > 0 en esta lista. */
+  saldoTotal: number;
+  /** Cuántas ventas del cliente quedan con saldo. */
+  ventasPendientes: number;
+}
+
+/**
+ * Filtra los clientes con saldo pendiente (> 0), ordenados de mayor a menor
+ * saldo. Permite cobrar a un cliente que tiene deuda aunque NO tenga visita
+ * agendada esta semana (D-002): los clientes llaman para pagar fuera de su
+ * ruta. El saldo se deriva (ventas − cobros), nunca se almacena.
+ */
+export async function clientesConSaldo(
+  clientes: Pick<Cliente, 'id' | 'nombre' | 'tipo'>[]
+): Promise<ClienteConSaldo[]> {
+  const conSaldo: ClienteConSaldo[] = [];
+  for (const c of clientes) {
+    const { saldoTotal, ventasConSaldo } = await desgloseCliente(c.id);
+    if (saldoTotal > 0) {
+      conSaldo.push({
+        clienteId: c.id,
+        nombre: c.nombre,
+        tipo: c.tipo,
+        saldoTotal,
+        ventasPendientes: ventasConSaldo.length,
+      });
+    }
+  }
+  conSaldo.sort((a, b) => b.saldoTotal - a.saldoTotal);
+  return conSaldo;
 }
 
 // ── Escritura ─────────────────────────────────────────────────

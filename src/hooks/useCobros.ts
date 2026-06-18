@@ -6,15 +6,18 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { db } from '../db/index';
 import {
   desgloseCliente as desgloseClienteLib,
   registrarCobro as registrarCobroLib,
   registrarCobroCliente as registrarCobroClienteLib,
+  clientesConSaldo as clientesConSaldoLib,
 } from '../lib/cobros';
 import type {
   DesgloseCliente,
   RegistrarCobroInput,
   RegistrarCobroClienteInput,
+  ClienteConSaldo,
 } from '../lib/cobros';
 import type { Cobro } from '../db/schema';
 
@@ -99,4 +102,44 @@ export function useSaldoCliente(clienteId: string | null): UseSaldoClienteReturn
   }, [load]);
 
   return { desglose, loading, error, refresh: load };
+}
+
+// ── Cobros pendientes (clientes con saldo) ────────────────────
+
+export interface UseCobrosPendientesReturn {
+  pendientes: ClienteConSaldo[];
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+}
+
+/**
+ * Lista los clientes con saldo > 0 (todos, tengan o no visita agendada), para
+ * que el vendedor pueda cobrar fuera de la ruta del día (D-002). El cálculo es
+ * local (Dexie); el saldo se deriva de ventas − cobros.
+ */
+export function useCobrosPendientes(): UseCobrosPendientesReturn {
+  const [pendientes, setPendientes] = useState<ClienteConSaldo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const clientes = await db.cliente.where('activo').equals(1).toArray();
+      setPendientes(await clientesConSaldoLib(clientes));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
+
+  return { pendientes, loading, error, refresh: load };
 }

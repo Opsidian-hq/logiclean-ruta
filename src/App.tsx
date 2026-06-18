@@ -34,6 +34,7 @@ import {
   homeOutline,
   receiptOutline,
   businessOutline,
+  cashOutline,
 } from 'ionicons/icons';
 
 /* Ionic Core CSS — DEBE importarse antes de cualquier componente Ionic */
@@ -64,6 +65,7 @@ const VisitasPage = lazyPage(() => import('./pages/visitas/VisitasPage'), 'Visit
 const InventarioPage = lazyPage(() => import('./pages/venta/InventarioPage'), 'InventarioPage');
 const VentaPage = lazyPage(() => import('./pages/venta/VentaPage'), 'VentaPage');
 const CobrarSaldoPage = lazyPage(() => import('./pages/cobranza/CobrarSaldoPage'), 'CobrarSaldoPage');
+const CobrosPendientesPage = lazyPage(() => import('./pages/cobranza/CobrosPendientesPage'), 'CobrosPendientesPage');
 const GastosPage = lazyPage(() => import('./pages/gastos/GastosPage'), 'GastosPage');
 const CatalogoPage = lazyPage(() => import('./pages/admin/CatalogoPage'), 'CatalogoPage');
 const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'ClientesPage');
@@ -92,7 +94,7 @@ function App() {
               <Route exact path="/login" component={LoginPage} />
 
               {/* Rutas vendedor: shell con tabs (visitas, venta, inventario, gastos, catálogo) */}
-              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza']}>
+              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobros']}>
                 <ProtectedRoute requiredRol="vendedor">
                   <VendedorTabs />
                 </ProtectedRoute>
@@ -132,6 +134,7 @@ function VendedorTabs() {
         <Route exact path="/catalogo" component={CatalogoOfflinePage} />
         <Route exact path="/inventario" component={InventarioPage} />
         <Route exact path="/venta" component={VentaPage} />
+        <Route exact path="/cobros" component={CobrosPendientesPage} />
         <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
         <Route exact path="/gastos" component={GastosPage} />
       </IonRouterOutlet>
@@ -144,6 +147,10 @@ function VendedorTabs() {
         <IonTabButton tab="venta" href="/venta">
           <IonIcon icon={cartOutline} style={{ color: 'var(--color-on-dark)' }} />
           <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Venta</span>
+        </IonTabButton>
+        <IonTabButton tab="cobros" href="/cobros">
+          <IonIcon icon={cashOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Cobros</span>
         </IonTabButton>
         <IonTabButton tab="inventario" href="/inventario">
           <IonIcon icon={cubeOutline} style={{ color: 'var(--color-on-dark)' }} />
