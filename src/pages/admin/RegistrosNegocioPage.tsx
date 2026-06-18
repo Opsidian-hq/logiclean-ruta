@@ -134,7 +134,8 @@ export function RegistrosNegocioPage() {
         </IonToolbar>
         <ConnectivityStrip />
         <IonToolbar>
-          <IonSegment value={seg} onIonChange={(e) => setSeg((e.detail.value as 'moderna' | 'backoffice') ?? 'moderna')}>
+          {/* Segmento sobre navy: mismo patrón de contraste que Visitas (D-007). */}
+          <IonSegment className="segment-on-navy" value={seg} onIonChange={(e) => setSeg((e.detail.value as 'moderna' | 'backoffice') ?? 'moderna')}>
             <IonSegmentButton value="moderna">
               <IonLabel>La Moderna</IonLabel>
             </IonSegmentButton>

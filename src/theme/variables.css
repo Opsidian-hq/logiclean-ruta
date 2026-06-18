@@ -157,3 +157,21 @@ body {
 .numeric {
   font-variant-numeric: var(--numeric);
 }
+
+/* ── Segmento (tabs) sobre fondo navy (D-007) ──────────────────
+   Legibilidad bajo luz solar directa: AMBOS tabs en blanco; el activo
+   se distingue por un subrayado de acento (cian), no por el color del
+   texto. El inactivo es blanco con opacidad reducida (visible pero
+   secundario). Contraste vs navy #001D51: activo (#FFF) ≈ 15:1 (AAA),
+   inactivo (blanco 55%) ≈ 5.7:1 (AA). Aplicar a TODO segmento sobre navy. */
+.segment-on-navy {
+  --background: rgba(255, 255, 255, 0.12);
+  --color: rgba(255, 255, 255, 0.55);          /* inactivo: blanco atenuado */
+  --color-checked: #FFFFFF;                    /* activo: blanco pleno */
+  --indicator-color: var(--color-cyan);        /* subrayado de acento */
+}
+/* Subrayado de acento de 3px en el tab activo (refuerza el indicador MD). */
+.segment-on-navy ion-segment-button::part(indicator-background) {
+  height: 3px;
+  background: var(--color-cyan);
+}
