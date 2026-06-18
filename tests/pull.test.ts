@@ -109,6 +109,15 @@ describe('pullTable', () => {
     h.store.errors.cliente = 'permission denied';
     await expect(pullTable('cliente')).rejects.toThrow(/permission denied/);
   });
+
+  it('PULL-007: hidrata ventas, líneas y cobros (D-004: dashboard/corte del gerente)', () => {
+    // Regresión D-004: el gerente agregaba $0 porque venta/linea_venta/cobro
+    // nunca se hidrataban a su BD local (sí el gasto). El consolidado del
+    // dashboard y el corte dependen de que estas tablas se traigan.
+    expect(PULL_TABLES).toContain('venta');
+    expect(PULL_TABLES).toContain('linea_venta');
+    expect(PULL_TABLES).toContain('cobro');
+  });
 });
 
 // ── PULL-004 / PULL-005 ───────────────────────────────────────
