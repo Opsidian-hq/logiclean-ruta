@@ -31,6 +31,11 @@ import type { EntityTable } from '../db/schema';
  * Tablas que se hidratan en Inc 0.
  * - vendedor / producto_base / presentacion: necesarias para el catálogo.
  * - cliente / inventario_vehiculo: cartera e inventario del vendedor (RLS).
+ * - venta / linea_venta / cobro: movimientos del periodo. Imprescindibles para
+ *   el dashboard y el corte del gerente: la RLS le da el consolidado de todos
+ *   los vendedores, pero sin hidratarlos su BD local arranca vacía y agregaría
+ *   $0 (D-004). Se traen juntos para que cada venta llegue con sus líneas y su
+ *   cobro, igual que el `gasto` ya se hidrataba.
  */
 export const PULL_TABLES: EntityTable[] = [
   'vendedor',
@@ -38,6 +43,9 @@ export const PULL_TABLES: EntityTable[] = [
   'presentacion',
   'cliente',
   'visita',
+  'venta',
+  'linea_venta',
+  'cobro',
   'inventario_vehiculo',
   'gasto',
   // Inc 3 — corte semanal y reconciliación con La Moderna.
