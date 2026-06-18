@@ -102,6 +102,16 @@ export function VisitasPage() {
             onIonChange={(e) =>
               setSegmento((e.detail.value as 'hoy' | 'semana') ?? 'hoy')
             }
+            // Contraste para luz solar (D-007): el tab inactivo se desvanecía
+            // contra el navy. Texto inactivo claro (≥ 4.5:1 vs navy), activo en
+            // blanco e indicador cian. Las custom properties se heredan a los
+            // segment-button (atraviesan el shadow DOM).
+            style={{
+              '--background': 'rgba(255, 255, 255, 0.12)',
+              '--color': '#C7D0E0',
+              '--color-checked': '#FFFFFF',
+              '--indicator-color': 'var(--color-cyan)',
+            }}
           >
             <IonSegmentButton value="hoy">
               <IonLabel>Hoy</IonLabel>

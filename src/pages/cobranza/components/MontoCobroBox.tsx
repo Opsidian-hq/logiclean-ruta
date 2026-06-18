@@ -8,7 +8,7 @@
  * En modo editable resalta con borde azul. Blanco de toque ≥ 48 px.
  */
 
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { money } from '../../../lib/money';
 
 interface MontoCobroBoxProps {
@@ -25,6 +25,13 @@ interface MontoCobroBoxProps {
 
 export function MontoCobroBox({ label, hint, monto, onChange, montoSize = 26 }: MontoCobroBoxProps) {
   const editable = !!onChange;
+
+  // Mientras se edita se respeta el texto crudo del usuario; al perder el foco
+  // (o como valor precargado) el monto se muestra con 2 decimales exactos —
+  // p. ej. 362.5 → "362.50" (D-001), nunca con decimales incompletos.
+  const [buffer, setBuffer] = useState<string | null>(null);
+  const valorInput =
+    buffer !== null ? buffer : Number.isFinite(monto) ? monto.toFixed(2) : '';
 
   return (
     <div style={boxStyle(editable)}>
@@ -44,8 +51,13 @@ export function MontoCobroBox({ label, hint, monto, onChange, montoSize = 26 }: 
             min={0}
             step="0.01"
             aria-label={label}
-            value={Number.isFinite(monto) ? String(monto) : ''}
-            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+            value={valorInput}
+            onFocus={() => setBuffer(Number.isFinite(monto) ? String(monto) : '')}
+            onChange={(e) => {
+              setBuffer(e.target.value);
+              onChange(parseFloat(e.target.value) || 0);
+            }}
+            onBlur={() => setBuffer(null)}
             style={{
               width: '120px',
               border: 'none',

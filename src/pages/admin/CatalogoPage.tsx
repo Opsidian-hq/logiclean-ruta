@@ -35,7 +35,7 @@ import {
   IonFabButton,
   IonToast,
 } from '@ionic/react';
-import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
+import { addOutline, pencilOutline, archiveOutline, swapHorizontalOutline } from 'ionicons/icons';
 import { useCatalog } from '../../hooks/useCatalog';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -158,6 +158,24 @@ export function CatalogoPage() {
                   : 'No hay productos. Crea el primero.'}
               </p>
             </IonText>
+          </div>
+        )}
+
+        {/* Pista de swipe: el patrón de deslizar no es descubrible por sí solo (D-006). */}
+        {!loading && !error && filtrados.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px var(--space-md) 8px',
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 600,
+            }}
+          >
+            <IonIcon icon={swapHorizontalOutline} aria-hidden="true" />
+            <span>Desliza un producto a la izquierda para editar o dar de baja.</span>
           </div>
         )}
 

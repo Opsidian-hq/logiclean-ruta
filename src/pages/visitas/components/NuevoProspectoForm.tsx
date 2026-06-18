@@ -39,10 +39,13 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
   const [saving, setSaving] = useState(false);
 
   const nombreInvalido = touched && !nombre.trim();
+  // Sin día de ruta el prospecto no entra en la ruta recurrente (HOY/SEMANA),
+  // así que se exige al darlo de alta (D-003).
+  const diaRutaInvalido = touched && !diaRuta.trim();
 
   const handleCrear = async () => {
     setTouched(true);
-    if (!nombre.trim()) return;
+    if (!nombre.trim() || !diaRuta.trim()) return;
     setSaving(true);
     try {
       await onCrear({
@@ -107,13 +110,26 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
           </IonItem>
 
           <IonItem>
-            <IonLabel position="stacked">Día de ruta (opcional)</IonLabel>
+            <IonLabel position="stacked">Día de ruta *</IonLabel>
             <IonInput
               value={diaRuta}
               onIonInput={(e) => setDiaRuta(e.detail.value ?? '')}
               placeholder="Ej. Lunes"
             />
           </IonItem>
+          {diaRutaInvalido ? (
+            <IonText color="danger">
+              <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>
+                El día de ruta es obligatorio
+              </p>
+            </IonText>
+          ) : (
+            <IonText color="medium">
+              <p style={{ marginLeft: 'var(--space-md)', marginRight: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>
+                Sin día de ruta el prospecto no aparecerá en tu lista de visitas.
+              </p>
+            </IonText>
+          )}
 
           <IonItem>
             <IonLabel position="stacked">Primera visita</IonLabel>
