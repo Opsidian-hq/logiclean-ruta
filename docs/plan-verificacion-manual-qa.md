@@ -3,7 +3,7 @@
 
 > **Propósito:** confirmar que el producto construido es el producto correcto y que
 > funciona en las manos de los usuarios reales, en condiciones reales. La cobertura
-> automatizada (146 tests, `docs/trazabilidad-qa-fase5.md`) ya verifica la lógica;
+> automatizada (156 tests, `docs/trazabilidad-qa-fase5.md`) ya verifica la lógica;
 > esta sesión verifica la experiencia y los casos que ningún test automatizado puede
 > cubrir.
 
@@ -34,17 +34,20 @@ estos fue construido; no se verifican.
 
 ## Criterios de entrada
 
-- [ ] Build desplegado y accesible desde el dispositivo de prueba.
-- [ ] Credenciales rotadas (✓ hecho).
-- [ ] `docs/trazabilidad-qa-fase5.md` disponible en el repo como referencia de
+- [x] Build desplegado y accesible desde el dispositivo de prueba.
+- [x] Credenciales rotadas (✓ hecho).
+- [x] `docs/trazabilidad-qa-fase5.md` disponible en el repo como referencia de
       trazabilidad.
 
 ## Criterios de salida (gate de Fase 5)
 
 - [ ] 100% de los criterios de aceptación del PRD v1.2 verificados manualmente.
-- [ ] 0 defectos críticos abiertos.
-- [ ] Pruebas de accesibilidad básica ejecutadas.
+      *(1.ª pasada ejecutada: D-001…D-007 detectados y corregidos. Pendiente:
+      re-verificar en dispositivo los fixes reabiertos D-005 y D-007.)*
+- [x] 0 defectos críticos abiertos. *(D-004 cerrado en PR #16.)*
+- [ ] Pruebas de accesibilidad básica ejecutadas. *(CP-028/CP-029 pendientes.)*
 - [ ] iOS offline verificado (T2) o riesgo declarado explícitamente.
+      *(CP-027 pendiente: requiere iPhone físico.)*
 
 ---
 
@@ -270,24 +273,47 @@ estos fue construido; no se verifican.
 
 ## Registro de defectos
 
-| ID | CP | Descripción | Severidad | Estado |
-|---|---|---|---|---|
-| D-001 | | | crítico / mayor / menor | abierto / cerrado |
+> **Bitácora 1.ª pasada (2026-06-18).** Siete defectos detectados y corregidos.
+> Todos cerrados y mergeados a `main`; build limpio (`tsc`/`vite`/`eslint`) y 156
+> tests en verde tras la última corrección. Sin defectos abiertos en código.
+
+| ID | CP | Descripción | Severidad | Corregido en | Estado |
+|---|---|---|---|---|---|
+| D-004 | CP-015/018 | Ventas no se reflejaban en dashboard ni corte: faltaban `venta`/`linea_venta`/`cobro` en `PULL_TABLES` (la BD local del gerente no se hidrataba) | Crítico | PR #16 | cerrado |
+| D-002 | CP-006 | Sin acceso a cobrar el saldo de un cliente fuera de la visita agendada → nueva sección "Cobros pendientes" en la barra del vendedor | Mayor | PR #17 | cerrado |
+| D-005 | CP-020 | Alta de producto no persistía y no daba feedback. 1.º: faltaba toast éxito/error (PR #17). Reabierto: causa raíz era un `<form>` anidado que disparaba un submit prematuro (PR #19) | Mayor | PR #17 → #19 | cerrado |
+| D-001 | CP-004 | Monto a cobrar mostraba `362.5` en vez de `362.50` (`toFixed(2)` + invariante `money()`) | Menor | PR #18 | cerrado |
+| D-003 | CP-010 | Campo "Día de ruta" no marcado como obligatorio (sin él, el prospecto no entra en la ruta recurrente) | Menor | PR #18 | cerrado |
+| D-006 | CP-022 | Swipe en catálogo (editar/dar de baja) sin pista visual descubrible | Menor | PR #18 | cerrado |
+| D-007 | CP-012 | Contraste bajo en tabs HOY/ESTA SEMANA sobre navy bajo luz solar. Reabierto 2×: la herencia de `--color` no aplicaba al `ion-segment-button` (PR #20 → #21) | Menor | PR #18 → #20 → #21 | cerrado |
 
 **Severidades:**
 - **Crítico:** bloquea el uso o corrompe datos. El gate exige 0 críticos abiertos.
 - **Mayor:** funcionalidad incompleta o incorrecta, pero con workaround.
 - **Menor:** visual, texto, comportamiento no esperado sin impacto operativo.
 
+### Pendiente de re-verificación en dispositivo
+
+Estos fixes se reabrieron porque la 1.ª corrección no resistió la prueba en campo;
+sus correcciones definitivas se validaron con tests/build, **no en dispositivo real**.
+Re-confirmar antes de cerrar el gate:
+
+- **D-005** (CP-020) — alta de producto end-to-end como gerente: toast visible + el
+  producto aparece en el catálogo sin navegación manual.
+- **D-007** (CP-012) — tabs HOY/ESTA SEMANA legibles **bajo luz solar directa** (la
+  condición exacta que reabrió el defecto), activo distinguible por el subrayado cian.
+
 ---
 
 ## Gate de cierre de Fase 5
 
 - [ ] CP-001 a CP-031 ejecutados (o CP-027 con riesgo declarado si no hay iPhone).
-- [ ] 0 defectos críticos abiertos.
+      *(1.ª pasada hecha; falta firmar la 2.ª sobre los fixes reabiertos D-005/D-007.)*
+- [x] 0 defectos críticos abiertos. *(D-004 cerrado.)*
 - [ ] Accesibilidad básica verificada (CP-028, CP-029).
 - [ ] Resultado de iOS offline documentado en CP-027.
-- [ ] Resultados trazados a `docs/trazabilidad-qa-fase5.md`.
+- [x] Resultados trazados a `docs/trazabilidad-qa-fase5.md`. *(Cobertura automatizada:
+      156 tests, 0 huecos abiertos.)*
 
 Con el gate cerrado, el producto avanza a **Fase 6 (Despliegue y entrega)**.
 
