@@ -52,7 +52,14 @@ export function ProtectedRoute({ children, requiredRol }: ProtectedRouteProps) {
     return <Redirect to="/login" />;
   }
 
-  // Rol incorrecto → redirigir según rol actual
+  // Autenticado pero SIN rol válido → no es un usuario habilitado de la app.
+  // Se rechaza enviándolo a /login (donde se cierra la sesión); nunca debe caer
+  // al shell de vendedor por defecto.
+  if (!rol) {
+    return <Redirect to="/login" />;
+  }
+
+  // Rol válido pero no el requerido → redirigir a SU área (no al fallback genérico).
   if (requiredRol && rol !== requiredRol) {
     if (rol === 'gerente') {
       return <Redirect to="/admin" />;

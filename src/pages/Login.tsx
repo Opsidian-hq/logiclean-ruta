@@ -77,25 +77,36 @@ const styles = {
 // ── Componente ────────────────────────────────────────────────
 
 export function LoginPage() {
-  const { signIn, loading, error, user, rol } = useAuthContext();
+  const { signIn, signOut, loading, error, user, rol } = useAuthContext();
   const history = useHistory();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [accessError, setAccessError] = useState<string | null>(null);
 
-  // Redirigir si ya está autenticado
+  // Redirigir según rol; si la sesión está autenticada pero SIN rol asignado,
+  // se rechaza el acceso y se cierra la sesión (no es un usuario de la app).
   useEffect(() => {
-    if (user && rol) {
-      if (rol === 'gerente') {
-        history.replace('/admin');
-      } else {
-        history.replace('/visitas');
-      }
+    if (!user) return;
+    if (rol === 'gerente') {
+      history.replace('/admin');
+    } else if (rol === 'vendedor') {
+      history.replace('/visitas');
+    } else {
+      // Sesión válida pero sin rol de app: se persiste el aviso (sobrevive al
+      // signOut, que vuelve user=null) y se cierra la sesión. El setState aquí
+      // es intencional: reacciona a la carga asíncrona de la sesión.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAccessError(
+        'Tu cuenta no tiene un rol asignado. Contacta al administrador.'
+      );
+      signOut();
     }
-  }, [user, rol, history]);
+  }, [user, rol, history, signOut]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
+    setAccessError(null);
     await signIn(email.trim(), password);
   };
 
@@ -109,11 +120,13 @@ export function LoginPage() {
             <div style={styles.subtitle}>Inicia sesión para continuar</div>
 
             {/* Error */}
-            {error && (
+            {(accessError || error) && (
               <div style={styles.errorBox} role="alert">
-                {error === 'Invalid login credentials'
-                  ? 'Correo o contraseña incorrectos.'
-                  : error}
+                {accessError
+                  ? accessError
+                  : error === 'Invalid login credentials'
+                    ? 'Correo o contraseña incorrectos.'
+                    : error}
               </div>
             )}
 
