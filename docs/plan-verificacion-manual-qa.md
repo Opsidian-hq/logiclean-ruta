@@ -250,6 +250,7 @@ estos fue construido; no se verifican.
 - Traza: NFR accesibilidad (PRD §6)
 - Pasos: completar un flujo completo de venta + cobro usando solo el pulgar de la mano dominante.
 - Esperado: todos los elementos interactivos son alcanzables sin reposicionar el teléfono; blancos de toque ≥ 44 px.
+- Nota: el token `--touch-min` (≥ 44 px, hoy 48 px) está fijado por `UIFIT-006`; la parte automatizable queda cubierta. Falta solo la confirmación de alcance a una mano en dispositivo.
 - Resultado: ☐ pasa ☐ falla · Notas: ___
 
 **CP-029 · Legibilidad bajo el sol**
@@ -296,7 +297,17 @@ estos fue construido; no se verifican.
 
 Estos fixes se reabrieron porque la 1.ª corrección no resistió la prueba en campo;
 sus correcciones definitivas se validaron con tests/build, **no en dispositivo real**.
-Re-confirmar antes de cerrar el gate:
+
+> **Blindaje automatizado (2026-06-20).** Como ambos defectos reincidieron por causa
+> *estructural* (no de lógica), se añadieron *fitness functions* que fijan el invariante
+> exacto de cada reapertura en `tests/ui-fitness.test.ts` — una regresión rompe la suite:
+> - **D-005** → `UIFIT-001/002/003`: `PresentacionForm` no renderiza `<form>` ni botón
+>   `submit`; `ProductoForm` tiene un único `<form>`.
+> - **D-007** → `UIFIT-004/005`: `--color-checked` cuelga de `.segment-on-navy
+>   ion-segment-button` (no del padre) y ambos segmentos sobre navy usan la clase.
+>
+> Con esto, la re-verificación manual queda reducida a **confirmación visual** (ya no es
+> una cacería de regresión):
 
 - **D-005** (CP-020) — alta de producto end-to-end como gerente: toast visible + el
   producto aparece en el catálogo sin navegación manual.
