@@ -32,6 +32,14 @@ export class ChunkErrorBoundary extends Component<Props, State> {
   }
 
   private retry = () => {
+    // Recarga completa de la página: es lo único que recupera de forma fiable un
+    // fallo de chunk por deploy obsoleto (los hashes cambiaron y el chunk viejo
+    // da 404). Trae el index.html nuevo y, con el service worker (autoUpdate),
+    // los chunks vigentes. Un simple re-render reusa el import fallido y no sirve.
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+      return;
+    }
     this.setState({ failed: false });
   };
 
