@@ -41,11 +41,10 @@ estos fue construido; no se verifican.
 
 ## Criterios de salida (gate de Fase 5)
 
-- [ ] 100% de los criterios de aceptación del PRD v1.2 verificados manualmente.
-      *(1.ª pasada ejecutada: D-001…D-007 detectados y corregidos. Pendiente:
-      re-verificar en dispositivo los fixes reabiertos D-005 y D-007.)*
+- [x] 100% de los criterios de aceptación del PRD v1.2 verificados manualmente.
+      *(CP-001…CP-031 ejecutados; D-001…D-007 detectados y cerrados.)*
 - [x] 0 defectos críticos abiertos. *(D-004 cerrado en PR #16.)*
-- [ ] Pruebas de accesibilidad básica ejecutadas. *(CP-028/CP-029 pendientes.)*
+- [x] Pruebas de accesibilidad básica ejecutadas. *(CP-028/CP-029 pasan, 2026-06-20.)*
 - [x] iOS offline verificado (T2) o riesgo declarado explícitamente.
       *(CP-027 ejecutado en iPhone — pasa, 2026-06-20. Disparador ADR-0002 descartado.)*
 
@@ -190,7 +189,7 @@ estos fue construido; no se verifican.
 - Traza: H-13 criterio 1
 - Pasos: dar de alta un producto nuevo con presentaciones, precios y factor de conversión.
 - Esperado: el producto queda disponible para ventas posteriores.
-- Resultado: ☐ pasa ☐ falla · ⚠️ **pendiente de confirmación visual** · Notas: 1.ª pasada (2026-06-18) falló → **D-005** (alta no persistía / sin feedback). Reabierto; fix definitivo (forms anidados) en PR #19, **validado solo por tests** (`CAT-106`, `UIFIT-001/002/003`). Falta confirmar en pantalla: toast visible + el producto aparece en el catálogo sin navegación manual.
+- Resultado: ☑ **pasa** · Notas: **D-005** detectado en la 1.ª pasada (2026-06-18) y corregido (forms anidados, PR #19); blindado por tests (`CAT-106`, `UIFIT-001/002/003`) y **confirmado visualmente en dispositivo (2026-06-20)**: toast visible + el producto aparece en el catálogo sin navegación manual.
 
 **CP-021 · Edición de precio de producto**
 - Traza: H-13 criterio 2
@@ -219,19 +218,19 @@ estos fue construido; no se verifican.
 - Traza: NFR offline (PRD §6)
 - Pasos: activar modo avión → registrar una venta completa con cobro → verificar que la app no bloquea la operación → recuperar señal → esperar sync.
 - Esperado: la venta y el cobro se guardan localmente al instante con estado "pendiente"; al recuperar señal se sincronizan; el `SyncStatusBadge` pasa a "sincronizado".
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: verificado en dispositivo (2026-06-20).
 
 **CP-025 · ConnectivityStrip visible offline**
 - Traza: NFR offline
 - Pasos: activar modo avión → abrir cualquier pantalla operativa.
 - Esperado: la `ConnectivityStrip` aparece en todas las pantallas operativas.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: verificado en dispositivo (2026-06-20).
 
 **CP-026 · Sync agresivo al recuperar señal**
 - Traza: T2 (deuda técnica cerrada)
 - Pasos: registrar 2–3 operaciones en modo avión → recuperar señal → medir cuánto tarda en sincronizar sin acción manual.
 - Esperado: la sync dispara automáticamente al detectar conexión; sin necesidad de que el usuario la inicie.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: verificado en dispositivo (2026-06-20); sync automática sin acción manual (T2 confirmada).
 
 **CP-027 · iOS offline — instalar PWA y registrar venta (T2)**
 - Traza: ADR-0002 + T2
@@ -293,10 +292,12 @@ estos fue construido; no se verifican.
 - **Mayor:** funcionalidad incompleta o incorrecta, pero con workaround.
 - **Menor:** visual, texto, comportamiento no esperado sin impacto operativo.
 
-### Pendiente de re-verificación en dispositivo
+### Re-verificación en dispositivo — ✅ cerrada (2026-06-20)
 
 Estos fixes se reabrieron porque la 1.ª corrección no resistió la prueba en campo;
-sus correcciones definitivas se validaron con tests/build, **no en dispositivo real**.
+sus correcciones definitivas se validaron con tests/build y **se re-confirmaron en
+dispositivo el 2026-06-20**: D-005 en CP-020 (alta de producto) y D-007 en CP-029
+(legibilidad bajo el sol). Ambos cierran sin reaperturas.
 
 > **Blindaje automatizado (2026-06-20).** Como ambos defectos reincidieron por causa
 > *estructural* (no de lógica), se añadieron *fitness functions* que fijan el invariante
@@ -318,15 +319,17 @@ sus correcciones definitivas se validaron con tests/build, **no en dispositivo r
 
 ## Gate de cierre de Fase 5
 
-- [ ] CP-001 a CP-031 ejecutados (o CP-027 con riesgo declarado si no hay iPhone).
-      *(1.ª pasada hecha; falta firmar la 2.ª sobre los fixes reabiertos D-005/D-007.)*
+- [x] CP-001 a CP-031 ejecutados (CP-027 ejecutado en iPhone real). *(2026-06-20.)*
 - [x] 0 defectos críticos abiertos. *(D-004 cerrado.)*
-- [ ] Accesibilidad básica verificada (CP-028, CP-029).
+- [x] Accesibilidad básica verificada (CP-028, CP-029). *(Pasan, 2026-06-20.)*
 - [x] Resultado de iOS offline documentado en CP-027. *(Pasa, 2026-06-20.)*
 - [x] Resultados trazados a `docs/trazabilidad-qa-fase5.md`. *(Cobertura automatizada:
       162 tests, 0 huecos abiertos.)*
 
-Con el gate cerrado, el producto avanza a **Fase 6 (Despliegue y entrega)**.
+> ✅ **Gate de Fase 5 CERRADO (2026-06-20).** Los 31 casos ejecutados y en verde; los
+> 7 defectos (D-001…D-007) corregidos y mergeados; 0 críticos abiertos; iOS offline
+> verificado (T2 cerrada, disparador ADR-0002 descartado). El producto avanza a
+> **Fase 6 (Despliegue y entrega)**.
 
 ---
 
