@@ -3,7 +3,7 @@
 
 > **Propósito:** confirmar que el producto construido es el producto correcto y que
 > funciona en las manos de los usuarios reales, en condiciones reales. La cobertura
-> automatizada (156 tests, `docs/trazabilidad-qa-fase5.md`) ya verifica la lógica;
+> automatizada (162 tests, `docs/trazabilidad-qa-fase5.md`) ya verifica la lógica;
 > esta sesión verifica la experiencia y los casos que ningún test automatizado puede
 > cubrir.
 
@@ -274,8 +274,9 @@ estos fue construido; no se verifican.
 ## Registro de defectos
 
 > **Bitácora 1.ª pasada (2026-06-18).** Siete defectos detectados y corregidos.
-> Todos cerrados y mergeados a `main`; build limpio (`tsc`/`vite`/`eslint`) y 156
-> tests en verde tras la última corrección. Sin defectos abiertos en código.
+> Todos cerrados y mergeados a `main`; build limpio (`tsc`/`vite`/`eslint`) y 162
+> tests en verde (incluidas las fitness functions de regresión `UIFIT-*`). Sin
+> defectos abiertos en código.
 
 | ID | CP | Descripción | Severidad | Corregido en | Estado |
 |---|---|---|---|---|---|

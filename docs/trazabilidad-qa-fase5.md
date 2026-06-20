@@ -1,14 +1,16 @@
 # Matriz de trazabilidad QA — Fase 5
 
-> Estado: **actualizado 2026-06-17** · Cruza los criterios de aceptación del **PRD v1.2 §5–§6** contra los casos de prueba en `tests/`.
+> Estado: **actualizado 2026-06-20** · Cruza los criterios de aceptación del **PRD v1.2 §5–§6** contra los casos de prueba en `tests/`.
 > Leyenda: ✓ cubierto · ◐ parcial · ✗ hueco · **(F)** hueco de funcionalidad (falta la lógica, no solo el test) · **(T)** hueco solo de prueba (la lógica existe).
 > **Cambio (2026-06-17):** cerrados H-05·2 (lógica + UI de entrega en la ficha), H-13, H-14, H-15·2/3, **H-06·1** (IVA recalculado) y **H-09·1** (inserción ad-hoc). **Todos los criterios del PRD v1.2 quedan cubiertos.**
+> **Cierre Fase 5 (2026-06-20):** verificación manual completa — los **31 casos CP-001…CP-031** ejecutados y en verde (`docs/plan-verificacion-manual-qa.md`); los **7 defectos D-001…D-007** corregidos y mergeados (PRs #16–#21); **0 críticos abiertos**; **iOS offline (T2)** verificado en dispositivo → disparador ADR-0002 descartado. Se añaden fitness functions `UIFIT-001…006` (`tests/ui-fitness.test.ts`) que blindan los defectos estructurales reincidentes D-005 (forms anidados) y D-007 (contraste de tabs). **Total: 162 tests automatizados en verde. Gate de Fase 5 CERRADO.**
 
 ## Resumen
 
 - **Criterios Must con cobertura completa:** H-01, H-02, H-03, H-04, **H-05**, H-07, H-08, H-10, H-11, H-12, **H-13**, **H-14**, H-15.
 - **Should cubiertos:** **H-06** (IVA), **H-09** (reprogramar + inserción ad-hoc).
-- **Riesgos técnicos de máximo cuidado — ya blindados:** **T1** (sync idempotente) `T1-001…004` ✓ · **T4** (RLS por tabla) `T4-*` ✓.
+- **Riesgos técnicos de máximo cuidado — ya blindados:** **T1** (sync idempotente) `T1-001…004` ✓ · **T4** (RLS por tabla) `T4-*` ✓ · **T2** (offline iOS) verificado en dispositivo en `CP-027` ✓ (disparador ADR-0002 descartado).
+- **Regresión de UI (defectos estructurales reincidentes):** `UIFIT-001…006` ✓ — D-005 (forms anidados) y D-007 (contraste de tabs sobre navy).
 - **Huecos abiertos:** ninguno. ✅
 
 ## Matriz por historia
