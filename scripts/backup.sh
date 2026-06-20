@@ -20,6 +20,11 @@ if [ -z "${SUPABASE_DB_URL:-}" ]; then
   exit 1
 fi
 
+# Defensa: quita saltos de línea / retornos de carro y espacios al inicio/fin.
+# Un secreto pegado en GitHub Actions puede arrastrar un '\n' final, lo que hace
+# que pg_dump lea el nombre de la base como "postgres\n" → FATAL: ... does not exist.
+SUPABASE_DB_URL="$(printf '%s' "$SUPABASE_DB_URL" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="backup_logiclean_${TIMESTAMP}.sql"
 
