@@ -109,6 +109,11 @@ todos los chunks (`globPatterns` en `vite.config.ts`), así que la app opera off
 tras la primera carga con señal. Cada deploy nuevo se actualiza automáticamente al
 recargar (con limpieza de caches obsoletas, `cleanupOutdatedCaches: true`).
 
+**Nota de bundle:** los vendors estables (React, Ionic, Supabase, Dexie) se separan en
+chunks propios (`build.rollupOptions.output.advancedChunks` en `vite.config.ts`). El
+código de la app (`index`, ~7 KB gzip) queda aparte, de modo que un deploy de la app
+no invalida el precache de los vendores en el service worker.
+
 ---
 
 ## 6. Operación continua (GitHub Actions)
