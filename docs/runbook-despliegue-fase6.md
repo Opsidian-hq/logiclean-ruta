@@ -37,6 +37,7 @@ ruta. No se despliegan porque no se construyeron.
 | Backend | Proyecto Supabase Cloud dedicado de **producción** |
 | Offline | Service worker (Workbox) precachea shell + chunks de ruta |
 | Operación | GitHub Actions (backup + keepalive) |
+| Integración | GitHub Actions `ci.yml` (lint + test + build) — gate de merge |
 
 ---
 
@@ -45,6 +46,7 @@ ruta. No se despliegan porque no se construyeron.
 - [x] Gate de Fase 5 CERRADO (`docs/plan-verificacion-manual-qa.md`): 31/31 CPs en verde, 0 críticos.
 - [x] 162 tests automatizados en verde (`docs/trazabilidad-qa-fase5.md`).
 - [x] `npm run build` limpio y service worker PWA generado.
+- [x] Gate de CI (`.github/workflows/ci.yml`) en verde — lint + test + build en cada PR/push a `main`.
 - [ ] Proyecto Supabase de **producción** creado (separado del de QA/dev).
 - [ ] Cuenta de hosting (Vercel) con acceso al repo.
 
@@ -112,6 +114,7 @@ recargar (con limpieza de caches obsoletas, `cleanupOutdatedCaches: true`).
 ## 6. Operación continua (GitHub Actions)
 
 Cargar los secretos del paso 3 en GitHub y verificar:
+- [ ] `ci.yml` — gate de integración (lint + test + build) en verde en el PR antes de fusionar a `main`. *(No requiere secretos; se recomienda marcarlo como check requerido en la protección de rama de `main`.)*
 - [ ] `backup.yml` — pg_dump semanal (lun 3am UTC), artifact 30 días. Lanzar `workflow_dispatch` una vez para validar.
 - [ ] `keepalive.yml` — ping cada 12 h (evita que Supabase free pause el proyecto tras 7 días). Lanzar manual una vez.
 - [ ] Descargar y revisar el primer backup (que el `.sql` no esté vacío).
