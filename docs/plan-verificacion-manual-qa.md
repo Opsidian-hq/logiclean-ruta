@@ -61,55 +61,55 @@ estos fue construido; no se verifican.
 - Precondición: sesión activa como vendedor; hay clientes de mayoreo en la ruta.
 - Pasos: entrar a la ruta del día → seleccionar un cliente mayoreo → registrar una venta con 2–3 productos → confirmar.
 - Esperado: los precios aplican la lista de mayoreo; el inventario del vehículo se reduce; se genera la nota de venta.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-002 · Venta de autoventa a cliente menudeo**
 - Traza: H-04 criterio 1
 - Pasos: mismo flujo con un cliente menudeo.
 - Esperado: los precios aplican la lista de menudeo.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-003 · Cobro total en efectivo al cerrar venta**
 - Traza: H-07 criterio 1
 - Pasos: tras confirmar productos de una venta → en el paso de cobro elegir "Cobro total" → forma de pago "Efectivo" → guardar.
 - Esperado: la venta queda guardada con su cobro; no hay saldo pendiente para ese cliente.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-004 · Cobro parcial con transferencia**
 - Traza: H-07 criterios 1 y 2
 - Pasos: registrar venta → cobro parcial → "Transferencia" → monto menor al total → guardar.
 - Esperado: saldo pendiente visible en ámbar; forma de pago correcta en el resumen; número de cuenta mostrado durante la captura.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-001** (monto `362.5` en vez de `362.50`) — corregido en PR #18.
 
 **CP-005 · Venta a crédito (sin cobro)**
 - Traza: H-07 criterio 2
 - Pasos: registrar venta → elegir "A crédito" → confirmar.
 - Esperado: la venta se guarda sin cobro; el saldo del cliente refleja el total como pendiente.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-006 · Cobros múltiples sobre una venta**
 - Traza: H-07 criterio 3
 - Pasos: desde la ficha del cliente con saldo pendiente → registrar un cobro parcial en efectivo → registrar otro cobro parcial en transferencia.
 - Esperado: cada cobro conserva su propia forma de pago; el saldo se reduce correctamente con cada cobro.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-002** (sin acceso a cobrar saldo fuera de visita) — corregido con la sección "Cobros pendientes" en PR #17.
 
 **CP-007 · Pedido pendiente**
 - Traza: H-05 criterios 1 y 2
 - Pasos: en una venta, registrar un pedido de un producto no disponible → en otra sesión, marcar el pedido como entregado.
 - Esperado: el pedido queda registrado; al entregarlo se convierte en venta y se cierra el pendiente.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-008 · Marcar venta como "requiere factura"**
 - Traza: H-06
 - Pasos: registrar venta → activar "requiere factura".
 - Esperado: el monto se calcula a precio de lista + IVA; la venta queda etiquetada.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-009 · Gasto de ruta en efectivo**
 - Traza: H-12 criterios 1 y 2
 - Pasos: registrar un gasto de tipo ruta con forma de pago efectivo.
 - Esperado: queda registrado con tipo, categoría, monto, fecha y forma de pago.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -120,31 +120,31 @@ estos fue construido; no se verifican.
 - Traza: H-01 criterio 1
 - Pasos: agregar un prospecto nuevo desde la app.
 - Esperado: queda con "visita 1 de 4" y la fecha de hoy.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-003** ("Día de ruta" no obligatorio) — corregido en PR #18.
 
 **CP-011 · Avance de ciclo en visita a prospecto**
 - Traza: H-01 criterio 2
 - Pasos: registrar una visita a un prospecto existente con nota, siguiente paso y fecha de próxima visita.
 - Esperado: el contador de ciclo avanza; nota y fecha quedan guardados.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-012 · Motor de vencimientos al iniciar jornada**
 - Traza: H-02 criterios 1 y 2
 - Pasos: abrir la app con al menos un prospecto con visita vencida y uno próximo a vencer.
 - Esperado: el vencido aparece con alerta de color; el próximo aparece en la lista ordenado por urgencia.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-007** (contraste de tabs HOY/ESTA SEMANA sobre navy) — corregido en PR #18→#20→#21 y **confirmado bajo sol directo en CP-029**.
 
 **CP-013 · Ruta del día**
 - Traza: H-08
 - Pasos: abrir la ruta del día.
 - Esperado: lista de clientes y prospectos a visitar hoy, en el orden conocido.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-014 · Insertar visita ad-hoc**
 - Traza: H-09 criterio 1
 - Pasos: agregar una visita fuera de la ruta planeada para atenderla hoy.
 - Esperado: aparece en la ruta del día actual.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -156,31 +156,31 @@ estos fue construido; no se verifican.
 - Precondición: hay ventas, cobros y gastos registrados en el periodo.
 - Pasos: generar el corte semanal.
 - Esperado: muestra ventas, cobranza desglosada por forma de pago (efectivo/transferencia), gastos de ruta descontados de la bolsa correspondiente, gastos de backoffice como salidas de caja, inventario vendido vs. devuelto.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-004** (crítico: ventas no aparecían en el corte) — corregido en PR #16.
 
 **CP-016 · Reconciliación bidones en el corte**
 - Traza: H-10 criterio 4 + H-11
 - Pasos: en el corte, verificar que el inventario en presentaciones se convierte a bidones usando el factor definido.
 - Esperado: el total de unidades vendidas aparece en bidones para la reconciliación con La Moderna.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-017 · Reinicio de indicadores de flujo al generar corte**
 - Traza: H-15 criterio 2
 - Pasos: revisar el dashboard antes y después de generar el corte.
 - Esperado: ventas, caja y gastos del periodo se reinician; el embudo y la adherencia NO se reinician.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-018 · Dashboard consolidado del gerente**
 - Traza: H-15 criterio 1
 - Pasos: abrir el dashboard.
 - Esperado: ventas del periodo, posición de caja por vendedor y bolsa (neta de gastos), alertas de prospectos vencidos o descuadres.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Cubierto por la corrección de **D-004** (PR #16): las ventas ya se reflejan en el dashboard.
 
 **CP-019 · Embudo de prospectos en el panel del gerente**
 - Traza: H-03 criterios 1 y 2
 - Pasos: con prospectos en distintas etapas del ciclo, abrir el panel del gerente.
 - Esperado: prospectos por etapa (1.ª–4.ª visita); porcentaje de adherencia visible.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -190,25 +190,25 @@ estos fue construido; no se verifican.
 - Traza: H-13 criterio 1
 - Pasos: dar de alta un producto nuevo con presentaciones, precios y factor de conversión.
 - Esperado: el producto queda disponible para ventas posteriores.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☐ pasa ☐ falla · ⚠️ **pendiente de confirmación visual** · Notas: 1.ª pasada (2026-06-18) falló → **D-005** (alta no persistía / sin feedback). Reabierto; fix definitivo (forms anidados) en PR #19, **validado solo por tests** (`CAT-106`, `UIFIT-001/002/003`). Falta confirmar en pantalla: toast visible + el producto aparece en el catálogo sin navegación manual.
 
 **CP-021 · Edición de precio de producto**
 - Traza: H-13 criterio 2
 - Pasos: editar el precio de un producto existente.
 - Esperado: las ventas registradas después del cambio usan el nuevo precio.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-022 · Baja de producto (desactivación)**
 - Traza: H-13 criterio 3
 - Pasos: dar de baja un producto con historial de ventas.
 - Esperado: el producto se desactiva (no se borra); el historial previo permanece intacto.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-006** (swipe sin pista visual) — corregido en PR #18.
 
 **CP-023 · Reasignación de cliente entre vendedores**
 - Traza: H-14 criterio 2
 - Pasos: reasignar un cliente de un vendedor al otro.
 - Esperado: el cliente aparece en la cartera del nuevo vendedor y desaparece de la del anterior.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
