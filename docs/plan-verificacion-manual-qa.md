@@ -251,7 +251,7 @@ estos fue construido; no se verifican.
 - Pasos: completar un flujo completo de venta + cobro usando solo el pulgar de la mano dominante.
 - Esperado: todos los elementos interactivos son alcanzables sin reposicionar el teléfono; blancos de toque ≥ 44 px.
 - Nota: el token `--touch-min` (≥ 44 px, hoy 48 px) está fijado por `UIFIT-006`; la parte automatizable queda cubierta. Falta solo la confirmación de alcance a una mano en dispositivo.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** ☐ falla · Notas: flujo venta+cobro completado con el pulgar de una mano sin reposicionar el teléfono (2026-06-20).
 
 **CP-029 · Legibilidad bajo el sol**
 - Pasos: usar la app al aire libre con brillo del sol directo sobre la pantalla.
@@ -262,13 +262,13 @@ estos fue construido; no se verifican.
 - Traza: NFR rendimiento (PRD §6)
 - Pasos: cerrar completamente la app → abrirla → medir el tiempo hasta que la ruta del día es visible e interactuable.
 - Esperado: arranque en segundos, no en decenas de segundos.
-- Resultado: ☐ pasa ☐ falla · tiempo medido: ___ seg · Notas: ___
+- Resultado: ☑ **pasa** · tiempo medido: **5** seg · Notas: arranque en frío hasta ruta del día interactuable (2026-06-20).
 
 **CP-031 · Registro de venta — tiempo de operación**
 - Traza: NFR rendimiento
 - Pasos: desde la ruta del día, completar una venta de 3 productos con cobro.
 - Esperado: operación completa en menos de 2 minutos para un usuario familiarizado.
-- Resultado: ☐ pasa ☐ falla · tiempo medido: ___ min · Notas: ___
+- Resultado: ☑ **pasa** · tiempo medido: **16** seg · Notas: venta de 3 productos con cobro; muy por debajo del umbral de 2 min (2026-06-20).
 
 ---
 
