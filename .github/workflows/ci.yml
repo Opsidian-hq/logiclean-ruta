@@ -1,0 +1,42 @@
+name: CI
+
+# Gate de integración: valida cada PR (y cada push a main) antes de desplegar.
+# Debe quedar en verde para fusionar — protege la rama de producción (Fase 6).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancela ejecuciones previas del mismo ref si llega un push nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: lint · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Vite 8 requiere Node >= 22.12 (alineado al entorno de desarrollo).
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

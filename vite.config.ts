@@ -38,6 +38,23 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // Separa los vendors estables del código de la app. Cambian rara vez,
+        // así que entre deploys el service worker (precache por hash) no vuelve
+        // a descargarlos y la primera carga en Android gama baja parte mejor.
+        advancedChunks: {
+          groups: [
+            { name: 'vendor-react', test: /node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\// },
+            { name: 'vendor-ionic', test: /node_modules\/(@ionic|ionicons)\// },
+            { name: 'vendor-supabase', test: /node_modules\/@supabase\// },
+            { name: 'vendor-dexie', test: /node_modules\/dexie\// },
+          ],
+        },
+      },
+    },
+  },
   test: {
     // Vitest config
     environment: 'node',

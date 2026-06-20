@@ -3,7 +3,7 @@
 
 > **Propósito:** confirmar que el producto construido es el producto correcto y que
 > funciona en las manos de los usuarios reales, en condiciones reales. La cobertura
-> automatizada (146 tests, `docs/trazabilidad-qa-fase5.md`) ya verifica la lógica;
+> automatizada (162 tests, `docs/trazabilidad-qa-fase5.md`) ya verifica la lógica;
 > esta sesión verifica la experiencia y los casos que ningún test automatizado puede
 > cubrir.
 
@@ -34,17 +34,19 @@ estos fue construido; no se verifican.
 
 ## Criterios de entrada
 
-- [ ] Build desplegado y accesible desde el dispositivo de prueba.
-- [ ] Credenciales rotadas (✓ hecho).
-- [ ] `docs/trazabilidad-qa-fase5.md` disponible en el repo como referencia de
+- [x] Build desplegado y accesible desde el dispositivo de prueba.
+- [x] Credenciales rotadas (✓ hecho).
+- [x] `docs/trazabilidad-qa-fase5.md` disponible en el repo como referencia de
       trazabilidad.
 
 ## Criterios de salida (gate de Fase 5)
 
-- [ ] 100% de los criterios de aceptación del PRD v1.2 verificados manualmente.
-- [ ] 0 defectos críticos abiertos.
-- [ ] Pruebas de accesibilidad básica ejecutadas.
-- [ ] iOS offline verificado (T2) o riesgo declarado explícitamente.
+- [x] 100% de los criterios de aceptación del PRD v1.2 verificados manualmente.
+      *(CP-001…CP-031 ejecutados; D-001…D-007 detectados y cerrados.)*
+- [x] 0 defectos críticos abiertos. *(D-004 cerrado en PR #16.)*
+- [x] Pruebas de accesibilidad básica ejecutadas. *(CP-028/CP-029 pasan, 2026-06-20.)*
+- [x] iOS offline verificado (T2) o riesgo declarado explícitamente.
+      *(CP-027 ejecutado en iPhone — pasa, 2026-06-20. Disparador ADR-0002 descartado.)*
 
 ---
 
@@ -58,55 +60,55 @@ estos fue construido; no se verifican.
 - Precondición: sesión activa como vendedor; hay clientes de mayoreo en la ruta.
 - Pasos: entrar a la ruta del día → seleccionar un cliente mayoreo → registrar una venta con 2–3 productos → confirmar.
 - Esperado: los precios aplican la lista de mayoreo; el inventario del vehículo se reduce; se genera la nota de venta.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-002 · Venta de autoventa a cliente menudeo**
 - Traza: H-04 criterio 1
 - Pasos: mismo flujo con un cliente menudeo.
 - Esperado: los precios aplican la lista de menudeo.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-003 · Cobro total en efectivo al cerrar venta**
 - Traza: H-07 criterio 1
 - Pasos: tras confirmar productos de una venta → en el paso de cobro elegir "Cobro total" → forma de pago "Efectivo" → guardar.
 - Esperado: la venta queda guardada con su cobro; no hay saldo pendiente para ese cliente.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-004 · Cobro parcial con transferencia**
 - Traza: H-07 criterios 1 y 2
 - Pasos: registrar venta → cobro parcial → "Transferencia" → monto menor al total → guardar.
 - Esperado: saldo pendiente visible en ámbar; forma de pago correcta en el resumen; número de cuenta mostrado durante la captura.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-001** (monto `362.5` en vez de `362.50`) — corregido en PR #18.
 
 **CP-005 · Venta a crédito (sin cobro)**
 - Traza: H-07 criterio 2
 - Pasos: registrar venta → elegir "A crédito" → confirmar.
 - Esperado: la venta se guarda sin cobro; el saldo del cliente refleja el total como pendiente.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-006 · Cobros múltiples sobre una venta**
 - Traza: H-07 criterio 3
 - Pasos: desde la ficha del cliente con saldo pendiente → registrar un cobro parcial en efectivo → registrar otro cobro parcial en transferencia.
 - Esperado: cada cobro conserva su propia forma de pago; el saldo se reduce correctamente con cada cobro.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-002** (sin acceso a cobrar saldo fuera de visita) — corregido con la sección "Cobros pendientes" en PR #17.
 
 **CP-007 · Pedido pendiente**
 - Traza: H-05 criterios 1 y 2
 - Pasos: en una venta, registrar un pedido de un producto no disponible → en otra sesión, marcar el pedido como entregado.
 - Esperado: el pedido queda registrado; al entregarlo se convierte en venta y se cierra el pendiente.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-008 · Marcar venta como "requiere factura"**
 - Traza: H-06
 - Pasos: registrar venta → activar "requiere factura".
 - Esperado: el monto se calcula a precio de lista + IVA; la venta queda etiquetada.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-009 · Gasto de ruta en efectivo**
 - Traza: H-12 criterios 1 y 2
 - Pasos: registrar un gasto de tipo ruta con forma de pago efectivo.
 - Esperado: queda registrado con tipo, categoría, monto, fecha y forma de pago.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -117,31 +119,31 @@ estos fue construido; no se verifican.
 - Traza: H-01 criterio 1
 - Pasos: agregar un prospecto nuevo desde la app.
 - Esperado: queda con "visita 1 de 4" y la fecha de hoy.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-003** ("Día de ruta" no obligatorio) — corregido en PR #18.
 
 **CP-011 · Avance de ciclo en visita a prospecto**
 - Traza: H-01 criterio 2
 - Pasos: registrar una visita a un prospecto existente con nota, siguiente paso y fecha de próxima visita.
 - Esperado: el contador de ciclo avanza; nota y fecha quedan guardados.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-012 · Motor de vencimientos al iniciar jornada**
 - Traza: H-02 criterios 1 y 2
 - Pasos: abrir la app con al menos un prospecto con visita vencida y uno próximo a vencer.
 - Esperado: el vencido aparece con alerta de color; el próximo aparece en la lista ordenado por urgencia.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-007** (contraste de tabs HOY/ESTA SEMANA sobre navy) — corregido en PR #18→#20→#21 y **confirmado bajo sol directo en CP-029**.
 
 **CP-013 · Ruta del día**
 - Traza: H-08
 - Pasos: abrir la ruta del día.
 - Esperado: lista de clientes y prospectos a visitar hoy, en el orden conocido.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-014 · Insertar visita ad-hoc**
 - Traza: H-09 criterio 1
 - Pasos: agregar una visita fuera de la ruta planeada para atenderla hoy.
 - Esperado: aparece en la ruta del día actual.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -153,31 +155,31 @@ estos fue construido; no se verifican.
 - Precondición: hay ventas, cobros y gastos registrados en el periodo.
 - Pasos: generar el corte semanal.
 - Esperado: muestra ventas, cobranza desglosada por forma de pago (efectivo/transferencia), gastos de ruta descontados de la bolsa correspondiente, gastos de backoffice como salidas de caja, inventario vendido vs. devuelto.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-004** (crítico: ventas no aparecían en el corte) — corregido en PR #16.
 
 **CP-016 · Reconciliación bidones en el corte**
 - Traza: H-10 criterio 4 + H-11
 - Pasos: en el corte, verificar que el inventario en presentaciones se convierte a bidones usando el factor definido.
 - Esperado: el total de unidades vendidas aparece en bidones para la reconciliación con La Moderna.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-017 · Reinicio de indicadores de flujo al generar corte**
 - Traza: H-15 criterio 2
 - Pasos: revisar el dashboard antes y después de generar el corte.
 - Esperado: ventas, caja y gastos del periodo se reinician; el embudo y la adherencia NO se reinician.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-018 · Dashboard consolidado del gerente**
 - Traza: H-15 criterio 1
 - Pasos: abrir el dashboard.
 - Esperado: ventas del periodo, posición de caja por vendedor y bolsa (neta de gastos), alertas de prospectos vencidos o descuadres.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Cubierto por la corrección de **D-004** (PR #16): las ventas ya se reflejan en el dashboard.
 
 **CP-019 · Embudo de prospectos en el panel del gerente**
 - Traza: H-03 criterios 1 y 2
 - Pasos: con prospectos en distintas etapas del ciclo, abrir el panel del gerente.
 - Esperado: prospectos por etapa (1.ª–4.ª visita); porcentaje de adherencia visible.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -187,25 +189,25 @@ estos fue construido; no se verifican.
 - Traza: H-13 criterio 1
 - Pasos: dar de alta un producto nuevo con presentaciones, precios y factor de conversión.
 - Esperado: el producto queda disponible para ventas posteriores.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: **D-005** detectado en la 1.ª pasada (2026-06-18) y corregido (forms anidados, PR #19); blindado por tests (`CAT-106`, `UIFIT-001/002/003`) y **confirmado visualmente en dispositivo (2026-06-20)**: toast visible + el producto aparece en el catálogo sin navegación manual.
 
 **CP-021 · Edición de precio de producto**
 - Traza: H-13 criterio 2
 - Pasos: editar el precio de un producto existente.
 - Esperado: las ventas registradas después del cambio usan el nuevo precio.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 **CP-022 · Baja de producto (desactivación)**
 - Traza: H-13 criterio 3
 - Pasos: dar de baja un producto con historial de ventas.
 - Esperado: el producto se desactiva (no se borra); el historial previo permanece intacto.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18). Surgió **D-006** (swipe sin pista visual) — corregido en PR #18.
 
 **CP-023 · Reasignación de cliente entre vendedores**
 - Traza: H-14 criterio 2
 - Pasos: reasignar un cliente de un vendedor al otro.
 - Esperado: el cliente aparece en la cartera del nuevo vendedor y desaparece de la del anterior.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: 1.ª pasada (2026-06-18), sin defectos.
 
 ---
 
@@ -216,27 +218,27 @@ estos fue construido; no se verifican.
 - Traza: NFR offline (PRD §6)
 - Pasos: activar modo avión → registrar una venta completa con cobro → verificar que la app no bloquea la operación → recuperar señal → esperar sync.
 - Esperado: la venta y el cobro se guardan localmente al instante con estado "pendiente"; al recuperar señal se sincronizan; el `SyncStatusBadge` pasa a "sincronizado".
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: verificado en dispositivo (2026-06-20).
 
 **CP-025 · ConnectivityStrip visible offline**
 - Traza: NFR offline
 - Pasos: activar modo avión → abrir cualquier pantalla operativa.
 - Esperado: la `ConnectivityStrip` aparece en todas las pantallas operativas.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: verificado en dispositivo (2026-06-20).
 
 **CP-026 · Sync agresivo al recuperar señal**
 - Traza: T2 (deuda técnica cerrada)
 - Pasos: registrar 2–3 operaciones en modo avión → recuperar señal → medir cuánto tarda en sincronizar sin acción manual.
 - Esperado: la sync dispara automáticamente al detectar conexión; sin necesidad de que el usuario la inicie.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** · Notas: verificado en dispositivo (2026-06-20); sync automática sin acción manual (T2 confirmada).
 
 **CP-027 · iOS offline — instalar PWA y registrar venta (T2)**
 - Traza: ADR-0002 + T2
 - Precondición: iPhone con Safari.
 - Pasos: instalar la app desde Safari (Compartir → Agregar a inicio) → registrar una venta sin señal → enviar la app al fondo → volver a primer plano → verificar sync.
 - Esperado: la venta sobrevive al segundo plano; al volver al primer plano con señal, sincroniza automáticamente.
-- Resultado: ☐ pasa ☐ falla ☐ no ejecutado (sin dispositivo iOS) · Notas: ___
-- **Nota de riesgo:** si este caso falla con pérdida de datos, se activa el disparador de migración a Capacitor nativo definido en ADR-0002. Registrar el resultado con detalle.
+- Resultado: ☑ **pasa** ☐ falla ☐ no ejecutado · Notas: ejecutado en iPhone/Safari (2026-06-20). La venta + cobro offline sobrevivieron al segundo plano; al recuperar señal la sync disparó automáticamente y el movimiento se reflejó en el dashboard/corte del gerente.
+- **Nota de riesgo:** si este caso falla con pérdida de datos, se activa el disparador de migración a Capacitor nativo definido en ADR-0002. **Resultado: el disparador NO se activa** — iOS offline verificado, la PWA es viable para el MVP.
 
 ---
 
@@ -247,49 +249,88 @@ estos fue construido; no se verifican.
 - Traza: NFR accesibilidad (PRD §6)
 - Pasos: completar un flujo completo de venta + cobro usando solo el pulgar de la mano dominante.
 - Esperado: todos los elementos interactivos son alcanzables sin reposicionar el teléfono; blancos de toque ≥ 44 px.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Nota: el token `--touch-min` (≥ 44 px, hoy 48 px) está fijado por `UIFIT-006`; la parte automatizable queda cubierta. Falta solo la confirmación de alcance a una mano en dispositivo.
+- Resultado: ☑ **pasa** ☐ falla · Notas: flujo venta+cobro completado con el pulgar de una mano sin reposicionar el teléfono (2026-06-20).
 
 **CP-029 · Legibilidad bajo el sol**
 - Pasos: usar la app al aire libre con brillo del sol directo sobre la pantalla.
 - Esperado: texto y botones legibles sin ajuste manual del brillo.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** ☐ falla · Notas: verificado al aire libre con sol directo (2026-06-20). Texto y botones legibles sin subir brillo; los tabs HOY/ESTA SEMANA sobre navy se distinguen bien → **confirma visualmente D-007** (CP-012), la condición exacta que lo reabrió.
 
 **CP-030 · Velocidad de arranque**
 - Traza: NFR rendimiento (PRD §6)
 - Pasos: cerrar completamente la app → abrirla → medir el tiempo hasta que la ruta del día es visible e interactuable.
 - Esperado: arranque en segundos, no en decenas de segundos.
-- Resultado: ☐ pasa ☐ falla · tiempo medido: ___ seg · Notas: ___
+- Resultado: ☑ **pasa** · tiempo medido: **5** seg · Notas: arranque en frío hasta ruta del día interactuable (2026-06-20).
 
 **CP-031 · Registro de venta — tiempo de operación**
 - Traza: NFR rendimiento
 - Pasos: desde la ruta del día, completar una venta de 3 productos con cobro.
 - Esperado: operación completa en menos de 2 minutos para un usuario familiarizado.
-- Resultado: ☐ pasa ☐ falla · tiempo medido: ___ min · Notas: ___
+- Resultado: ☑ **pasa** · tiempo medido: **16** seg · Notas: venta de 3 productos con cobro; muy por debajo del umbral de 2 min (2026-06-20).
 
 ---
 
 ## Registro de defectos
 
-| ID | CP | Descripción | Severidad | Estado |
-|---|---|---|---|---|
-| D-001 | | | crítico / mayor / menor | abierto / cerrado |
+> **Bitácora 1.ª pasada (2026-06-18).** Siete defectos detectados y corregidos.
+> Todos cerrados y mergeados a `main`; build limpio (`tsc`/`vite`/`eslint`) y 162
+> tests en verde (incluidas las fitness functions de regresión `UIFIT-*`). Sin
+> defectos abiertos en código.
+
+| ID | CP | Descripción | Severidad | Corregido en | Estado |
+|---|---|---|---|---|---|
+| D-004 | CP-015/018 | Ventas no se reflejaban en dashboard ni corte: faltaban `venta`/`linea_venta`/`cobro` en `PULL_TABLES` (la BD local del gerente no se hidrataba) | Crítico | PR #16 | cerrado |
+| D-002 | CP-006 | Sin acceso a cobrar el saldo de un cliente fuera de la visita agendada → nueva sección "Cobros pendientes" en la barra del vendedor | Mayor | PR #17 | cerrado |
+| D-005 | CP-020 | Alta de producto no persistía y no daba feedback. 1.º: faltaba toast éxito/error (PR #17). Reabierto: causa raíz era un `<form>` anidado que disparaba un submit prematuro (PR #19) | Mayor | PR #17 → #19 | cerrado |
+| D-001 | CP-004 | Monto a cobrar mostraba `362.5` en vez de `362.50` (`toFixed(2)` + invariante `money()`) | Menor | PR #18 | cerrado |
+| D-003 | CP-010 | Campo "Día de ruta" no marcado como obligatorio (sin él, el prospecto no entra en la ruta recurrente) | Menor | PR #18 | cerrado |
+| D-006 | CP-022 | Swipe en catálogo (editar/dar de baja) sin pista visual descubrible | Menor | PR #18 | cerrado |
+| D-007 | CP-012 | Contraste bajo en tabs HOY/ESTA SEMANA sobre navy bajo luz solar. Reabierto 2×: la herencia de `--color` no aplicaba al `ion-segment-button` (PR #20 → #21) | Menor | PR #18 → #20 → #21 | cerrado |
 
 **Severidades:**
 - **Crítico:** bloquea el uso o corrompe datos. El gate exige 0 críticos abiertos.
 - **Mayor:** funcionalidad incompleta o incorrecta, pero con workaround.
 - **Menor:** visual, texto, comportamiento no esperado sin impacto operativo.
 
+### Re-verificación en dispositivo — ✅ cerrada (2026-06-20)
+
+Estos fixes se reabrieron porque la 1.ª corrección no resistió la prueba en campo;
+sus correcciones definitivas se validaron con tests/build y **se re-confirmaron en
+dispositivo el 2026-06-20**: D-005 en CP-020 (alta de producto) y D-007 en CP-029
+(legibilidad bajo el sol). Ambos cierran sin reaperturas.
+
+> **Blindaje automatizado (2026-06-20).** Como ambos defectos reincidieron por causa
+> *estructural* (no de lógica), se añadieron *fitness functions* que fijan el invariante
+> exacto de cada reapertura en `tests/ui-fitness.test.ts` — una regresión rompe la suite:
+> - **D-005** → `UIFIT-001/002/003`: `PresentacionForm` no renderiza `<form>` ni botón
+>   `submit`; `ProductoForm` tiene un único `<form>`.
+> - **D-007** → `UIFIT-004/005`: `--color-checked` cuelga de `.segment-on-navy
+>   ion-segment-button` (no del padre) y ambos segmentos sobre navy usan la clase.
+>
+> Con esto, la re-verificación manual queda reducida a **confirmación visual** (ya no es
+> una cacería de regresión):
+
+- **D-005** (CP-020) — alta de producto end-to-end como gerente: toast visible + el
+  producto aparece en el catálogo sin navegación manual.
+- **D-007** (CP-012) — tabs HOY/ESTA SEMANA legibles **bajo luz solar directa** (la
+  condición exacta que reabrió el defecto), activo distinguible por el subrayado cian.
+
 ---
 
 ## Gate de cierre de Fase 5
 
-- [ ] CP-001 a CP-031 ejecutados (o CP-027 con riesgo declarado si no hay iPhone).
-- [ ] 0 defectos críticos abiertos.
-- [ ] Accesibilidad básica verificada (CP-028, CP-029).
-- [ ] Resultado de iOS offline documentado en CP-027.
-- [ ] Resultados trazados a `docs/trazabilidad-qa-fase5.md`.
+- [x] CP-001 a CP-031 ejecutados (CP-027 ejecutado en iPhone real). *(2026-06-20.)*
+- [x] 0 defectos críticos abiertos. *(D-004 cerrado.)*
+- [x] Accesibilidad básica verificada (CP-028, CP-029). *(Pasan, 2026-06-20.)*
+- [x] Resultado de iOS offline documentado en CP-027. *(Pasa, 2026-06-20.)*
+- [x] Resultados trazados a `docs/trazabilidad-qa-fase5.md`. *(Cobertura automatizada:
+      162 tests, 0 huecos abiertos.)*
 
-Con el gate cerrado, el producto avanza a **Fase 6 (Despliegue y entrega)**.
+> ✅ **Gate de Fase 5 CERRADO (2026-06-20).** Los 31 casos ejecutados y en verde; los
+> 7 defectos (D-001…D-007) corregidos y mergeados; 0 críticos abiertos; iOS offline
+> verificado (T2 cerrada, disparador ADR-0002 descartado). El producto avanza a
+> **Fase 6 (Despliegue y entrega)**.
 
 ---
 
