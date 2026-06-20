@@ -256,7 +256,7 @@ estos fue construido; no se verifican.
 **CP-029 · Legibilidad bajo el sol**
 - Pasos: usar la app al aire libre con brillo del sol directo sobre la pantalla.
 - Esperado: texto y botones legibles sin ajuste manual del brillo.
-- Resultado: ☐ pasa ☐ falla · Notas: ___
+- Resultado: ☑ **pasa** ☐ falla · Notas: verificado al aire libre con sol directo (2026-06-20). Texto y botones legibles sin subir brillo; los tabs HOY/ESTA SEMANA sobre navy se distinguen bien → **confirma visualmente D-007** (CP-012), la condición exacta que lo reabrió.
 
 **CP-030 · Velocidad de arranque**
 - Traza: NFR rendimiento (PRD §6)
