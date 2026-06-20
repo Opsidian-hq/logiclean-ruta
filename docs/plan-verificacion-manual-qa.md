@@ -46,8 +46,8 @@ estos fue construido; no se verifican.
       re-verificar en dispositivo los fixes reabiertos D-005 y D-007.)*
 - [x] 0 defectos críticos abiertos. *(D-004 cerrado en PR #16.)*
 - [ ] Pruebas de accesibilidad básica ejecutadas. *(CP-028/CP-029 pendientes.)*
-- [ ] iOS offline verificado (T2) o riesgo declarado explícitamente.
-      *(CP-027 pendiente: requiere iPhone físico.)*
+- [x] iOS offline verificado (T2) o riesgo declarado explícitamente.
+      *(CP-027 ejecutado en iPhone — pasa, 2026-06-20. Disparador ADR-0002 descartado.)*
 
 ---
 
@@ -238,8 +238,8 @@ estos fue construido; no se verifican.
 - Precondición: iPhone con Safari.
 - Pasos: instalar la app desde Safari (Compartir → Agregar a inicio) → registrar una venta sin señal → enviar la app al fondo → volver a primer plano → verificar sync.
 - Esperado: la venta sobrevive al segundo plano; al volver al primer plano con señal, sincroniza automáticamente.
-- Resultado: ☐ pasa ☐ falla ☐ no ejecutado (sin dispositivo iOS) · Notas: ___
-- **Nota de riesgo:** si este caso falla con pérdida de datos, se activa el disparador de migración a Capacitor nativo definido en ADR-0002. Registrar el resultado con detalle.
+- Resultado: ☑ **pasa** ☐ falla ☐ no ejecutado · Notas: ejecutado en iPhone/Safari (2026-06-20). La venta + cobro offline sobrevivieron al segundo plano; al recuperar señal la sync disparó automáticamente y el movimiento se reflejó en el dashboard/corte del gerente.
+- **Nota de riesgo:** si este caso falla con pérdida de datos, se activa el disparador de migración a Capacitor nativo definido en ADR-0002. **Resultado: el disparador NO se activa** — iOS offline verificado, la PWA es viable para el MVP.
 
 ---
 
@@ -322,9 +322,9 @@ sus correcciones definitivas se validaron con tests/build, **no en dispositivo r
       *(1.ª pasada hecha; falta firmar la 2.ª sobre los fixes reabiertos D-005/D-007.)*
 - [x] 0 defectos críticos abiertos. *(D-004 cerrado.)*
 - [ ] Accesibilidad básica verificada (CP-028, CP-029).
-- [ ] Resultado de iOS offline documentado en CP-027.
+- [x] Resultado de iOS offline documentado en CP-027. *(Pasa, 2026-06-20.)*
 - [x] Resultados trazados a `docs/trazabilidad-qa-fase5.md`. *(Cobertura automatizada:
-      156 tests, 0 huecos abiertos.)*
+      162 tests, 0 huecos abiertos.)*
 
 Con el gate cerrado, el producto avanza a **Fase 6 (Despliegue y entrega)**.
 
