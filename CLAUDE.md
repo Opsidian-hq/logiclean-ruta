@@ -8,8 +8,8 @@
 Logiclean Ruta es una PWA de venta en ruta construida con **React + Ionic + Capacitor** sobre **Supabase** (auth, RLS, sync offline). El tracker operativo vive en **Notion** y se actualiza vía MCP al terminar cada acción relevante.
 
 - **Proyecto en Notion:** Logiclean Ruta (`https://app.notion.com/p/389b4abbc878816d808dd28808f49795`)
-- **Fase actual:** 6 · Despliegue y entrega
-- **Gate pendiente:** Capacitar al vendedor de mayoreo (1 de 3 criterios sin cumplir)
+- **Fase actual:** 7 · Operación
+- **Fase 6 · Despliegue y entrega:** Completada (gate 3/3 — capacitación y handover al cliente cerrados el 25 jun 2026)
 
 ---
 
@@ -60,20 +60,17 @@ Las tareas en Notion están bajo la base **Tareas**, relacionadas a **Grupos de 
 3 · Diseño de detalle         ✅ Completada
 4 · Construcción              ✅ Completada
 5 · Verificación y QA         ✅ Completada
-6 · Despliegue y entrega      🟡 En curso  ← FASE ACTIVA
-7 · Operación                 ⬜ No iniciada
+6 · Despliegue y entrega      ✅ Completada
+7 · Operación                 🟡 En curso  ← FASE ACTIVA
 ```
 
-### Gate de Fase 6 (2 de 3 cumplidos)
+### Gate de Fase 6 (3 de 3 cumplidos) ✅
 - [x] Runbook de operación entregado
 - [x] Despliegue verificado en producción
-- [ ] **Capacitar al vendedor de mayoreo** ← PENDIENTE
+- [x] Capacitación y handover al cliente completados (vendedor de mayoreo + instalación PWA) — 25 jun 2026
 
-Cuando se complete la capacitación:
-1. Marca la tarea como **Completada** en Notion.
-2. Marca el criterio de gate como **Cumplido** con la fecha como evidencia.
-3. Marca la Fase 6 como **Completada**.
-4. Marca la Fase 7 · Operación como **En curso**.
+La Fase 6 quedó cerrada el 25 jun 2026 y la Fase 7 · Operación está activa. Próximo foco:
+monitoreo en operación, soporte post-arranque y atención de incidencias.
 
 ---
 
