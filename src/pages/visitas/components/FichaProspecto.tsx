@@ -23,6 +23,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { CICLO_OBJETIVO } from '../../../lib/prospectos';
 import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
+import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { CicloBar } from '../../../components/ui/CicloBar';
@@ -37,6 +38,8 @@ interface FichaProspectoProps {
   onRegistrar: (args: RegistrarVisitaArgs) => Promise<unknown>;
   /** Reprograma la próxima visita (H-09) sin registrar visita ni avanzar ciclo. */
   onReprogramar?: (fechaProxima: string) => Promise<unknown>;
+  /** Fija/cambia el día de visita semanal del cliente (texto o null). */
+  onCambiarDia?: (dia: string | null) => Promise<unknown>;
   /** Abre el cobro de saldo previo del cliente (Flujo C · P3). */
   onCobrarSaldo?: () => void;
   /** Carga los pedidos pendientes del cliente (H-05). */
@@ -58,12 +61,14 @@ export function FichaProspecto({
   cargarVisitas,
   onRegistrar,
   onReprogramar,
+  onCambiarDia,
   onCobrarSaldo,
   cargarPedidos,
   onEntregarPedido,
   onClose,
 }: FichaProspectoProps) {
   const [reprogOpen, setReprogOpen] = useState(false);
+  const [diaRuta, setDiaRuta] = useState<string | null>(cliente.dia_ruta ?? null);
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [loading, setLoading] = useState(true);
   const [nota, setNota] = useState('');
@@ -139,6 +144,11 @@ export function FichaProspecto({
     onClose();
   };
 
+  const handleCambiarDia = async (dia: string | null) => {
+    setDiaRuta(dia);
+    if (onCambiarDia) await onCambiarDia(dia);
+  };
+
   return (
     <>
       <IonHeader>
@@ -173,9 +183,9 @@ export function FichaProspecto({
             <div style={{ fontSize: '27px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '11px', lineHeight: 1.1, letterSpacing: '-0.3px' }}>
               {cliente.nombre}
             </div>
-            {cliente.dia_ruta && (
+            {diaRuta && (
               <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-                Día de ruta · {cliente.dia_ruta}
+                Día de ruta · {diaRuta}
               </div>
             )}
           </div>
@@ -197,6 +207,18 @@ export function FichaProspecto({
               La mayoría compra en la 3.ª o 4.ª visita. Cada visita acerca el cierre.
             </div>
           </Card>
+
+          {/* Día de visita semanal: el vendedor decide qué día visitarlo. */}
+          {onCambiarDia && (
+            <Card padding="6px 14px">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-body)' }}>
+                  Día de visita
+                </span>
+                <DiaVisitaSelect value={diaRuta} onChange={handleCambiarDia} />
+              </div>
+            </Card>
+          )}
 
           {/* Reprogramar próxima visita (H-09) */}
           {onReprogramar && (

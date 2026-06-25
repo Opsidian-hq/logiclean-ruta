@@ -158,6 +158,47 @@ export async function reprogramarVisita(
   return actualizado;
 }
 
+// ── Gestión de ruta del cliente (vendedor) ───────────────────
+
+export interface ActualizarRutaInput {
+  cliente: Cliente;
+  /**
+   * Día semanal de ruta (texto, p. ej. "Lunes"). `null` lo quita de la ruta
+   * recurrente. `undefined` deja el día actual sin cambios.
+   */
+  diaRuta?: string | null;
+  /** Próxima visita (ISO date). `undefined` deja la fecha actual sin cambios. */
+  fechaProxima?: string;
+}
+
+/**
+ * Actualiza la programación de ruta de un cliente: su día semanal (`dia_ruta`)
+ * y/o su próxima visita (`fecha_proxima_visita`). A diferencia de
+ * `reprogramarVisita`, no exige la fecha, así que sirve para que el vendedor
+ * sólo fije/cambie el día de visita. No registra visita ni avanza el ciclo.
+ */
+export async function actualizarRutaCliente(
+  input: ActualizarRutaInput
+): Promise<Cliente> {
+  const { cliente, diaRuta, fechaProxima } = input;
+
+  const actualizado: Cliente = {
+    ...cliente,
+    dia_ruta: diaRuta !== undefined ? diaRuta?.trim() || null : cliente.dia_ruta,
+    fecha_proxima_visita:
+      fechaProxima !== undefined ? fechaProxima : cliente.fecha_proxima_visita,
+  };
+
+  await db.cliente.put(toDexieRow(actualizado));
+  const item = await enqueueOperation(
+    'cliente',
+    'upsert',
+    actualizado as unknown as Record<string, unknown>
+  );
+  await syncEngine.enqueueAndSync(item);
+  return actualizado;
+}
+
 /** Visitas de un cliente, de la más reciente a la más antigua. */
 export async function visitasDeCliente(clienteId: string): Promise<Visita[]> {
   const visitas = await db.visita

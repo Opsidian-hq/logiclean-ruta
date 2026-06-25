@@ -12,6 +12,7 @@ import {
   crearProspecto as crearProspectoLib,
   registrarVisita as registrarVisitaLib,
   reprogramarVisita as reprogramarVisitaLib,
+  actualizarRutaCliente as actualizarRutaClienteLib,
   visitasDeCliente,
 } from '../lib/visitas';
 import type {
@@ -19,6 +20,7 @@ import type {
   RegistrarVisitaInput,
   RegistrarVisitaResult,
   ReprogramarVisitaInput,
+  ActualizarRutaInput,
 } from '../lib/visitas';
 import { useAuthContext } from '../context/AuthContext';
 import type { Cliente, Visita } from '../db/schema';
@@ -33,6 +35,8 @@ export interface UseSeguimientoReturn {
   crearProspecto: (args: CrearProspectoArgs) => Promise<Cliente>;
   registrarVisita: (args: RegistrarVisitaArgs) => Promise<RegistrarVisitaResult>;
   reprogramarVisita: (args: ReprogramarVisitaInput) => Promise<Cliente>;
+  /** Fija/cambia el día de visita y/o la próxima visita del cliente. */
+  actualizarRuta: (args: ActualizarRutaInput) => Promise<Cliente>;
   visitasDeCliente: (clienteId: string) => Promise<Visita[]>;
   refresh: () => Promise<void>;
 }
@@ -99,6 +103,15 @@ export function useSeguimiento(): UseSeguimientoReturn {
     [loadFromLocal]
   );
 
+  const actualizarRuta = useCallback(
+    async (args: ActualizarRutaInput): Promise<Cliente> => {
+      const cliente = await actualizarRutaClienteLib(args);
+      await loadFromLocal();
+      return cliente;
+    },
+    [loadFromLocal]
+  );
+
   return {
     prospectos,
     loading,
@@ -106,6 +119,7 @@ export function useSeguimiento(): UseSeguimientoReturn {
     crearProspecto,
     registrarVisita,
     reprogramarVisita,
+    actualizarRuta,
     visitasDeCliente,
     refresh,
   };
