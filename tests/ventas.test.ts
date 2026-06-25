@@ -30,6 +30,8 @@ vi.mock('../src/sync/SyncEngine', () => ({
 
 import { registrarVenta } from '../src/lib/ventas';
 import { db } from '../src/db/index';
+import { toDexieRow } from '../src/db/normalize';
+import type { Cliente } from '../src/db/schema';
 
 const VENDEDOR = 'vend-1';
 const PRES = {
@@ -207,5 +209,63 @@ describe('registrarVenta', () => {
     });
     expect(res.iva).toBe(0);
     expect(res.venta.total).toBe(300);
+  });
+});
+
+// ── Pedido pendiente agenda la visita de entrega ──────────────
+describe('registrarVenta · agenda la entrega del pedido', () => {
+  async function sembrarCliente(fechaProxima: string | null): Promise<Cliente> {
+    const cliente: Cliente = {
+      id: 'cli-1',
+      vendedor_id: VENDEDOR,
+      nombre: 'Abarrotes La Esquina',
+      tipo: 'menudeo',
+      estado: 'activo',
+      ciclo_visita: 1,
+      dia_ruta: null,
+      fecha_proxima_visita: fechaProxima,
+      activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    return cliente;
+  }
+
+  it('VENTA-011: la próxima visita se agenda en la fecha de entrega', async () => {
+    await sembrarCliente(null);
+    await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'menudeo' },
+      lineasVehiculo: [],
+      pedidos: [{ presentacion_id: PRES.id, cantidad: 2, fecha_compromiso: '2026-06-20' }],
+    });
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita).toBe('2026-06-20');
+  });
+
+  it('VENTA-012: toma la entrega más próxima de varios pedidos', async () => {
+    await sembrarCliente(null);
+    await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'menudeo' },
+      lineasVehiculo: [],
+      pedidos: [
+        { presentacion_id: PRES.id, cantidad: 2, fecha_compromiso: '2026-06-25' },
+        { presentacion_id: PRES.id, cantidad: 1, fecha_compromiso: '2026-06-18' },
+      ],
+    });
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita).toBe('2026-06-18');
+  });
+
+  it('VENTA-013: no retrasa una visita ya agendada antes de la entrega', async () => {
+    await sembrarCliente('2026-06-10');
+    await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'menudeo' },
+      lineasVehiculo: [],
+      pedidos: [{ presentacion_id: PRES.id, cantidad: 2, fecha_compromiso: '2026-06-20' }],
+    });
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita).toBe('2026-06-10'); // se respeta la más próxima
   });
 });

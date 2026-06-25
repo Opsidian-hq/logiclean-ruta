@@ -29,6 +29,7 @@ import type { CSSProperties } from 'react';
 import { useRegistrosNegocio } from '../../hooks/useRegistrosNegocio';
 import { CATEGORIAS_BACKOFFICE } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -130,6 +131,7 @@ export function RegistrosNegocioPage() {
           <IonTitle>Registros del negocio</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip />

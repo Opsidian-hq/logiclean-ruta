@@ -21,6 +21,7 @@ import type { CSSProperties } from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
 import { CICLO_OBJETIVO } from '../../lib/prospectos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -77,6 +78,7 @@ export function DashboardPage() {
           <IonTitle>Inicio</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip />

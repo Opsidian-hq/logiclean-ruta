@@ -18,11 +18,12 @@
 
 import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
+import { toDexieRow } from '../db/normalize';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
 import { precioUnitario, importeLinea } from './precios';
 import { decrementar } from './inventario';
-import type { Venta, LineaVenta, PedidoPendiente } from '../db/schema';
+import type { Venta, LineaVenta, PedidoPendiente, Cliente } from '../db/schema';
 
 export interface EntregarPedidoInput {
   pedidoId: string;
@@ -145,6 +146,11 @@ export async function entregarPedido(
   const pedidoSurtido: PedidoPendiente = { ...pedido, estado: 'surtido' };
   await persist('pedido_pendiente', pedidoSurtido);
 
+  // 3b) Reagendar la próxima visita del cliente a la siguiente entrega pendiente
+  //     (o quitarla si ya no quedan), para que salga de HOY/Esta semana una vez
+  //     entregado todo lo que reaparecía por entregas.
+  await reagendarTrasEntrega(cliente, pedido);
+
   // 4) Un único disparo de sync para todo el lote.
   await syncEngine.refreshPendingCount();
   await syncEngine.syncNow();
@@ -152,10 +158,39 @@ export async function entregarPedido(
   return { venta, linea, pedido: pedidoSurtido };
 }
 
+/**
+ * Tras surtir un pedido, si la próxima visita del cliente había quedado agendada
+ * **por esa entrega** (coincide con su `fecha_compromiso`), la reagenda a la
+ * siguiente entrega pendiente o la deja en null. Si la visita venía de otra cosa
+ * (p. ej. el ciclo de un prospecto), no la toca. Persiste en el lote.
+ */
+async function reagendarTrasEntrega(
+  cliente: Cliente,
+  pedidoSurtido: PedidoPendiente
+): Promise<void> {
+  const compromiso = pedidoSurtido.fecha_compromiso?.slice(0, 10) ?? null;
+  const actual = cliente.fecha_proxima_visita?.slice(0, 10) ?? null;
+  // Sólo limpiamos lo que esta entrega había agendado.
+  if (!compromiso || actual !== compromiso) return;
+
+  const restantes = (await pedidosPendientesDeCliente(cliente.id)).filter(
+    (p) => p.id !== pedidoSurtido.id
+  );
+  const siguienteEntrega =
+    restantes
+      .map((p) => p.fecha_compromiso)
+      .filter((f): f is string => !!f)
+      .map((f) => f.slice(0, 10))
+      .sort()[0] ?? null;
+
+  const actualizado: Cliente = { ...cliente, fecha_proxima_visita: siguienteEntrega };
+  await persist('cliente', toDexieRow(actualizado));
+}
+
 // ── Persistencia local + cola (sin disparar sync) ─────────────
 
 async function persist(
-  table: 'venta' | 'linea_venta' | 'pedido_pendiente',
+  table: 'venta' | 'linea_venta' | 'pedido_pendiente' | 'cliente',
   row: object
 ): Promise<void> {
   await db.table(table).put(row);

@@ -33,6 +33,7 @@ import { useSeguimiento } from '../../hooks/useSeguimiento';
 import { clasificarVencimiento, CICLO_OBJETIVO } from '../../lib/prospectos';
 import type { Vencimiento } from '../../lib/prospectos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -95,6 +96,7 @@ export function VisitasPage() {
           <IonTitle>Visitas</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip />
@@ -223,27 +225,27 @@ export function VisitasPage() {
               </div>
             )}
 
-            {!seg.loading && !seg.error && seg.prospectos.length === 0 && (
+            {!seg.loading && !seg.error && seg.seguimiento.length === 0 && (
               <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <IonText color="medium">
-                  <p>Sin prospectos por vencer esta semana.</p>
+                  <p>Sin visitas ni entregas por atender esta semana.</p>
                 </IonText>
               </div>
             )}
 
-            {!seg.loading && !seg.error && seg.prospectos.length > 0 && (
+            {!seg.loading && !seg.error && seg.seguimiento.length > 0 && (
               <>
                 <div style={{ padding: '18px var(--space-md) 12px' }}>
                   <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-navy)', lineHeight: 1.12, letterSpacing: '-0.2px' }}>
                     ¿A quién visitar esta semana?
                   </div>
                   <div className="numeric" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '6px' }}>
-                    {seg.prospectos.length} prospecto{seg.prospectos.length !== 1 ? 's' : ''} en seguimiento
+                    {seg.seguimiento.length} por atender esta semana
                   </div>
                 </div>
 
                 {GRUPOS.map(({ clave, titulo, color }) => {
-                  const items = seg.prospectos.filter((c) => clasificarVencimiento(c) === clave);
+                  const items = seg.seguimiento.filter((c) => clasificarVencimiento(c) === clave);
                   if (items.length === 0) return null;
                   return (
                     <div key={clave}>
@@ -262,6 +264,9 @@ export function VisitasPage() {
                       {items.map((c) => {
                         const chip = urgenciaChip(c);
                         const etapa = Math.min(c.ciclo_visita, CICLO_OBJETIVO);
+                        // Prospecto → ciclo de visitas; cliente activo → entrega/visita.
+                        const esEntrega = c.estado !== 'prospecto';
+                        const nEntregas = seg.entregasPorCliente[c.id] ?? 0;
                         return (
                           <div
                             key={c.id}
@@ -292,10 +297,20 @@ export function VisitasPage() {
                                 {c.nombre}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                                <CicloBar actual={etapa} objetivo={CICLO_OBJETIVO} />
-                                <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-body)', whiteSpace: 'nowrap' }}>
-                                  Visita {etapa} de {CICLO_OBJETIVO}
-                                </span>
+                                {esEntrega ? (
+                                  <Chip tone="primarySoft">
+                                    {nEntregas > 0
+                                      ? `Entrega pendiente${nEntregas > 1 ? ` · ${nEntregas}` : ''}`
+                                      : 'Visita programada'}
+                                  </Chip>
+                                ) : (
+                                  <>
+                                    <CicloBar actual={etapa} objetivo={CICLO_OBJETIVO} />
+                                    <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-body)', whiteSpace: 'nowrap' }}>
+                                      Visita {etapa} de {CICLO_OBJETIVO}
+                                    </span>
+                                  </>
+                                )}
                                 <span style={{ marginLeft: 'auto' }}>
                                   <Chip tone={chip.tone}>{chip.label}</Chip>
                                 </span>

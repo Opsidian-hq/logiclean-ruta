@@ -175,7 +175,7 @@ export function FichaProspecto({
               <Chip tone={cliente.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
                 {cliente.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
               </Chip>
-              <Chip tone="neutral">Prospecto</Chip>
+              <Chip tone="neutral">{cliente.estado === 'prospecto' ? 'Prospecto' : 'Cliente'}</Chip>
               {cliente.fecha_proxima_visita && (
                 <Chip tone="neutral">Próxima: {cliente.fecha_proxima_visita}</Chip>
               )}
@@ -190,23 +190,25 @@ export function FichaProspecto({
             )}
           </div>
 
-          {/* Tarjeta de ciclo */}
-          <Card padding="16px" style={{ borderRadius: '16px', boxShadow: '0 1px 2px rgba(16,24,40,.04)' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: '#8A94A6' }}>
-                Ciclo de visitas
-              </span>
-              <span className="numeric" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-navy)' }}>
-                Visita {etapa} <span style={{ color: '#9AA4B6' }}>de {CICLO_OBJETIVO}</span>
-              </span>
-            </div>
-            <div style={{ marginTop: '13px' }}>
-              <CicloBar actual={etapa} objetivo={CICLO_OBJETIVO} block />
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '12px', lineHeight: 1.4 }}>
-              La mayoría compra en la 3.ª o 4.ª visita. Cada visita acerca el cierre.
-            </div>
-          </Card>
+          {/* Tarjeta de ciclo (solo prospectos: el ciclo de 4 visitas es de venta) */}
+          {cliente.estado === 'prospecto' && (
+            <Card padding="16px" style={{ borderRadius: '16px', boxShadow: '0 1px 2px rgba(16,24,40,.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: '#8A94A6' }}>
+                  Ciclo de visitas
+                </span>
+                <span className="numeric" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                  Visita {etapa} <span style={{ color: '#9AA4B6' }}>de {CICLO_OBJETIVO}</span>
+                </span>
+              </div>
+              <div style={{ marginTop: '13px' }}>
+                <CicloBar actual={etapa} objetivo={CICLO_OBJETIVO} block />
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '12px', lineHeight: 1.4 }}>
+                La mayoría compra en la 3.ª o 4.ª visita. Cada visita acerca el cierre.
+              </div>
+            </Card>
+          )}
 
           {/* Día de visita semanal: el vendedor decide qué día visitarlo. */}
           {onCambiarDia && (

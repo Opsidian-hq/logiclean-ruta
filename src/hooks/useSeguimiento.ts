@@ -7,7 +7,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import { prospectosDeLaSemana } from '../lib/prospectos';
+import { seguimientoDeLaSemana } from '../lib/prospectos';
+import { pedidosPendientesDeCliente } from '../lib/pedidos';
 import {
   crearProspecto as crearProspectoLib,
   registrarVisita as registrarVisitaLib,
@@ -29,7 +30,10 @@ export type CrearProspectoArgs = Omit<CrearProspectoInput, 'vendedorId'>;
 export type RegistrarVisitaArgs = Omit<RegistrarVisitaInput, 'vendedorId'>;
 
 export interface UseSeguimientoReturn {
-  prospectos: Cliente[];
+  /** Clientes a atender esta semana (prospectos + entregas/visitas agendadas). */
+  seguimiento: Cliente[];
+  /** Nº de pedidos pendientes por cliente, para etiquetar entregas. */
+  entregasPorCliente: Record<string, number>;
   loading: boolean;
   error: string | null;
   crearProspecto: (args: CrearProspectoArgs) => Promise<Cliente>;
@@ -45,7 +49,8 @@ export function useSeguimiento(): UseSeguimientoReturn {
   const { user } = useAuthContext();
   const vendedorId = user?.id ?? null;
 
-  const [prospectos, setProspectos] = useState<Cliente[]>([]);
+  const [seguimiento, setSeguimiento] = useState<Cliente[]>([]);
+  const [entregasPorCliente, setEntregasPorCliente] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +60,15 @@ export function useSeguimiento(): UseSeguimientoReturn {
       const propios = vendedorId
         ? todos.filter((c) => c.vendedor_id === vendedorId)
         : todos;
-      setProspectos(prospectosDeLaSemana(propios));
+      const lista = seguimientoDeLaSemana(propios);
+
+      // Nº de pedidos pendientes por cliente listado (para etiquetar entregas).
+      const conteos = await Promise.all(
+        lista.map(async (c) => [c.id, (await pedidosPendientesDeCliente(c.id)).length] as const)
+      );
+
+      setSeguimiento(lista);
+      setEntregasPorCliente(Object.fromEntries(conteos));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -113,7 +126,8 @@ export function useSeguimiento(): UseSeguimientoReturn {
   );
 
   return {
-    prospectos,
+    seguimiento,
+    entregasPorCliente,
     loading,
     error,
     crearProspecto,

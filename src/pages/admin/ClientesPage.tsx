@@ -40,6 +40,7 @@ import {
 import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
 import { useClientes } from '../../hooks/useClientes';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteForm } from './components/ClienteForm';
@@ -100,6 +101,7 @@ export function ClientesPage() {
           <IonTitle>Clientes</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip />

@@ -67,6 +67,28 @@ export function prospectosDeLaSemana(
     );
 }
 
+/**
+ * Agenda de la semana: clientes (de cualquier estado) cuya próxima visita está
+ * vencida o por vencer hasta el domingo. Generaliza `prospectosDeLaSemana` para
+ * incluir también clientes activos con una entrega/visita agendada (su
+ * `fecha_proxima_visita` la fija una preventa o una reprogramación), de modo que
+ * el vendedor vea a quién visitar/entregar esta semana, no sólo a los prospectos.
+ */
+export function seguimientoDeLaSemana(
+  clientes: Cliente[],
+  hoy: Date = new Date()
+): Cliente[] {
+  return clientes
+    .filter((c) => c.activo)
+    .filter((c) => {
+      const v = clasificarVencimiento(c, hoy);
+      return v === 'vencido' || v === 'por_vencer';
+    })
+    .sort((a, b) =>
+      (a.fecha_proxima_visita ?? '').localeCompare(b.fecha_proxima_visita ?? '')
+    );
+}
+
 // ── Embudo (H-03) ─────────────────────────────────────────────
 
 export interface EmbudoEtapa {

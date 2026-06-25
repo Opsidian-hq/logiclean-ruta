@@ -168,3 +168,54 @@ describe('[H-05·2] entregar pedido pendiente: se convierte en venta y se cierra
     expect(vista[0].fecha_compromiso).toBe('2026-06-20');
   });
 });
+
+// ── Reagenda de la próxima visita tras entregar ───────────────
+describe('entregarPedido · reagenda la próxima visita del cliente', () => {
+  it('PEDIDO-109: si la visita la agendó esta entrega, queda en null al no quedar pedidos', async () => {
+    // Cliente con próxima visita = la fecha de entrega del pedido (la puso la preventa).
+    const cliente: Cliente = {
+      id: 'cli-1', vendedor_id: VENDEDOR, nombre: 'X', tipo: 'menudeo',
+      estado: 'activo', ciclo_visita: 1, fecha_proxima_visita: '2026-06-20', activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    await sembrarPedido(2); // ped-1, fecha_compromiso 2026-06-20
+
+    await entregarPedido({ pedidoId: 'ped-1' });
+
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita ?? null).toBeNull();
+  });
+
+  it('PEDIDO-110: reagenda a la siguiente entrega pendiente', async () => {
+    const cliente: Cliente = {
+      id: 'cli-1', vendedor_id: VENDEDOR, nombre: 'X', tipo: 'menudeo',
+      estado: 'activo', ciclo_visita: 1, fecha_proxima_visita: '2026-06-20', activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    await sembrarPedido(2); // ped-1 entrega 2026-06-20
+    await db.pedido_pendiente.put({
+      id: 'ped-2', cliente_id: 'cli-1', vendedor_id: VENDEDOR,
+      presentacion_id: PRES.id, cantidad: 1, fecha_compromiso: '2026-06-27', estado: 'pendiente',
+    });
+
+    await entregarPedido({ pedidoId: 'ped-1' });
+
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita).toBe('2026-06-27');
+  });
+
+  it('PEDIDO-111: no toca una visita que no venía de esta entrega', async () => {
+    // La próxima visita (de un ciclo de prospecto) no coincide con la entrega.
+    const cliente: Cliente = {
+      id: 'cli-1', vendedor_id: VENDEDOR, nombre: 'X', tipo: 'menudeo',
+      estado: 'prospecto', ciclo_visita: 2, fecha_proxima_visita: '2026-06-15', activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    await sembrarPedido(2); // entrega 2026-06-20 ≠ 2026-06-15
+
+    await entregarPedido({ pedidoId: 'ped-1' });
+
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita).toBe('2026-06-15'); // intacta
+  });
+});
