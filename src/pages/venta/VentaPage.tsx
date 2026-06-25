@@ -28,6 +28,7 @@ import {
   IonSpinner,
   IonToast,
   IonFooter,
+  IonModal,
 } from '@ionic/react';
 import { addOutline, trashOutline } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
@@ -36,6 +37,8 @@ import { useLocation, useHistory } from 'react-router-dom';
 import { useInventario } from '../../hooks/useInventario';
 import { useClientes } from '../../hooks/useClientes';
 import { useVenta } from '../../hooks/useVenta';
+import { useAuthContext } from '../../context/AuthContext';
+import { NuevoClienteForm, type NuevoClienteArgs } from './components/NuevoClienteForm';
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -77,12 +80,30 @@ const unidadChip: CSSProperties = {
 
 export function VentaPage() {
   const { rows, loading } = useInventario();
-  const { clientes } = useClientes();
+  const { clientes, saveCliente } = useClientes();
   const { registrarVenta, submitting } = useVenta();
+  const { user } = useAuthContext();
   const location = useLocation();
   const history = useHistory();
 
   const [clienteId, setClienteId] = useState<string>('');
+  const [nuevoClienteOpen, setNuevoClienteOpen] = useState(false);
+
+  // Alta de cliente activo sin salir de la venta: queda auto-seleccionado.
+  const crearClienteVenta = async ({ nombre, tipo, diaRuta }: NuevoClienteArgs) => {
+    if (!user) return;
+    const nuevo = await saveCliente({
+      vendedor_id: user.id,
+      nombre,
+      tipo,
+      estado: 'activo',
+      ciclo_visita: 1,
+      dia_ruta: diaRuta,
+      fecha_proxima_visita: null,
+      activo: true,
+    });
+    setClienteId(nuevo.id);
+  };
 
   // Preselección del cliente vía ?cliente=<id> (entrada desde la ruta del día).
   useEffect(() => {
@@ -338,6 +359,27 @@ export function VentaPage() {
                         </Chip>
                       </div>
                     )}
+                    {/* Alta de cliente nuevo en la propia venta (vendedor). */}
+                    <button
+                      type="button"
+                      onClick={() => setNuevoClienteOpen(true)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        marginTop: '6px',
+                        padding: 0,
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--color-primary)',
+                        fontSize: '13.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <IonIcon icon={addOutline} style={{ fontSize: '16px' }} />
+                      Nuevo cliente
+                    </button>
                   </div>
                   {/* Acceso a cobrar saldo previo desde la ficha del cliente (P3). */}
                   {cliente && (
@@ -642,6 +684,14 @@ export function VentaPage() {
           </div>
         </IonToolbar>
       </IonFooter>
+
+      {/* Modal: alta rápida de cliente activo desde la venta */}
+      <IonModal isOpen={nuevoClienteOpen} onDidDismiss={() => setNuevoClienteOpen(false)}>
+        <NuevoClienteForm
+          onCrear={crearClienteVenta}
+          onClose={() => setNuevoClienteOpen(false)}
+        />
+      </IonModal>
 
       <IonToast
         isOpen={!!toast}

@@ -39,6 +39,7 @@ import { Chip } from '../../components/ui/Chip';
 import { CicloBar } from '../../components/ui/CicloBar';
 import { FichaProspecto } from './components/FichaProspecto';
 import { NuevoProspectoForm } from './components/NuevoProspectoForm';
+import { GestionRutaModal } from './components/GestionRutaModal';
 import { pedidosPendientesVista, entregarPedido } from '../../lib/pedidos';
 import type { Cliente } from '../../db/schema';
 
@@ -85,6 +86,7 @@ export function VisitasPage() {
 
   const [fichaCliente, setFichaCliente] = useState<Cliente | null>(null);
   const [nuevoOpen, setNuevoOpen] = useState(false);
+  const [gestionCliente, setGestionCliente] = useState<Cliente | null>(null);
 
   return (
     <IonPage>
@@ -147,7 +149,14 @@ export function VisitasPage() {
                 {ruta.clientes.map((c) => (
                   <Card key={c.id} padding="13px 14px">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '11px' }}>
-                      <div style={{ minWidth: 0 }}>
+                      {/* Tocar los datos del cliente abre la gestión de su día de visita. */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setGestionCliente(c)}
+                        onKeyDown={(e) => e.key === 'Enter' && setGestionCliente(c)}
+                        style={{ minWidth: 0, flex: 1, cursor: 'pointer' }}
+                      >
                         <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.1 }}>
                           {c.nombre}
                         </div>
@@ -165,7 +174,10 @@ export function VisitasPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => history.push(`/venta?cliente=${c.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          history.push(`/venta?cliente=${c.id}`);
+                        }}
                         style={{
                           flex: 'none',
                           display: 'inline-flex',
@@ -321,6 +333,10 @@ export function VisitasPage() {
             onReprogramar={(fechaProxima) =>
               seg.reprogramarVisita({ cliente: fichaCliente, fechaProxima })
             }
+            onCambiarDia={async (dia) => {
+              await seg.actualizarRuta({ cliente: fichaCliente, diaRuta: dia });
+              await ruta.refresh();
+            }}
             onCobrarSaldo={() => {
               const id = fichaCliente.id;
               setFichaCliente(null);
@@ -343,6 +359,20 @@ export function VisitasPage() {
           onCrear={seg.crearProspecto}
           onClose={() => setNuevoOpen(false)}
         />
+      </IonModal>
+
+      {/* Modal: gestionar día de visita / ruta del cliente */}
+      <IonModal isOpen={!!gestionCliente} onDidDismiss={() => setGestionCliente(null)}>
+        {gestionCliente && (
+          <GestionRutaModal
+            cliente={gestionCliente}
+            onGuardar={async ({ diaRuta, fechaProxima }) => {
+              await seg.actualizarRuta({ cliente: gestionCliente, diaRuta, fechaProxima });
+              await Promise.all([ruta.refresh(), seg.refresh()]);
+            }}
+            onClose={() => setGestionCliente(null)}
+          />
+        )}
       </IonModal>
     </IonPage>
   );
