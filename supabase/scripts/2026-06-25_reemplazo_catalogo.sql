@@ -1,11 +1,21 @@
 -- ============================================================
--- Logiclean Ruta — Seed: Catálogo de productos (lista menudeo vigente)
+-- Logiclean Ruta — Reemplazo de catálogo en producción (2026-06-25)
 --
--- Generado desde la lista de precios del cliente. UUIDs deterministas (uuid5)
--- para reproducibilidad e idempotencia. precio_mayoreo = precio_menudeo
--- (pendiente la lista de mayoreo real). 34 productos · 56 presentaciones.
+-- Sustituye el catálogo actual por la lista de precios menudeo vigente.
+-- precio_mayoreo = precio_menudeo (pendiente lista de mayoreo real).
+--
+-- "Borrado" del catálogo viejo, respetando integridad referencial:
+--   * DELETE físico de productos/presentaciones SIN historial de ventas/pedidos.
+--   * Baja lógica (activo=false) de los que SÍ tienen historial (no se puede
+--     borrar sin destruir ventas; siguen referenciados por linea_venta).
+--   * Se limpia el inventario del vehículo del catálogo viejo (operativo).
+-- Idempotente: re-ejecutar no duplica (UUIDs uuid5 + ON CONFLICT).
+-- Ejecutar completo en el SQL Editor de Supabase.
 -- ============================================================
 
+BEGIN;
+
+-- 1) Insertar el catálogo nuevo (productos + presentaciones, activos)
 INSERT INTO producto_base (id, nombre, unidad_compra, precio_preferencial, activo) VALUES
   ('4d8ce2ae-cdb7-589a-9d9f-da6379639977', 'Limpiador Multiusos Canela Logiclean', 'bidon', NULL, true),
   ('c963f67d-7c2d-54cb-896e-8f30cc8fe11f', 'Limpiador Multiusos Mar Fresco Logiclean', 'bidon', NULL, true),
@@ -101,3 +111,278 @@ INSERT INTO presentacion (id, producto_base_id, nombre, unidad_venta, factor_con
   ('905acf65-c118-55a3-a83d-8aeffc183b17', 'c782e965-01b3-560d-8178-00be31d3f997', 'Papel Higenico Jr Sanisol 12/200', 'paquete', 1, 370.00, 370.00, true),
   ('9960e768-6c25-5e0b-86b9-c4145cd47656', '258ef52a-64aa-5854-b669-ac2135f51026', 'Papel Higenico Jr Sanilux 12/250', 'paquete', 1, 590.00, 590.00, true)
 ON CONFLICT (id) DO NOTHING;
+
+-- 2) Limpiar inventario del vehículo de presentaciones que NO son del catálogo nuevo
+DELETE FROM inventario_vehiculo
+WHERE presentacion_id NOT IN (
+  '79bd6357-b879-5a06-be99-ea6a675f5348',
+  '51d8b8a8-8a23-5621-bde1-9ac9203b60c3',
+  '4cf1bd6c-0d40-5e85-85d5-b402bc2413c5',
+  '484a2b9a-398a-5a26-a3cf-566fc2fbdc0a',
+  '1360a899-c1a2-5fee-a74a-2da32504e3cb',
+  '1d7a008b-6ddb-5b10-9466-3d8cdfc7056b',
+  'f0d85640-7fad-5f9c-b301-a3b3a4a51bb1',
+  '8df274b8-44c8-5f87-a484-d54a2d054744',
+  'cd5f6015-24c4-5dd2-b321-e29c2beefb20',
+  'bd3a12db-a374-54a3-b652-6d68a9d0ed15',
+  'f5c482fd-bcc1-5b50-b697-e87941ac8e51',
+  'cf637f7e-5142-5e06-9225-ff30e9f53971',
+  'b770b82c-b8a5-58c1-a2c8-dfe1179ae707',
+  'a2f7bf5d-c58f-5f91-8468-7bf48f4d561f',
+  '8aedef89-c355-5278-b687-627d4479e926',
+  '7f93ba01-8e69-549e-9b29-a4c711faceb1',
+  '26f06eb3-4719-5c79-a0e4-9764f86510a0',
+  '6719d6b3-2129-5b24-829e-fddfbb40ee77',
+  '2d1e4a4e-6656-50e8-8966-749a2ba5df37',
+  '3953d26d-e3bf-501c-844f-d57d1613c41a',
+  '4e8ef31b-5325-58f1-a4ea-8ccbdefd3c21',
+  '81bbd7e5-d353-5784-9e16-d6579f470431',
+  'dfbb7ab1-52fe-52b3-8ae6-4c2ac89d6cbe',
+  '0e7e6978-9ec7-5a0f-857f-3d3888449ab8',
+  '60a65721-b661-5060-a4b2-89bf3f0c084b',
+  '2f34d3ca-f423-55b5-b69d-3797554d598b',
+  '5556a674-95ca-5b02-b3c4-4401c7612bd2',
+  '8660c701-f38e-5f25-8529-126f65cb4b14',
+  '8ce905b9-1bbe-57f5-9714-64aa635ac7d6',
+  '75c607ec-e73a-51c9-8757-d9339b7d86cc',
+  'c1848307-dc20-5001-a40c-6231802dafcb',
+  '8295759f-b5b5-51b2-8274-f4bada1156a6',
+  '163f2c3d-c9b7-51d7-ad6f-9e501d989dba',
+  'c7d24b88-f34c-55c4-b462-fe965d695479',
+  '3364668e-5f9c-594b-bdc7-b02fa24addac',
+  '1be215c7-3860-53de-b552-fb0a597143e7',
+  'a476f0a1-738a-535f-a960-55e2ae7aacb9',
+  '8d6a0070-886e-5994-b358-76cec11f25d4',
+  'f46be2a3-56fc-5c19-8c6f-88b084ff76d5',
+  '5e687cce-484a-5e86-aa48-caec2bc1f000',
+  '91890ba4-4259-5adf-a743-b26fda7184cc',
+  '42287bda-b520-5b8d-b7bb-db9474a2131e',
+  'eff50ec2-188f-56c4-9d46-0f3cb04d8ecf',
+  '6c8a10c7-4b85-5926-aa9e-87a6ffa55f4c',
+  '38c61b74-a6d6-5ae1-8a15-8c963b903156',
+  'ea6bae25-2dcc-5e17-96dd-3ab95b83e978',
+  '6c1278e5-b497-5fe8-8bcb-a506ca9c1df6',
+  'f1212941-97bc-5999-b9ef-506bdf262cae',
+  '7cbd213d-bab7-54d1-b7af-26ba202c5ee0',
+  '9337c23d-1736-5f7e-a805-6c4d4308b3bb',
+  '4c8b02d2-c2fa-58fb-9866-3241397f6fbc',
+  '5431248e-dfbd-516f-9e8c-fe8ff02b204f',
+  'fbb1a503-cdf2-5f4d-981c-a19c9e87db6f',
+  '0d3a46d6-2a77-58cc-a4e7-520eaa5be011',
+  '905acf65-c118-55a3-a83d-8aeffc183b17',
+  '9960e768-6c25-5e0b-86b9-c4145cd47656'
+);
+
+-- 3) Baja lógica de presentaciones viejas CON historial (ventas o pedidos)
+UPDATE presentacion SET activo = false
+WHERE id NOT IN (
+  '79bd6357-b879-5a06-be99-ea6a675f5348',
+  '51d8b8a8-8a23-5621-bde1-9ac9203b60c3',
+  '4cf1bd6c-0d40-5e85-85d5-b402bc2413c5',
+  '484a2b9a-398a-5a26-a3cf-566fc2fbdc0a',
+  '1360a899-c1a2-5fee-a74a-2da32504e3cb',
+  '1d7a008b-6ddb-5b10-9466-3d8cdfc7056b',
+  'f0d85640-7fad-5f9c-b301-a3b3a4a51bb1',
+  '8df274b8-44c8-5f87-a484-d54a2d054744',
+  'cd5f6015-24c4-5dd2-b321-e29c2beefb20',
+  'bd3a12db-a374-54a3-b652-6d68a9d0ed15',
+  'f5c482fd-bcc1-5b50-b697-e87941ac8e51',
+  'cf637f7e-5142-5e06-9225-ff30e9f53971',
+  'b770b82c-b8a5-58c1-a2c8-dfe1179ae707',
+  'a2f7bf5d-c58f-5f91-8468-7bf48f4d561f',
+  '8aedef89-c355-5278-b687-627d4479e926',
+  '7f93ba01-8e69-549e-9b29-a4c711faceb1',
+  '26f06eb3-4719-5c79-a0e4-9764f86510a0',
+  '6719d6b3-2129-5b24-829e-fddfbb40ee77',
+  '2d1e4a4e-6656-50e8-8966-749a2ba5df37',
+  '3953d26d-e3bf-501c-844f-d57d1613c41a',
+  '4e8ef31b-5325-58f1-a4ea-8ccbdefd3c21',
+  '81bbd7e5-d353-5784-9e16-d6579f470431',
+  'dfbb7ab1-52fe-52b3-8ae6-4c2ac89d6cbe',
+  '0e7e6978-9ec7-5a0f-857f-3d3888449ab8',
+  '60a65721-b661-5060-a4b2-89bf3f0c084b',
+  '2f34d3ca-f423-55b5-b69d-3797554d598b',
+  '5556a674-95ca-5b02-b3c4-4401c7612bd2',
+  '8660c701-f38e-5f25-8529-126f65cb4b14',
+  '8ce905b9-1bbe-57f5-9714-64aa635ac7d6',
+  '75c607ec-e73a-51c9-8757-d9339b7d86cc',
+  'c1848307-dc20-5001-a40c-6231802dafcb',
+  '8295759f-b5b5-51b2-8274-f4bada1156a6',
+  '163f2c3d-c9b7-51d7-ad6f-9e501d989dba',
+  'c7d24b88-f34c-55c4-b462-fe965d695479',
+  '3364668e-5f9c-594b-bdc7-b02fa24addac',
+  '1be215c7-3860-53de-b552-fb0a597143e7',
+  'a476f0a1-738a-535f-a960-55e2ae7aacb9',
+  '8d6a0070-886e-5994-b358-76cec11f25d4',
+  'f46be2a3-56fc-5c19-8c6f-88b084ff76d5',
+  '5e687cce-484a-5e86-aa48-caec2bc1f000',
+  '91890ba4-4259-5adf-a743-b26fda7184cc',
+  '42287bda-b520-5b8d-b7bb-db9474a2131e',
+  'eff50ec2-188f-56c4-9d46-0f3cb04d8ecf',
+  '6c8a10c7-4b85-5926-aa9e-87a6ffa55f4c',
+  '38c61b74-a6d6-5ae1-8a15-8c963b903156',
+  'ea6bae25-2dcc-5e17-96dd-3ab95b83e978',
+  '6c1278e5-b497-5fe8-8bcb-a506ca9c1df6',
+  'f1212941-97bc-5999-b9ef-506bdf262cae',
+  '7cbd213d-bab7-54d1-b7af-26ba202c5ee0',
+  '9337c23d-1736-5f7e-a805-6c4d4308b3bb',
+  '4c8b02d2-c2fa-58fb-9866-3241397f6fbc',
+  '5431248e-dfbd-516f-9e8c-fe8ff02b204f',
+  'fbb1a503-cdf2-5f4d-981c-a19c9e87db6f',
+  '0d3a46d6-2a77-58cc-a4e7-520eaa5be011',
+  '905acf65-c118-55a3-a83d-8aeffc183b17',
+  '9960e768-6c25-5e0b-86b9-c4145cd47656'
+)
+AND (
+  EXISTS (SELECT 1 FROM linea_venta lv WHERE lv.presentacion_id = presentacion.id)
+  OR EXISTS (SELECT 1 FROM pedido_pendiente pp WHERE pp.presentacion_id = presentacion.id)
+);
+
+-- 4) DELETE físico de presentaciones viejas SIN historial
+DELETE FROM presentacion
+WHERE id NOT IN (
+  '79bd6357-b879-5a06-be99-ea6a675f5348',
+  '51d8b8a8-8a23-5621-bde1-9ac9203b60c3',
+  '4cf1bd6c-0d40-5e85-85d5-b402bc2413c5',
+  '484a2b9a-398a-5a26-a3cf-566fc2fbdc0a',
+  '1360a899-c1a2-5fee-a74a-2da32504e3cb',
+  '1d7a008b-6ddb-5b10-9466-3d8cdfc7056b',
+  'f0d85640-7fad-5f9c-b301-a3b3a4a51bb1',
+  '8df274b8-44c8-5f87-a484-d54a2d054744',
+  'cd5f6015-24c4-5dd2-b321-e29c2beefb20',
+  'bd3a12db-a374-54a3-b652-6d68a9d0ed15',
+  'f5c482fd-bcc1-5b50-b697-e87941ac8e51',
+  'cf637f7e-5142-5e06-9225-ff30e9f53971',
+  'b770b82c-b8a5-58c1-a2c8-dfe1179ae707',
+  'a2f7bf5d-c58f-5f91-8468-7bf48f4d561f',
+  '8aedef89-c355-5278-b687-627d4479e926',
+  '7f93ba01-8e69-549e-9b29-a4c711faceb1',
+  '26f06eb3-4719-5c79-a0e4-9764f86510a0',
+  '6719d6b3-2129-5b24-829e-fddfbb40ee77',
+  '2d1e4a4e-6656-50e8-8966-749a2ba5df37',
+  '3953d26d-e3bf-501c-844f-d57d1613c41a',
+  '4e8ef31b-5325-58f1-a4ea-8ccbdefd3c21',
+  '81bbd7e5-d353-5784-9e16-d6579f470431',
+  'dfbb7ab1-52fe-52b3-8ae6-4c2ac89d6cbe',
+  '0e7e6978-9ec7-5a0f-857f-3d3888449ab8',
+  '60a65721-b661-5060-a4b2-89bf3f0c084b',
+  '2f34d3ca-f423-55b5-b69d-3797554d598b',
+  '5556a674-95ca-5b02-b3c4-4401c7612bd2',
+  '8660c701-f38e-5f25-8529-126f65cb4b14',
+  '8ce905b9-1bbe-57f5-9714-64aa635ac7d6',
+  '75c607ec-e73a-51c9-8757-d9339b7d86cc',
+  'c1848307-dc20-5001-a40c-6231802dafcb',
+  '8295759f-b5b5-51b2-8274-f4bada1156a6',
+  '163f2c3d-c9b7-51d7-ad6f-9e501d989dba',
+  'c7d24b88-f34c-55c4-b462-fe965d695479',
+  '3364668e-5f9c-594b-bdc7-b02fa24addac',
+  '1be215c7-3860-53de-b552-fb0a597143e7',
+  'a476f0a1-738a-535f-a960-55e2ae7aacb9',
+  '8d6a0070-886e-5994-b358-76cec11f25d4',
+  'f46be2a3-56fc-5c19-8c6f-88b084ff76d5',
+  '5e687cce-484a-5e86-aa48-caec2bc1f000',
+  '91890ba4-4259-5adf-a743-b26fda7184cc',
+  '42287bda-b520-5b8d-b7bb-db9474a2131e',
+  'eff50ec2-188f-56c4-9d46-0f3cb04d8ecf',
+  '6c8a10c7-4b85-5926-aa9e-87a6ffa55f4c',
+  '38c61b74-a6d6-5ae1-8a15-8c963b903156',
+  'ea6bae25-2dcc-5e17-96dd-3ab95b83e978',
+  '6c1278e5-b497-5fe8-8bcb-a506ca9c1df6',
+  'f1212941-97bc-5999-b9ef-506bdf262cae',
+  '7cbd213d-bab7-54d1-b7af-26ba202c5ee0',
+  '9337c23d-1736-5f7e-a805-6c4d4308b3bb',
+  '4c8b02d2-c2fa-58fb-9866-3241397f6fbc',
+  '5431248e-dfbd-516f-9e8c-fe8ff02b204f',
+  'fbb1a503-cdf2-5f4d-981c-a19c9e87db6f',
+  '0d3a46d6-2a77-58cc-a4e7-520eaa5be011',
+  '905acf65-c118-55a3-a83d-8aeffc183b17',
+  '9960e768-6c25-5e0b-86b9-c4145cd47656'
+)
+AND NOT EXISTS (SELECT 1 FROM linea_venta lv WHERE lv.presentacion_id = presentacion.id)
+AND NOT EXISTS (SELECT 1 FROM pedido_pendiente pp WHERE pp.presentacion_id = presentacion.id);
+
+-- 5a) DELETE físico de productos viejos que quedaron sin presentaciones
+DELETE FROM producto_base
+WHERE id NOT IN (
+  '4d8ce2ae-cdb7-589a-9d9f-da6379639977',
+  'c963f67d-7c2d-54cb-896e-8f30cc8fe11f',
+  'fc943de9-8123-5b1f-a847-cb53873a79f8',
+  '5c738381-d2f9-5637-8d26-603c858a9a88',
+  '87a77ab0-46e0-5f0c-b53f-e9366e20319f',
+  'fd36dab8-4753-577b-b38a-34a9fd1efedb',
+  '5e18c4cc-a4c3-5c63-b765-e46f2dad4632',
+  '774d6cc5-ba57-5fd9-bc03-5260705eb663',
+  '9674f154-eadb-5d7a-9b42-ccb95735aad2',
+  '4bcc0dfb-88f6-57de-a804-2c5ca404a622',
+  '4be73acc-524d-5ef6-88fa-07c00e12dc53',
+  'befa967a-b254-5627-8be2-d0dc131e7f52',
+  'ac53244a-c78d-5c17-9c85-8b7e9d3260e6',
+  'c57079f7-239c-5a10-9a50-a574cad92197',
+  'e7e3e8c1-0d68-57cd-94e1-7e08d5647340',
+  'd9a57e67-cff6-5e93-b7aa-840c67182c92',
+  '5b2dc1bd-2308-5290-8635-c137f88b3e75',
+  'f5aae65c-e82f-5028-899a-d2dcba7b19f4',
+  'e9b754cd-121d-5e1b-b916-e755f3a5e0a5',
+  'cc183a49-b182-54de-924c-1e4fae2dcbf5',
+  '67a2e7d5-152c-5d6b-9340-46e5b3bd4dfb',
+  '787696d5-ba15-58f9-9e02-d9b8f33c7a53',
+  'a33fbae3-d493-5e4f-93a0-521ff8e0612e',
+  'd402e2af-addf-5ff6-bc48-d64522845aad',
+  'b74a5b33-29de-55ab-b597-9a40ea801d87',
+  '9a7d4349-e290-55d5-8079-93f06a3e5ef8',
+  '7ef258f2-6c96-5585-a120-ca3b49f968d3',
+  'a7fe11a0-ddc1-5758-9b75-0350eb069e9e',
+  '02ba554d-76b4-522b-839f-3479166b48c1',
+  '0957e80a-4db8-567f-906d-dc87a3999e31',
+  '072206e7-05f3-54cb-8fa1-0dbaa1bac3a3',
+  '8d0b0644-d0af-54e1-a6d6-6692bae3bedf',
+  'c782e965-01b3-560d-8178-00be31d3f997',
+  '258ef52a-64aa-5854-b669-ac2135f51026'
+)
+AND NOT EXISTS (SELECT 1 FROM presentacion p WHERE p.producto_base_id = producto_base.id);
+
+-- 5b) Baja lógica de productos viejos que conservan presentaciones (desactivadas)
+UPDATE producto_base SET activo = false
+WHERE id NOT IN (
+  '4d8ce2ae-cdb7-589a-9d9f-da6379639977',
+  'c963f67d-7c2d-54cb-896e-8f30cc8fe11f',
+  'fc943de9-8123-5b1f-a847-cb53873a79f8',
+  '5c738381-d2f9-5637-8d26-603c858a9a88',
+  '87a77ab0-46e0-5f0c-b53f-e9366e20319f',
+  'fd36dab8-4753-577b-b38a-34a9fd1efedb',
+  '5e18c4cc-a4c3-5c63-b765-e46f2dad4632',
+  '774d6cc5-ba57-5fd9-bc03-5260705eb663',
+  '9674f154-eadb-5d7a-9b42-ccb95735aad2',
+  '4bcc0dfb-88f6-57de-a804-2c5ca404a622',
+  '4be73acc-524d-5ef6-88fa-07c00e12dc53',
+  'befa967a-b254-5627-8be2-d0dc131e7f52',
+  'ac53244a-c78d-5c17-9c85-8b7e9d3260e6',
+  'c57079f7-239c-5a10-9a50-a574cad92197',
+  'e7e3e8c1-0d68-57cd-94e1-7e08d5647340',
+  'd9a57e67-cff6-5e93-b7aa-840c67182c92',
+  '5b2dc1bd-2308-5290-8635-c137f88b3e75',
+  'f5aae65c-e82f-5028-899a-d2dcba7b19f4',
+  'e9b754cd-121d-5e1b-b916-e755f3a5e0a5',
+  'cc183a49-b182-54de-924c-1e4fae2dcbf5',
+  '67a2e7d5-152c-5d6b-9340-46e5b3bd4dfb',
+  '787696d5-ba15-58f9-9e02-d9b8f33c7a53',
+  'a33fbae3-d493-5e4f-93a0-521ff8e0612e',
+  'd402e2af-addf-5ff6-bc48-d64522845aad',
+  'b74a5b33-29de-55ab-b597-9a40ea801d87',
+  '9a7d4349-e290-55d5-8079-93f06a3e5ef8',
+  '7ef258f2-6c96-5585-a120-ca3b49f968d3',
+  'a7fe11a0-ddc1-5758-9b75-0350eb069e9e',
+  '02ba554d-76b4-522b-839f-3479166b48c1',
+  '0957e80a-4db8-567f-906d-dc87a3999e31',
+  '072206e7-05f3-54cb-8fa1-0dbaa1bac3a3',
+  '8d0b0644-d0af-54e1-a6d6-6692bae3bedf',
+  'c782e965-01b3-560d-8178-00be31d3f997',
+  '258ef52a-64aa-5854-b669-ac2135f51026'
+)
+AND EXISTS (SELECT 1 FROM presentacion p WHERE p.producto_base_id = producto_base.id);
+
+COMMIT;
+
+-- Verificación sugerida tras ejecutar:
+--   SELECT count(*) FROM producto_base WHERE activo;   -- 34
+--   SELECT count(*) FROM presentacion  WHERE activo;   -- 56
