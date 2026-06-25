@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest';
 import {
   clasificarVencimiento,
   prospectosDeLaSemana,
+  seguimientoDeLaSemana,
   embudoPorEtapa,
   adherencia,
   finDeSemana,
@@ -60,6 +61,22 @@ describe('prospectosDeLaSemana', () => {
     ];
     const res = prospectosDeLaSemana(lista, LUNES);
     expect(res.map((c) => c.id)).toEqual(['b', 'a']);
+  });
+});
+
+describe('seguimientoDeLaSemana', () => {
+  it('PROSP-005: incluye prospectos Y clientes activos con visita/entrega esta semana', () => {
+    const lista = [
+      cli({ id: 'a', nombre: 'A', fecha_proxima_visita: '2026-06-18' }), // prospecto por vencer
+      cli({ id: 'b', nombre: 'B', fecha_proxima_visita: '2026-06-05' }), // prospecto vencido
+      cli({ id: 'd', nombre: 'D', fecha_proxima_visita: '2026-06-19', estado: 'activo' }), // activo con entrega → dentro
+      cli({ id: 'f', nombre: 'F', fecha_proxima_visita: null, estado: 'activo' }), // activo sin fecha → fuera
+      cli({ id: 'c', nombre: 'C', fecha_proxima_visita: '2026-06-30' }), // al día → fuera
+      cli({ id: 'e', nombre: 'E', fecha_proxima_visita: '2026-06-12', activo: false }), // inactivo → fuera
+    ];
+    const res = seguimientoDeLaSemana(lista, LUNES);
+    // Orden por urgencia (fecha asc): b(06-05), a(06-18), d(06-19)
+    expect(res.map((c) => c.id)).toEqual(['b', 'a', 'd']);
   });
 });
 

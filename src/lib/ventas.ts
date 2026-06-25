@@ -14,6 +14,7 @@
 
 import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
+import { toDexieRow } from '../db/normalize';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
 import { precioUnitario, totalVenta, calcularIVA, totalConFactura } from './precios';
@@ -24,6 +25,7 @@ import type {
   LineaVenta,
   Cobro,
   PedidoPendiente,
+  Cliente,
 } from '../db/schema';
 import type { TipoCliente } from './precios';
 
@@ -151,6 +153,11 @@ export async function registrarVenta(
     pedidosCreados.push(pedido);
   }
 
+  // 3b) Agendar la visita de entrega: la próxima visita del cliente se mueve a
+  //     la fecha de entrega más próxima del pedido, para que reaparezca en la
+  //     ruta (HOY/Esta semana) y el vendedor vaya a entregarlo (H-05).
+  await agendarEntrega(cliente.id, pedidosCreados);
+
   // 4) COBRO opcional (H-07)
   let cobroCreado: Cobro | null = null;
   if (cobro && cobro.monto > 0) {
@@ -174,10 +181,36 @@ export async function registrarVenta(
   return { venta, lineas, pedidos: pedidosCreados, cobro: cobroCreado, subtotal, iva, saldo };
 }
 
+/**
+ * Mueve la próxima visita del cliente a la fecha de entrega más próxima de los
+ * pedidos levantados, salvo que ya tuviera agendada una visita anterior (no la
+ * retrasa). Persiste el cliente en el mismo lote (sin disparar sync aquí).
+ */
+async function agendarEntrega(
+  clienteId: string,
+  pedidos: PedidoPendiente[]
+): Promise<void> {
+  const fechas = pedidos
+    .map((p) => p.fecha_compromiso)
+    .filter((f): f is string => !!f)
+    .map((f) => f.slice(0, 10));
+  if (fechas.length === 0) return;
+
+  const proximaEntrega = fechas.sort()[0];
+  const cliente = await db.cliente.get(clienteId);
+  if (!cliente) return;
+
+  const actual = cliente.fecha_proxima_visita?.slice(0, 10) ?? null;
+  if (actual && actual <= proximaEntrega) return; // ya hay una visita igual o antes
+
+  const actualizado: Cliente = { ...cliente, fecha_proxima_visita: proximaEntrega };
+  await persist('cliente', toDexieRow(actualizado));
+}
+
 // ── Persistencia local + cola (sin disparar sync) ─────────────
 
 async function persist(
-  table: 'venta' | 'linea_venta' | 'pedido_pendiente' | 'cobro',
+  table: 'venta' | 'linea_venta' | 'pedido_pendiente' | 'cobro' | 'cliente',
   row: object
 ): Promise<void> {
   await db.table(table).put(row);

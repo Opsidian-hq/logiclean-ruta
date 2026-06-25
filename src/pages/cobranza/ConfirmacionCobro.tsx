@@ -32,6 +32,7 @@ import { folioLocal } from '../../lib/folio';
 import type { FormaPago } from '../../lib/cobros';
 import { SaldoInfo } from './components/SaldoInfo';
 import { ErrorSyncBanner } from './components/ErrorSyncBanner';
+import type { PedidoConfirmado } from '../venta/components/ConfirmacionPreventa';
 
 interface ConfirmacionCobroProps {
   ventaId: string;
@@ -47,6 +48,8 @@ interface ConfirmacionCobroProps {
   /** Forma de pago del cobro; null si fue a crédito (sin cobro). */
   formaPago: FormaPago | null;
   saldo: number;
+  /** Pedidos pendientes levantados en la misma venta (preventa), si los hay. */
+  pedidos?: PedidoConfirmado[];
   onVolverRuta: () => void;
   onVerFicha?: () => void;
 }
@@ -76,6 +79,7 @@ export function ConfirmacionCobro({
   montoCobrado,
   formaPago,
   saldo,
+  pedidos = [],
   onVolverRuta,
   onVerFicha,
 }: ConfirmacionCobroProps) {
@@ -197,6 +201,30 @@ export function ConfirmacionCobro({
                 <span style={{ color: '#3E6B22' }}>✓</span>Venta liquidada
               </span>
               <span className="numeric" style={{ fontSize: '15px', fontWeight: 800, color: '#3E6B22' }}>Saldo {money(0)}</span>
+            </div>
+          )}
+
+          {/* Pedidos pendientes (preventa) levantados en la misma venta */}
+          {pedidos.length > 0 && (
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: '#8A94A6', margin: '4px 0 8px' }}>
+                Pedidos programados (preventa) · {pedidos.length}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pedidos.map((p, idx) => (
+                  <div key={idx} style={{ border: '1.5px solid var(--color-primary-line)', background: 'var(--color-primary-bg)', borderRadius: '14px', padding: '12px 13px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="numeric" style={{ minWidth: '28px', fontSize: '15px', fontWeight: 800, color: 'var(--color-primary)' }}>
+                      {p.cantidad}×
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>{p.nombre}</div>
+                    {p.fecha_compromiso && (
+                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--color-primary)' }}>
+                        entrega {p.fecha_compromiso}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { useInventario } from '../../hooks/useInventario';
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 
@@ -43,6 +44,7 @@ export function InventarioPage() {
           <IonTitle>Inventario del vehículo</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip text="El inventario se guarda en el equipo al instante" />

@@ -41,6 +41,7 @@ import { useAuthContext } from '../../context/AuthContext';
 import { NuevoClienteForm, type NuevoClienteArgs } from './components/NuevoClienteForm';
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -52,10 +53,14 @@ import type { RegistrarVentaResult } from '../../lib/ventas';
 import { money } from '../../lib/money';
 import { CobroVentaStep, type DecisionCobro } from '../cobranza/CobroVentaStep';
 import { ConfirmacionCobro } from '../cobranza/ConfirmacionCobro';
+import { ConfirmacionPreventa } from './components/ConfirmacionPreventa';
 import type { FormaPago } from '../../lib/cobros';
 
-/** Fases del flujo de venta: carrito (Flujo A) → cobro (P1) → confirmación (P2). */
-type Fase = 'carrito' | 'cobro' | 'confirmacion';
+/**
+ * Fases del flujo: carrito (Flujo A) → cobro (P1) → confirmación (P2).
+ * `preventa` es el cierre cuando sólo se levantan pedidos (sin venta ni cobro).
+ */
+type Fase = 'carrito' | 'cobro' | 'confirmacion' | 'preventa';
 
 // Etiqueta de sección en mayúsculas (prototipo).
 const sectionLabel: CSSProperties = {
@@ -177,20 +182,34 @@ export function VentaPage() {
   const puedeGuardar =
     !!cliente && (lineasVehiculo.length > 0 || pedidos.length > 0) && !submitting;
 
+  // La fecha de entrega es obligatoria: con ella se agenda la visita de entrega.
+  const pedidoCompleto = !!pedPres && pedCant > 0 && !!pedFecha;
+
   const agregarPedido = () => {
-    if (!pedPres || pedCant <= 0) return;
+    if (!pedidoCompleto) return;
     setPedidos((prev) => [
       ...prev,
       {
         presentacion_id: pedPres,
         cantidad: pedCant,
-        fecha_compromiso: pedFecha || null,
+        fecha_compromiso: pedFecha,
       },
     ]);
     setPedPres('');
     setPedCant(1);
     setPedFecha('');
   };
+
+  // Sólo preventa: hay pedidos pero nada que cobrar hoy → se salta el cobro.
+  const soloPedidos = lineasVehiculo.length === 0 && pedidos.length > 0;
+
+  // Pedidos con nombre resuelto para las pantallas de confirmación.
+  const pedidosVista = (peds: typeof pedidos) =>
+    peds.map((p) => ({
+      nombre: nombrePresentacion(p.presentacion_id),
+      cantidad: p.cantidad,
+      fecha_compromiso: p.fecha_compromiso ?? undefined,
+    }));
 
   const quitarPedido = (idx: number) =>
     setPedidos((prev) => prev.filter((_, i) => i !== idx));
@@ -226,6 +245,20 @@ export function VentaPage() {
     setFase('confirmacion');
   };
 
+  // Sólo preventa: guarda los pedidos (sin cobro) y confirma sin paso de cobro.
+  const programarPreventa = async () => {
+    if (!cliente || !tipo) return;
+    const res = await registrarVenta({
+      cliente: { id: cliente.id, tipo },
+      lineasVehiculo: [],
+      pedidos,
+      cobro: null,
+      requiereFactura: false,
+    });
+    setResultado(res);
+    setFase('preventa');
+  };
+
   // P2: regreso a la ruta del día; se descarta el estado en memoria.
   const volverARuta = () => {
     reset();
@@ -250,6 +283,21 @@ export function VentaPage() {
     );
   }
 
+  // ── Confirmación de preventa (sólo pedidos, sin cobro) ──
+  if (fase === 'preventa' && resultado && cliente && tipo) {
+    return (
+      <IonPage>
+        <ConfirmacionPreventa
+          ventaId={resultado.venta.id}
+          clienteNombre={cliente.nombre}
+          tipo={tipo}
+          pedidos={pedidosVista(pedidos)}
+          onVolverRuta={volverARuta}
+        />
+      </IonPage>
+    );
+  }
+
   // ── P2 · Confirmación de venta con cobro registrado ──
   if (fase === 'confirmacion' && resultado && cliente && tipo) {
     const formaPago: FormaPago | null =
@@ -266,6 +314,7 @@ export function VentaPage() {
           montoCobrado={resultado.cobro?.monto ?? 0}
           formaPago={formaPago}
           saldo={resultado.saldo}
+          pedidos={pedidosVista(pedidos)}
           onVolverRuta={volverARuta}
           onVerFicha={
             resultado.saldo > 0
@@ -288,6 +337,7 @@ export function VentaPage() {
           <IonTitle>Nueva venta</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         {/* Franja offline-first permanente (ADR-0001) */}
@@ -594,18 +644,24 @@ export function VentaPage() {
                 </div>
               </IonItem>
               <IonItem>
-                <IonLabel position="stacked">Fecha compromiso</IonLabel>
+                <IonLabel position="stacked">Fecha de entrega *</IonLabel>
                 <IonInput
                   type="date"
                   value={pedFecha}
                   onIonInput={(e) => setPedFecha(e.detail.value ?? '')}
                 />
               </IonItem>
+              <div style={{ padding: '4px var(--space-md) 0' }}>
+                <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
+                  Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
+                  para entregarle el pedido.
+                </IonNote>
+              </div>
               <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
                 <IonButton
                   expand="block"
                   fill="outline"
-                  disabled={!pedPres || pedCant <= 0}
+                  disabled={!pedidoCompleto}
                   onClick={agregarPedido}
                 >
                   <IonIcon icon={addOutline} slot="start" />
@@ -673,14 +729,21 @@ export function VentaPage() {
               )}
             </div>
 
-            {/* CTA ancho completo: avanza al paso de cobro (P1). */}
-            <PrimaryCTA
-              disabled={!puedeGuardar}
-              onClick={() => setFase('cobro')}
-              trailing={money(total)}
-            >
-              Continuar al cobro
-            </PrimaryCTA>
+            {/* CTA: si sólo hay preventa, se programa el pedido sin paso de cobro;
+                si hay productos del vehículo, se avanza al cobro (P1). */}
+            {soloPedidos ? (
+              <PrimaryCTA disabled={!puedeGuardar} onClick={programarPreventa}>
+                Programar pedido
+              </PrimaryCTA>
+            ) : (
+              <PrimaryCTA
+                disabled={!puedeGuardar}
+                onClick={() => setFase('cobro')}
+                trailing={money(total)}
+              >
+                Continuar al cobro
+              </PrimaryCTA>
+            )}
           </div>
         </IonToolbar>
       </IonFooter>

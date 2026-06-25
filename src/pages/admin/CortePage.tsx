@@ -28,6 +28,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useCorte } from '../../hooks/useCorte';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
+import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -107,6 +108,7 @@ export function CortePage() {
           <IonTitle>Corte semanal</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip />

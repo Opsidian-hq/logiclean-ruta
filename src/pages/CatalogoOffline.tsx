@@ -13,27 +13,23 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonButton,
-  IonIcon,
   IonSearchbar,
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { logOutOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useCatalog } from '../hooks/useCatalog';
 import { SyncStatusBadge } from '../components/SyncStatusBadge';
+import { CuentaButton } from '../components/CuentaButton';
 import { ConnectivityStrip } from '../components/ui/ConnectivityStrip';
 import { Card } from '../components/ui/Card';
 import { Chip } from '../components/ui/Chip';
-import { useAuthContext } from '../context/AuthContext';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
 // ── Componente ────────────────────────────────────────────────
 
 export function CatalogoOfflinePage() {
-  const { signOut } = useAuthContext();
   const { productos, loading, error } = useCatalog();
   const [search, setSearch] = useState('');
 
@@ -48,9 +44,7 @@ export function CatalogoOfflinePage() {
           <IonTitle>Catálogo</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
-            <IonButton onClick={() => signOut()} title="Cerrar sesión">
-              <IonIcon icon={logOutOutline} style={{ color: 'var(--color-on-dark)' }} />
-            </IonButton>
+            <CuentaButton />
           </IonButtons>
         </IonToolbar>
         <ConnectivityStrip text="Catálogo guardado en el equipo · disponible sin conexión" />
