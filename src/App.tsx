@@ -35,6 +35,7 @@ import {
   receiptOutline,
   businessOutline,
   cashOutline,
+  personOutline,
 } from 'ionicons/icons';
 
 /* Ionic Core CSS — DEBE importarse antes de cualquier componente Ionic */
@@ -72,6 +73,8 @@ const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'Clien
 const DashboardPage = lazyPage(() => import('./pages/admin/DashboardPage'), 'DashboardPage');
 const CortePage = lazyPage(() => import('./pages/admin/CortePage'), 'CortePage');
 const RegistrosNegocioPage = lazyPage(() => import('./pages/admin/RegistrosNegocioPage'), 'RegistrosNegocioPage');
+const MisClientesPage = lazyPage(() => import('./pages/clientes/MisClientesPage'), 'MisClientesPage');
+const ClienteDetallePage = lazyPage(() => import('./pages/clientes/ClienteDetallePage'), 'ClienteDetallePage');
 
 /* Guards */
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -93,8 +96,8 @@ function App() {
               {/* Ruta pública */}
               <Route exact path="/login" component={LoginPage} />
 
-              {/* Rutas vendedor: shell con tabs (visitas, venta, inventario, gastos, catálogo) */}
-              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobros']}>
+              {/* Rutas vendedor: shell con tabs */}
+              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobros', '/mis-clientes', '/clientes']}>
                 <ProtectedRoute requiredRol="vendedor">
                   <VendedorTabs />
                 </ProtectedRoute>
@@ -137,6 +140,8 @@ function VendedorTabs() {
         <Route exact path="/cobros" component={CobrosPendientesPage} />
         <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
         <Route exact path="/gastos" component={GastosPage} />
+        <Route exact path="/mis-clientes" component={MisClientesPage} />
+        <Route exact path="/clientes/:clienteId" component={ClienteDetallePage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
@@ -164,6 +169,10 @@ function VendedorTabs() {
           <IonIcon icon={gridOutline} style={{ color: 'var(--color-on-dark)' }} />
           <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Catálogo</span>
         </IonTabButton>
+        <IonTabButton tab="mis-clientes" href="/mis-clientes">
+          <IonIcon icon={personOutline} style={{ color: 'var(--color-on-dark)' }} />
+          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
+        </IonTabButton>
       </IonTabBar>
     </IonTabs>
   );
@@ -181,6 +190,7 @@ function AdminTabs() {
         <Route exact path="/admin/dashboard" component={DashboardPage} />
         <Route exact path="/admin/catalogo" component={CatalogoPage} />
         <Route exact path="/admin/clientes" component={ClientesPage} />
+        <Route exact path="/admin/clientes/:clienteId" component={ClienteDetallePage} />
         <Route exact path="/admin/corte" component={CortePage} />
         <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
       </IonRouterOutlet>
