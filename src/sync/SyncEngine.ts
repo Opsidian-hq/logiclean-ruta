@@ -167,13 +167,42 @@ export class SyncEngine {
     }
   }
 
+  /**
+   * Normaliza campos booleanos que pudieron haberse almacenado como 1/0
+   * (DexieBool) en la cola. Aplica solo a tablas con columnas BOOLEAN conocidas.
+   */
+  private normalizeBooleans(
+    table: string,
+    payload: Record<string, unknown>
+  ): Record<string, unknown> {
+    const boolFields: Record<string, string[]> = {
+      cliente:      ['activo'],
+      producto_base: ['activo'],
+      presentacion: ['activo'],
+      venta:        ['requiere_factura'],
+    };
+    const fields = boolFields[table];
+    if (!fields) return payload;
+    const out = { ...payload };
+    for (const f of fields) {
+      if (f in out && typeof out[f] === 'number') {
+        out[f] = out[f] !== 0;
+      }
+    }
+    return out;
+  }
+
   /** Procesar un ítem individual de la cola */
   private async processItem(item: SyncQueueItem): Promise<boolean> {
     try {
       if (item.operation === 'upsert') {
+        const payload = this.normalizeBooleans(
+          item.table_name,
+          item.payload as Record<string, unknown>
+        );
         const { error } = await supabase
           .from(item.table_name)
-          .upsert(item.payload as Record<string, unknown>, { onConflict: 'id' });
+          .upsert(payload, { onConflict: 'id' });
 
         if (error) {
           await markError(item.id, error.message);
