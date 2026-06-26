@@ -25,7 +25,7 @@ import {
   IonFab,
   IonFabButton,
 } from '@ionic/react';
-import { cartOutline, addOutline } from 'ionicons/icons';
+import { cartOutline, addOutline, personOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useRutaDelDia } from '../../hooks/useRutaDelDia';
@@ -174,32 +174,57 @@ export function VisitasPage() {
                           )}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          history.push(`/venta?cliente=${c.id}`);
-                        }}
-                        style={{
-                          flex: 'none',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          minHeight: '44px',
-                          padding: '0 16px',
-                          border: 'none',
-                          borderRadius: '12px',
-                          background: 'var(--color-primary)',
-                          color: '#fff',
-                          fontSize: '15px',
-                          fontWeight: 800,
-                          boxShadow: 'var(--shadow-cta)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <IonIcon icon={cartOutline} style={{ fontSize: '18px' }} />
-                        Vender
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 'none' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            history.push(`/venta?cliente=${c.id}`);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            minHeight: '40px',
+                            padding: '0 14px',
+                            border: 'none',
+                            borderRadius: '12px',
+                            background: 'var(--color-primary)',
+                            color: '#fff',
+                            fontSize: '14px',
+                            fontWeight: 800,
+                            boxShadow: 'var(--shadow-cta)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <IonIcon icon={cartOutline} style={{ fontSize: '16px' }} />
+                          Vender
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            history.push(`/clientes/${c.id}`);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            minHeight: '34px',
+                            padding: '0 14px',
+                            border: '1.5px solid var(--color-divider)',
+                            borderRadius: '10px',
+                            background: 'transparent',
+                            color: 'var(--color-navy)',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <IonIcon icon={personOutline} style={{ fontSize: '14px' }} />
+                          Perfil
+                        </button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -270,20 +295,19 @@ export function VisitasPage() {
                         return (
                           <div
                             key={c.id}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => setFichaCliente(c)}
-                            onKeyDown={(e) => e.key === 'Enter' && setFichaCliente(c)}
                             style={{
                               display: 'flex',
                               alignItems: 'stretch',
                               background: 'var(--color-surface)',
                               borderBottom: '1px solid var(--color-divider)',
-                              cursor: 'pointer',
                             }}
                           >
                             <div style={{ width: '5px', flex: 'none', background: BARRA_URGENCIA[clave] }} />
                             <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setFichaCliente(c)}
+                              onKeyDown={(e) => e.key === 'Enter' && setFichaCliente(c)}
                               style={{
                                 flex: 1,
                                 minWidth: 0,
@@ -291,6 +315,7 @@ export function VisitasPage() {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '7px',
+                                cursor: 'pointer',
                               }}
                             >
                               <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.05 }}>
@@ -316,6 +341,31 @@ export function VisitasPage() {
                                 </span>
                               </div>
                             </div>
+                            {/* Botón "Perfil" → detalle del cliente */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                history.push(`/clientes/${c.id}`);
+                              }}
+                              style={{
+                                flex: 'none',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                                padding: '0 14px',
+                                border: 'none',
+                                borderLeft: '1px solid var(--color-divider)',
+                                background: 'transparent',
+                                color: 'var(--color-text-secondary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <IonIcon icon={personOutline} style={{ fontSize: '20px' }} />
+                              <span style={{ fontSize: '10px', fontWeight: 700 }}>Perfil</span>
+                            </button>
                           </div>
                         );
                       })}

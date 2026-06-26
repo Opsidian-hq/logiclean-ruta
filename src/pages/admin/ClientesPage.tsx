@@ -37,8 +37,9 @@ import {
   IonFabButton,
   IonNote,
 } from '@ionic/react';
-import { addOutline, pencilOutline, archiveOutline } from 'ionicons/icons';
+import { addOutline, pencilOutline, archiveOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useClientes } from '../../hooks/useClientes';
+import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -66,6 +67,7 @@ export function ClientesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<Cliente | null>(null);
   const [confirmBaja, setConfirmBaja] = useState<string | null>(null);
+  const history = useHistory();
 
   // Cargar lista de vendedores para el filtro y el formulario
   useEffect(() => {
@@ -178,7 +180,11 @@ export function ClientesPage() {
           <IonList>
             {filtrados.map((cliente) => (
               <IonItemSliding key={cliente.id}>
-                <IonItem>
+                <IonItem
+                  button
+                  detail={false}
+                  onClick={() => history.push(`/admin/clientes/${cliente.id}`)}
+                >
                   <IonLabel>
                     <h2 style={{ fontWeight: 700, color: 'var(--color-navy)' }}>
                       {cliente.nombre}
@@ -201,6 +207,7 @@ export function ClientesPage() {
                       </IonNote>
                     )}
                   </IonLabel>
+                  <IonIcon icon={chevronForwardOutline} slot="end" style={{ color: 'var(--color-text-secondary)', fontSize: '16px' }} />
                 </IonItem>
 
                 <IonItemOptions side="end">
