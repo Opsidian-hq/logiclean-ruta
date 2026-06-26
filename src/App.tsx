@@ -31,7 +31,6 @@ import {
   IonLabel,
   setupIonicReact,
 } from '@ionic/react';
-import { menuController } from '@ionic/core';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Switch, Redirect } from 'react-router-dom';
 import {
@@ -203,9 +202,11 @@ function VendedorTabs() {
             <IonIcon icon={personOutline} style={{ color: 'var(--color-on-dark)' }} />
             <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
           </IonTabButton>
-          <IonTabButton tab="more" onClick={() => menuController.open('vendedor-menu')}>
-            <IonIcon icon={menuOutline} style={{ color: 'var(--color-on-dark)' }} />
-            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Más</span>
+          <IonTabButton tab="more">
+            <IonMenuToggle menu="vendedor-menu" autoHide={false}>
+              <IonIcon icon={menuOutline} style={{ color: 'var(--color-on-dark)' }} />
+              <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Más</span>
+            </IonMenuToggle>
           </IonTabButton>
         </IonTabBar>
       </IonTabs>
