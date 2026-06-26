@@ -20,8 +20,18 @@ import {
   IonTabButton,
   IonIcon,
   IonTabs,
+  IonMenu,
+  IonMenuToggle,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonList,
+  IonItem,
+  IonLabel,
   setupIonicReact,
 } from '@ionic/react';
+import { menuController } from '@ionic/core';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Switch, Redirect } from 'react-router-dom';
 import {
@@ -36,6 +46,7 @@ import {
   businessOutline,
   cashOutline,
   personOutline,
+  menuOutline,
 } from 'ionicons/icons';
 
 /* Ionic Core CSS — DEBE importarse antes de cualquier componente Ionic */
@@ -129,52 +140,76 @@ function App() {
 
 // ── Tabs del vendedor ─────────────────────────────────────────
 
+const MENU_ITEMS = [
+  { path: '/inventario', icon: cubeOutline,   label: 'Inventario' },
+  { path: '/gastos',     icon: walletOutline,  label: 'Gastos'     },
+  { path: '/catalogo',   icon: gridOutline,    label: 'Catálogo'   },
+] as const;
+
 function VendedorTabs() {
   return (
-    <IonTabs>
-      <IonRouterOutlet>
-        <Route exact path="/visitas" component={VisitasPage} />
-        <Route exact path="/catalogo" component={CatalogoOfflinePage} />
-        <Route exact path="/inventario" component={InventarioPage} />
-        <Route exact path="/venta" component={VentaPage} />
-        <Route exact path="/cobros" component={CobrosPendientesPage} />
-        <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
-        <Route exact path="/gastos" component={GastosPage} />
-        <Route exact path="/mis-clientes" component={MisClientesPage} />
-        <Route exact path="/clientes/:clienteId" component={ClienteDetallePage} />
-      </IonRouterOutlet>
+    <>
+      <IonMenu contentId="vendedor-content" menuId="vendedor-menu" side="end">
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Más opciones</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <IonList lines="none">
+            {MENU_ITEMS.map(({ path, icon, label }) => (
+              <IonMenuToggle key={path} menu="vendedor-menu" autoHide={false}>
+                <IonItem
+                  routerLink={path}
+                  routerDirection="none"
+                  style={{ '--min-height': 'var(--touch-min)' }}
+                >
+                  <IonIcon icon={icon} slot="start" color="primary" />
+                  <IonLabel>{label}</IonLabel>
+                </IonItem>
+              </IonMenuToggle>
+            ))}
+          </IonList>
+        </IonContent>
+      </IonMenu>
 
-      <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
-        <IonTabButton tab="visitas" href="/visitas">
-          <IonIcon icon={mapOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Visitas</span>
-        </IonTabButton>
-        <IonTabButton tab="venta" href="/venta">
-          <IonIcon icon={cartOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Venta</span>
-        </IonTabButton>
-        <IonTabButton tab="cobros" href="/cobros">
-          <IonIcon icon={cashOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Cobros</span>
-        </IonTabButton>
-        <IonTabButton tab="inventario" href="/inventario">
-          <IonIcon icon={cubeOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inventario</span>
-        </IonTabButton>
-        <IonTabButton tab="gastos" href="/gastos">
-          <IonIcon icon={walletOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Gastos</span>
-        </IonTabButton>
-        <IonTabButton tab="catalogo" href="/catalogo">
-          <IonIcon icon={gridOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Catálogo</span>
-        </IonTabButton>
-        <IonTabButton tab="mis-clientes" href="/mis-clientes">
-          <IonIcon icon={personOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
-        </IonTabButton>
-      </IonTabBar>
-    </IonTabs>
+      <IonTabs>
+        <IonRouterOutlet id="vendedor-content">
+          <Route exact path="/visitas" component={VisitasPage} />
+          <Route exact path="/catalogo" component={CatalogoOfflinePage} />
+          <Route exact path="/inventario" component={InventarioPage} />
+          <Route exact path="/venta" component={VentaPage} />
+          <Route exact path="/cobros" component={CobrosPendientesPage} />
+          <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
+          <Route exact path="/gastos" component={GastosPage} />
+          <Route exact path="/mis-clientes" component={MisClientesPage} />
+          <Route exact path="/clientes/:clienteId" component={ClienteDetallePage} />
+        </IonRouterOutlet>
+
+        <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
+          <IonTabButton tab="visitas" href="/visitas">
+            <IonIcon icon={mapOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Visitas</span>
+          </IonTabButton>
+          <IonTabButton tab="venta" href="/venta">
+            <IonIcon icon={cartOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Venta</span>
+          </IonTabButton>
+          <IonTabButton tab="cobros" href="/cobros">
+            <IonIcon icon={cashOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Cobros</span>
+          </IonTabButton>
+          <IonTabButton tab="mis-clientes" href="/mis-clientes">
+            <IonIcon icon={personOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
+          </IonTabButton>
+          <IonTabButton tab="more" onClick={() => menuController.open('vendedor-menu')}>
+            <IonIcon icon={menuOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Más</span>
+          </IonTabButton>
+        </IonTabBar>
+      </IonTabs>
+    </>
   );
 }
 
