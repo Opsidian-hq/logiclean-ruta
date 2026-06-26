@@ -203,8 +203,13 @@ async function agendarEntrega(
   const actual = cliente.fecha_proxima_visita?.slice(0, 10) ?? null;
   if (actual && actual <= proximaEntrega) return; // ya hay una visita igual o antes
 
-  const actualizado: Cliente = { ...cliente, fecha_proxima_visita: proximaEntrega };
-  await persist('cliente', toDexieRow(actualizado));
+  // Restaurar activo a booleano (Dexie lo almacena como 1/0).
+  const actualizado: Cliente = {
+    ...cliente,
+    activo: Boolean(cliente.activo),
+    fecha_proxima_visita: proximaEntrega,
+  };
+  await persist('cliente', actualizado);
 }
 
 // ── Persistencia local + cola (sin disparar sync) ─────────────
@@ -213,6 +218,8 @@ async function persist(
   table: 'venta' | 'linea_venta' | 'pedido_pendiente' | 'cobro' | 'cliente',
   row: object
 ): Promise<void> {
-  await db.table(table).put(row);
-  await enqueueOperation(table, 'upsert', row as Record<string, unknown>);
+  const raw = row as Record<string, unknown>;
+  // Dexie necesita 1/0 para indexar booleanos; Supabase necesita true/false.
+  await db.table(table).put(toDexieRow(raw));
+  await enqueueOperation(table, 'upsert', raw);
 }
