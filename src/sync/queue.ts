@@ -14,7 +14,7 @@ import type { EntityTable } from '../db/schema';
 
 // ── Tipos ─────────────────────────────────────────────────────
 
-export type SyncOperation = 'upsert' | 'delete';
+export type SyncOperation = 'upsert' | 'patch' | 'delete';
 
 export type SyncStatus = 'pending' | 'synced' | 'error';
 

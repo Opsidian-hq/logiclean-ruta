@@ -214,6 +214,24 @@ export class SyncEngine {
         return true;
       }
 
+      if (item.operation === 'patch') {
+        const payload = item.payload as Record<string, unknown>;
+        const { id, ...fields } = payload;
+        const { error } = await supabase
+          .from(item.table_name)
+          .update(fields)
+          .eq('id', id as string);
+
+        if (error) {
+          await markError(item.id, error.message);
+          console.error(`[SyncEngine] patch error en ${item.table_name}:`, error.message);
+          return false;
+        }
+
+        await markSynced(item.id);
+        return true;
+      }
+
       if (item.operation === 'delete') {
         const { error } = await supabase
           .from(item.table_name)

@@ -203,13 +203,17 @@ async function agendarEntrega(
   const actual = cliente.fecha_proxima_visita?.slice(0, 10) ?? null;
   if (actual && actual <= proximaEntrega) return; // ya hay una visita igual o antes
 
-  // Restaurar activo a booleano (Dexie lo almacena como 1/0).
-  const actualizado: Cliente = {
-    ...cliente,
-    activo: Boolean(cliente.activo),
+  // Patch parcial: solo fecha_proxima_visita. Un upsert completo podría
+  // sobreescribir campos (dia_ruta, nombre…) con una snapshot antigua si el
+  // ítem lleva tiempo en la cola de sync.
+  await db.cliente
+    .where('id')
+    .equals(clienteId)
+    .modify({ fecha_proxima_visita: proximaEntrega });
+  await enqueueOperation('cliente', 'patch', {
+    id: clienteId,
     fecha_proxima_visita: proximaEntrega,
-  };
-  await persist('cliente', actualizado);
+  });
 }
 
 // ── Persistencia local + cola (sin disparar sync) ─────────────
