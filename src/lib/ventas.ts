@@ -25,7 +25,6 @@ import type {
   LineaVenta,
   Cobro,
   PedidoPendiente,
-  Cliente,
 } from '../db/schema';
 import type { TipoCliente } from './precios';
 
