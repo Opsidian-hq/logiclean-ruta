@@ -46,6 +46,7 @@ export const PULL_TABLES: EntityTable[] = [
   'venta',
   'linea_venta',
   'cobro',
+  'pedido_pendiente',
   'inventario_vehiculo',
   'gasto',
   // Inc 3 — corte semanal y reconciliación con La Moderna.

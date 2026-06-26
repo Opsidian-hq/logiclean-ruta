@@ -25,7 +25,6 @@ import type {
   LineaVenta,
   Cobro,
   PedidoPendiente,
-  Cliente,
 } from '../db/schema';
 import type { TipoCliente } from './precios';
 
@@ -203,8 +202,17 @@ async function agendarEntrega(
   const actual = cliente.fecha_proxima_visita?.slice(0, 10) ?? null;
   if (actual && actual <= proximaEntrega) return; // ya hay una visita igual o antes
 
-  const actualizado: Cliente = { ...cliente, fecha_proxima_visita: proximaEntrega };
-  await persist('cliente', toDexieRow(actualizado));
+  // Patch parcial: solo fecha_proxima_visita. Un upsert completo podría
+  // sobreescribir campos (dia_ruta, nombre…) con una snapshot antigua si el
+  // ítem lleva tiempo en la cola de sync.
+  await db.cliente
+    .where('id')
+    .equals(clienteId)
+    .modify({ fecha_proxima_visita: proximaEntrega });
+  await enqueueOperation('cliente', 'patch', {
+    id: clienteId,
+    fecha_proxima_visita: proximaEntrega,
+  });
 }
 
 // ── Persistencia local + cola (sin disparar sync) ─────────────
@@ -213,6 +221,8 @@ async function persist(
   table: 'venta' | 'linea_venta' | 'pedido_pendiente' | 'cobro' | 'cliente',
   row: object
 ): Promise<void> {
-  await db.table(table).put(row);
-  await enqueueOperation(table, 'upsert', row as Record<string, unknown>);
+  const raw = row as Record<string, unknown>;
+  // Dexie necesita 1/0 para indexar booleanos; Supabase necesita true/false.
+  await db.table(table).put(toDexieRow(raw));
+  await enqueueOperation(table, 'upsert', raw);
 }

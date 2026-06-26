@@ -17,13 +17,24 @@
 export type DexieBool = 0 | 1;
 
 /**
- * Devuelve una copia de la fila con todos los campos booleanos convertidos a
- * 1/0. No muta el objeto original. Los demás campos se conservan tal cual.
+ * Solo los campos booleanos que aparecen en un índice Dexie necesitan ser
+ * convertidos a 1/0. Los no indexados (p. ej. requiere_factura) se almacenan
+ * como booleanos nativos sin problema.
+ */
+const DEXIE_INDEXED_BOOLEANS = new Set(['activo']);
+
+/**
+ * Devuelve una copia de la fila con los campos booleanos INDEXADOS convertidos
+ * a 1/0. Los demás campos booleanos y el resto se conservan tal cual.
+ * No muta el objeto original.
  */
 export function toDexieRow<T extends object>(row: T): T {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(row)) {
-    out[key] = typeof value === 'boolean' ? (value ? 1 : 0) : value;
+    out[key] =
+      typeof value === 'boolean' && DEXIE_INDEXED_BOOLEANS.has(key)
+        ? (value ? 1 : 0)
+        : value;
   }
   return out as T;
 }
