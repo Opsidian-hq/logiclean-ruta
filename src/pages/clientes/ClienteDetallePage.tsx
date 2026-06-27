@@ -19,8 +19,11 @@ import {
   IonContent,
   IonButtons,
   IonBackButton,
+  IonButton,
   IonFooter,
   IonModal,
+  IonRefresher,
+  IonRefresherContent,
   IonSpinner,
   IonText,
   IonIcon,
@@ -34,6 +37,7 @@ import {
   navigateOutline,
   clipboardOutline,
   happyOutline,
+  createOutline,
 } from 'ionicons/icons';
 import { useClienteDetalle } from '../../hooks/useClienteDetalle';
 import { useAuthContext } from '../../context/AuthContext';
@@ -41,8 +45,7 @@ import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { Chip } from '../../components/ui/Chip';
 import { Card } from '../../components/ui/Card';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
-import { GestionRutaModal } from '../visitas/components/GestionRutaModal';
-import { actualizarRutaCliente } from '../../lib/visitas';
+import { EditarClienteModal } from './components/EditarClienteModal';
 import { CICLO_OBJETIVO } from '../../lib/prospectos';
 import { money } from '../../lib/money';
 import { folioLocal } from '../../lib/folio';
@@ -128,7 +131,7 @@ function PerfilVendedor({
 }: PerfilProps & { clienteId: string }) {
   const history = useHistory();
   const { vendedorNombre, visitas, ventas, pedidosPendientes, desglose, refresh } = detalle;
-  const [gestionOpen, setGestionOpen] = useState(false);
+  const [editarOpen, setEditarOpen] = useState(false);
 
   const saldoTotal = desglose?.saldoTotal ?? 0;
   const etapa = Math.min(cliente.ciclo_visita, CICLO_OBJETIVO);
@@ -138,7 +141,7 @@ function PerfilVendedor({
   const notaAnterior = visitas.find((v) => v.nota)?.nota;
   const sigPaso = visitas.find((v) => v.siguiente_paso)?.siguiente_paso;
 
-  const hayHistorial = (desglose?.historial.length ?? 0) > 0 || ventas.length > 0;
+  const hayHistorial = ventas.length > 0;
   const sinNada =
     saldoTotal <= 0 && pedidosPendientes.length === 0 && cliente.estado !== 'prospecto' && !hayHistorial;
 
@@ -150,11 +153,19 @@ function PerfilVendedor({
             <IonBackButton defaultHref="/visitas" style={{ '--color': 'var(--color-on-dark)' }} />
           </IonButtons>
           <IonTitle>{cliente.nombre}</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={() => setEditarOpen(true)} style={{ '--color': 'var(--color-on-dark)' }}>
+              <IonIcon icon={createOutline} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
         <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => { await refresh(); e.detail.complete(); }}>
+          <IonRefresherContent />
+        </IonRefresher>
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Hero */}
           <Card padding="16px">
@@ -186,12 +197,6 @@ function PerfilVendedor({
             />
             <InfoFila etiqueta="Ciclo de visita" valor={`${cliente.ciclo_visita}`} last />
           </Card>
-
-          {/* Gestionar día/visita (preserva la gestión de ruta del cliente) */}
-          <button type="button" onClick={() => setGestionOpen(true)} style={linkBtn}>
-            <IonIcon icon={navigateOutline} style={{ fontSize: '16px' }} />
-            Gestionar día de visita
-          </button>
 
           {/* a) Cobros pendientes (rojo) */}
           {saldoTotal > 0 && (
@@ -289,20 +294,6 @@ function PerfilVendedor({
             </SeccionPendiente>
           )}
 
-          {/* Historial: cobros registrados */}
-          {(desglose?.historial.length ?? 0) > 0 && (
-            <HistorialCard titulo="Cobros registrados" badge={desglose!.historial.length}>
-              {desglose!.historial.map((cobro) => (
-                <FilaHistorial
-                  key={cobro.id}
-                  fecha={fechaHora(cobro.fecha)}
-                  desc={cobro.forma_pago}
-                  monto={money(cobro.monto)}
-                />
-              ))}
-            </HistorialCard>
-          )}
-
           {/* Historial: ventas recientes */}
           {ventas.length > 0 && (
             <HistorialCard titulo="Ventas recientes" badge={ventas.length}>
@@ -341,15 +332,12 @@ function PerfilVendedor({
         </IonToolbar>
       </IonFooter>
 
-      {/* Modal: gestionar día de visita / ruta del cliente */}
-      <IonModal isOpen={gestionOpen} onDidDismiss={() => setGestionOpen(false)}>
-        <GestionRutaModal
+      {/* Modal: editar información del cliente */}
+      <IonModal isOpen={editarOpen} onDidDismiss={() => setEditarOpen(false)}>
+        <EditarClienteModal
           cliente={cliente}
-          onGuardar={async ({ diaRuta, fechaProxima }) => {
-            await actualizarRutaCliente({ cliente, diaRuta, fechaProxima });
-            await refresh();
-          }}
-          onClose={() => setGestionOpen(false)}
+          onGuardado={refresh}
+          onClose={() => setEditarOpen(false)}
         />
       </IonModal>
     </IonPage>
@@ -497,22 +485,6 @@ const subLinea = {
   fontSize: '12.5px',
   color: 'var(--color-text-secondary)',
   marginBottom: '4px',
-};
-
-const linkBtn = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '6px',
-  minHeight: '44px',
-  width: '100%',
-  border: '1.5px solid var(--color-divider)',
-  borderRadius: '12px',
-  background: 'var(--color-surface)',
-  color: 'var(--color-navy)',
-  fontSize: '14px',
-  fontWeight: 700,
-  cursor: 'pointer',
 };
 
 const fabVender = {
