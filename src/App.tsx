@@ -37,7 +37,6 @@ import {
   gridOutline,
   peopleOutline,
   cubeOutline,
-  cartOutline,
   mapOutline,
   walletOutline,
   homeOutline,
@@ -196,11 +195,7 @@ function VendedorTabs() {
             <IonIcon icon={mapOutline} style={{ color: 'var(--color-on-dark)' }} />
             <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Visitas</span>
           </IonTabButton>
-          <IonTabButton tab="venta" href="/venta">
-            <IonIcon icon={cartOutline} style={{ color: 'var(--color-on-dark)' }} />
-            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Venta</span>
-          </IonTabButton>
-          <IonTabButton tab="cobros" href="/cobros">
+<IonTabButton tab="cobros" href="/cobros">
             <IonIcon icon={cashOutline} style={{ color: 'var(--color-on-dark)' }} />
             <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Cobros</span>
           </IonTabButton>
