@@ -24,10 +24,19 @@ import {
   IonModal,
   IonFab,
   IonFabButton,
+  IonToast,
+  useIonViewWillEnter,
 } from '@ionic/react';
-import { cartOutline, addOutline, personOutline } from 'ionicons/icons';
-import { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import {
+  addOutline,
+  personOutline,
+  cashOutline,
+  cubeOutline,
+  timeOutline,
+  chevronForwardOutline,
+} from 'ionicons/icons';
+import { useState, type ReactNode } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useRutaDelDia } from '../../hooks/useRutaDelDia';
 import { useSeguimiento } from '../../hooks/useSeguimiento';
 import { clasificarVencimiento, CICLO_OBJETIVO } from '../../lib/prospectos';
@@ -40,8 +49,8 @@ import { Chip } from '../../components/ui/Chip';
 import { CicloBar } from '../../components/ui/CicloBar';
 import { FichaProspecto } from './components/FichaProspecto';
 import { NuevoProspectoForm } from './components/NuevoProspectoForm';
-import { GestionRutaModal } from './components/GestionRutaModal';
 import { pedidosPendientesVista, entregarPedido } from '../../lib/pedidos';
+import { money } from '../../lib/money';
 import type { Cliente } from '../../db/schema';
 
 const BARRA_URGENCIA: Record<Vencimiento, string> = {
@@ -87,7 +96,20 @@ export function VisitasPage() {
 
   const [fichaCliente, setFichaCliente] = useState<Cliente | null>(null);
   const [nuevoOpen, setNuevoOpen] = useState(false);
-  const [gestionCliente, setGestionCliente] = useState<Cliente | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const location = useLocation<{ toast?: string } | undefined>();
+
+  // Al volver de un flujo (cobro/entrega/seguimiento): refrescar la ruta para
+  // que el pendiente resuelto desaparezca, y mostrar el toast de confirmación.
+  useIonViewWillEnter(() => {
+    void ruta.refresh();
+    void seg.refresh();
+    const msg = location.state?.toast;
+    if (msg) {
+      setToast(msg);
+      history.replace({ pathname: '/visitas', state: undefined });
+    }
+  });
 
   return (
     <IonPage>
@@ -138,7 +160,7 @@ export function VisitasPage() {
               </div>
             )}
 
-            {!ruta.loading && !ruta.error && ruta.clientes.length === 0 && (
+            {!ruta.loading && !ruta.error && ruta.items.length === 0 && (
               <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <IonText color="medium">
                   <p>No hay clientes en la ruta de hoy.</p>
@@ -146,86 +168,59 @@ export function VisitasPage() {
               </div>
             )}
 
-            {!ruta.loading && !ruta.error && ruta.clientes.length > 0 && (
+            {!ruta.loading && !ruta.error && ruta.items.length > 0 && (
               <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {ruta.clientes.map((c) => (
-                  <Card key={c.id} padding="13px 14px">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '11px' }}>
-                      {/* Tocar los datos del cliente abre la gestión de su día de visita. */}
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setGestionCliente(c)}
-                        onKeyDown={(e) => e.key === 'Enter' && setGestionCliente(c)}
-                        style={{ minWidth: 0, flex: 1, cursor: 'pointer' }}
-                      >
-                        <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.1 }}>
-                          {c.nombre}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '6px', flexWrap: 'wrap' }}>
-                          <Chip tone={c.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
-                            {c.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
-                          </Chip>
-                          <Chip tone={c.estado === 'prospecto' ? 'amber' : 'primarySoft'}>
-                            {c.estado === 'prospecto' ? 'Prospecto' : 'Cliente'}
-                          </Chip>
-                          {c.dia_ruta && (
-                            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{c.dia_ruta}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 'none' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            history.push(`/venta?cliente=${c.id}`);
-                          }}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            minHeight: '40px',
-                            padding: '0 14px',
-                            border: 'none',
-                            borderRadius: '12px',
-                            background: 'var(--color-primary)',
-                            color: '#fff',
-                            fontSize: '14px',
-                            fontWeight: 800,
-                            boxShadow: 'var(--shadow-cta)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <IonIcon icon={cartOutline} style={{ fontSize: '16px' }} />
-                          Vender
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            history.push(`/clientes/${c.id}`);
-                          }}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            minHeight: '34px',
-                            padding: '0 14px',
-                            border: '1.5px solid var(--color-divider)',
-                            borderRadius: '10px',
-                            background: 'transparent',
-                            color: 'var(--color-navy)',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <IonIcon icon={personOutline} style={{ fontSize: '14px' }} />
-                          Perfil
-                        </button>
-                      </div>
+                {ruta.items.map(({ cliente: c, sumCobros, nEntregas, seguimiento }) => (
+                  // La tarjeta completa es el punto de entrada al perfil del cliente.
+                  <Card
+                    key={c.id}
+                    padding="16px"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => history.push(`/clientes/${c.id}`)}
+                    onKeyDown={(e) => e.key === 'Enter' && history.push(`/clientes/${c.id}`)}
+                    style={{ position: 'relative', cursor: 'pointer' }}
+                  >
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.1, paddingRight: '24px' }}>
+                      {c.nombre}
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '10px', flexWrap: 'wrap' }}>
+                      <Chip tone={c.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
+                        {c.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
+                      </Chip>
+                      <Chip tone={c.estado === 'prospecto' ? 'amber' : 'primarySoft'}>
+                        {c.estado === 'prospecto' ? 'Prospecto' : 'Cliente'}
+                      </Chip>
+                      {c.dia_ruta && (
+                        <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{c.dia_ruta}</span>
+                      )}
+                    </div>
+
+                    {/* Alertas contextuales: sólo las que aplican, una por línea. */}
+                    {(sumCobros > 0 || nEntregas > 0 || seguimiento) && (
+                      <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        {sumCobros > 0 && (
+                          <AlertaVisita color="var(--color-error)" icon={cashOutline}>
+                            Cobro pendiente · {money(sumCobros)}
+                          </AlertaVisita>
+                        )}
+                        {nEntregas > 0 && (
+                          <AlertaVisita color="#B45309" icon={cubeOutline}>
+                            Entrega pendiente · {nEntregas} producto{nEntregas !== 1 ? 's' : ''}
+                          </AlertaVisita>
+                        )}
+                        {seguimiento && (
+                          <AlertaVisita color="var(--color-primary)" icon={timeOutline}>
+                            Seguimiento · Visita {seguimiento.visita} de {seguimiento.objetivo}
+                          </AlertaVisita>
+                        )}
+                      </div>
+                    )}
+
+                    <IonIcon
+                      icon={chevronForwardOutline}
+                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#C8CAD0', fontSize: '20px' }}
+                    />
                   </Card>
                 ))}
               </div>
@@ -426,19 +421,31 @@ export function VisitasPage() {
         />
       </IonModal>
 
-      {/* Modal: gestionar día de visita / ruta del cliente */}
-      <IonModal isOpen={!!gestionCliente} onDidDismiss={() => setGestionCliente(null)}>
-        {gestionCliente && (
-          <GestionRutaModal
-            cliente={gestionCliente}
-            onGuardar={async ({ diaRuta, fechaProxima }) => {
-              await seg.actualizarRuta({ cliente: gestionCliente, diaRuta, fechaProxima });
-              await Promise.all([ruta.refresh(), seg.refresh()]);
-            }}
-            onClose={() => setGestionCliente(null)}
-          />
-        )}
-      </IonModal>
+      <IonToast
+        isOpen={!!toast}
+        message={toast ?? ''}
+        duration={2200}
+        onDidDismiss={() => setToast(null)}
+        color="dark"
+      />
     </IonPage>
+  );
+}
+
+/** Línea de alerta contextual de una tarjeta de visita (icono + texto en color). */
+function AlertaVisita({
+  color,
+  icon,
+  children,
+}: {
+  color: string;
+  icon: string;
+  children: ReactNode;
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color }}>
+      <IonIcon icon={icon} style={{ fontSize: '15px', flex: 'none' }} />
+      {children}
+    </div>
   );
 }
