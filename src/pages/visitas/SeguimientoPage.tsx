@@ -71,14 +71,31 @@ export function SeguimientoPage() {
   const [fechaProxima, setFechaProxima] = useState(fechaRelativa(7));
   const [saving, setSaving] = useState(false);
   const [hecho, setHecho] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // La lista de clientes carga en background; si no encontramos el cliente
+  // mostramos spinner mientras llega, no un error permanente.
+  const { loading: clientesLoading } = useClientes();
 
   if (!cliente) {
+    if (clientesLoading) {
+      return (
+        <IonPage>
+          <Cabecera titulo="Registrar visita" onBack={() => history.goBack()} />
+          <IonContent>
+            <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+              <IonSpinner name="crescent" />
+            </div>
+          </IonContent>
+        </IonPage>
+      );
+    }
     return (
       <IonPage>
         <Cabecera titulo="Registrar visita" onBack={() => history.goBack()} />
         <IonContent>
-          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
-            <IonSpinner name="crescent" />
+          <div style={{ padding: 'var(--space-md)', textAlign: 'center', color: 'var(--color-text-secondary)', fontWeight: 600, marginTop: 'var(--space-2xl)' }}>
+            Cliente no encontrado.
           </div>
         </IonContent>
       </IonPage>
@@ -90,6 +107,7 @@ export function SeguimientoPage() {
   const pctNuevo = Math.round((siguienteEtapa / CICLO_OBJETIVO) * 100);
 
   const guardar = async () => {
+    setSaveError(null);
     setSaving(true);
     try {
       await registrarVisita({
@@ -99,6 +117,8 @@ export function SeguimientoPage() {
         fechaProxima: fechaProxima || undefined,
       });
       setHecho(true);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'No se pudo guardar la visita. Intenta de nuevo.');
     } finally {
       setSaving(false);
     }
@@ -225,7 +245,18 @@ export function SeguimientoPage() {
       </IonContent>
       <IonFooter>
         <IonToolbar style={{ '--background': 'var(--color-bg)' }}>
-          <div style={{ padding: 'var(--space-sm) var(--space-md) var(--space-md)' }}>
+          <div style={{ padding: 'var(--space-sm) var(--space-md) var(--space-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {saveError && (
+              <div style={{ background: '#FDECEA', border: '1.5px solid #F4B3AC', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#911A11' }}>No se pudo guardar la visita</div>
+                  <div style={{ fontSize: '12px', color: '#7A1610', marginTop: '2px', lineHeight: 1.4 }}>{saveError}</div>
+                </div>
+                <button type="button" onClick={() => setSaveError(null)} style={{ padding: '6px 10px', border: 'none', background: 'var(--color-error)', color: '#fff', borderRadius: '8px', fontWeight: 700, fontSize: '11px', cursor: 'pointer', flex: 'none' }}>
+                  OK
+                </button>
+              </div>
+            )}
             <PrimaryCTA loading={saving} disabled={saving} onClick={guardar}>
               {saving ? 'Guardando…' : `Guardar visita · avanzar a ${siguienteEtapa} de ${CICLO_OBJETIVO}`}
             </PrimaryCTA>

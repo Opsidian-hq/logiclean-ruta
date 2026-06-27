@@ -23,7 +23,6 @@ import {
   IonFooter,
   IonSpinner,
   IonIcon,
-  IonText,
 } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
@@ -62,22 +61,31 @@ export function EntregaPage() {
   const [paso, setPaso] = useState<'productos' | 'resumen'>('productos');
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [fechaReprog, setFechaReprog] = useState(fechaRelativa(1));
   const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   // Se persiste una sola vez aunque el vendedor vuelva atrás desde el cobro.
   const [confirmado, setConfirmado] = useState<ConfirmarEntregaResult | null>(null);
 
   useEffect(() => {
     let activo = true;
-    pedidosParaEntrega(clienteId).then((peds) => {
-      if (!activo) return;
-      setItems(peds.map((p) => ({ ...p, entregado: true, cancelado: false })));
-      setLoading(false);
-    });
+    pedidosParaEntrega(clienteId)
+      .then((peds) => {
+        if (!activo) return;
+        setItems(peds.map((p) => ({ ...p, entregado: true, cancelado: false })));
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!activo) return;
+        setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.');
+        setLoading(false);
+      });
     return () => {
       activo = false;
     };
-  }, [clienteId]);
+  }, [clienteId, retryKey]);
 
   const togglEntregado = (id: string) =>
     setItems((prev) =>
@@ -98,6 +106,7 @@ export function EntregaPage() {
   // ── Paso 2 → cobro: persiste la entrega y avanza ──
   const irACobro = async () => {
     if (!cliente) return;
+    setSaveError(null);
     setSubmitting(true);
     try {
       const res =
@@ -131,18 +140,89 @@ export function EntregaPage() {
         // Nada se entregó (todo reprogramado/cancelado): no hay cobro.
         history.push({ pathname: '/visitas', state: { toast: 'Entrega registrada en la ruta' } });
       }
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'No se pudo guardar la entrega. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ── Carga ──
   if (loading || !cliente) {
     return (
       <IonPage>
-        <CabeceraEntrega titulo={paso === 'productos' ? 'Confirmar entrega' : 'Resumen'} onBack={() => history.goBack()} />
+        <CabeceraEntrega titulo="Confirmar entrega" onBack={() => history.goBack()} />
         <IonContent>
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  // ── Error de carga ──
+  if (loadError) {
+    return (
+      <IonPage>
+        <CabeceraEntrega titulo="Confirmar entrega" onBack={() => history.push(`/clientes/${clienteId}`)} />
+        <IonContent>
+          <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', justifyContent: 'center', minHeight: '60%', textAlign: 'center' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: '#FDECEA', border: '1.5px solid #F4B3AC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IonIcon icon={alertCircleOutline} style={{ fontSize: '32px', color: 'var(--color-error)' }} />
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-navy)' }}>No se pudieron cargar los pedidos</div>
+            <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>{loadError}</div>
+            <button
+              type="button"
+              onClick={() => { setLoading(true); setLoadError(null); setRetryKey((k) => k + 1); }}
+              style={{ marginTop: '8px', padding: '14px 24px', border: 'none', borderRadius: '12px', background: 'var(--color-primary)', color: '#fff', fontSize: '15px', fontWeight: 800, cursor: 'pointer' }}
+            >
+              Reintentar
+            </button>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  // ── Vacío · sin pedidos pendientes ──
+  if (items.length === 0) {
+    return (
+      <IonPage>
+        <CabeceraEntrega titulo="Confirmar entrega" onBack={() => history.push(`/clientes/${clienteId}`)} />
+        <IonContent>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              gap: '8px',
+              padding: '56px 24px',
+            }}
+          >
+            <div
+              style={{
+                width: '78px',
+                height: '78px',
+                borderRadius: '24px',
+                background: '#ECFCE0',
+                border: '1.5px solid #B7EE92',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span style={{ color: '#3E6B22', fontSize: '38px', fontWeight: 800 }}>✓</span>
+            </div>
+            <div style={{ fontSize: '21px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '8px' }}>
+              Sin entregas pendientes
+            </div>
+            <div style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
+              {cliente.nombre} no tiene pedidos por entregar.
+            </div>
           </div>
         </IonContent>
       </IonPage>
@@ -186,11 +266,6 @@ export function EntregaPage() {
                   {entregados.length} de {items.length}
                 </span>
               </div>
-              {items.length === 0 && (
-                <div style={{ padding: '16px' }}>
-                  <IonText color="medium"><p style={{ margin: 0, fontSize: '13px' }}>Sin productos pendientes de entrega.</p></IonText>
-                </div>
-              )}
               {items.map((it) => {
                 const ok = it.entregado;
                 return (
@@ -308,7 +383,18 @@ export function EntregaPage() {
 
       <IonFooter>
         <IonToolbar style={{ '--background': 'var(--color-bg)' }}>
-          <div style={{ padding: 'var(--space-sm) var(--space-md) var(--space-md)' }}>
+          <div style={{ padding: 'var(--space-sm) var(--space-md) var(--space-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {paso === 'resumen' && saveError && (
+              <div style={{ background: '#FDECEA', border: '1.5px solid #F4B3AC', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#911A11' }}>No se pudo guardar la entrega</div>
+                  <div style={{ fontSize: '12px', color: '#7A1610', marginTop: '2px', lineHeight: 1.4 }}>{saveError}</div>
+                </div>
+                <button type="button" onClick={() => setSaveError(null)} style={{ padding: '6px 10px', border: 'none', background: 'var(--color-error)', color: '#fff', borderRadius: '8px', fontWeight: 700, fontSize: '11px', cursor: 'pointer', flex: 'none' }}>
+                  OK
+                </button>
+              </div>
+            )}
             {paso === 'productos' ? (
               <PrimaryCTA onClick={() => setPaso('resumen')}>Continuar al resumen</PrimaryCTA>
             ) : (

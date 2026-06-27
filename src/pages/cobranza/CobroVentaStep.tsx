@@ -64,6 +64,9 @@ interface CobroVentaStepProps {
   /** Skeleton mientras carga el saldo del cliente (cálculo local breve). */
   loading?: boolean;
   submitting?: boolean;
+  /** Error al intentar guardar el cobro (distinto del error de sync). */
+  saveError?: string | null;
+  onDismissSaveError?: () => void;
   onConfirm: (decision: DecisionCobro) => void;
   onBack: () => void;
 }
@@ -88,6 +91,8 @@ export function CobroVentaStep({
   modos,
   loading = false,
   submitting = false,
+  saveError,
+  onDismissSaveError,
   onConfirm,
   onBack,
 }: CobroVentaStepProps) {
@@ -138,6 +143,27 @@ export function CobroVentaStep({
             {/* Error de sync: el dinero no se pierde */}
             {syncStatus === 'error' && (
               <ErrorSyncBanner monto={monto > 0 ? monto : total} onReintentar={syncNow} />
+            )}
+
+            {/* Error al guardar (fallo local): muestra mensaje + botón OK */}
+            {saveError && (
+              <div style={{ background: '#FDECEA', border: '1.5px solid #F4B3AC', borderRadius: '14px', padding: '14px 15px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#911A11' }}>No se pudo guardar el cobro</div>
+                  <div style={{ fontSize: '12.5px', color: '#7A1610', marginTop: '3px', lineHeight: 1.4 }}>
+                    {saveError}
+                  </div>
+                </div>
+                {onDismissSaveError && (
+                  <button
+                    type="button"
+                    onClick={onDismissSaveError}
+                    style={{ padding: '8px 10px', border: 'none', background: 'var(--color-error)', color: '#fff', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flex: 'none' }}
+                  >
+                    OK
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Total grande */}
