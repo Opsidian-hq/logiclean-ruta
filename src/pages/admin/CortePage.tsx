@@ -23,10 +23,13 @@ import {
   IonText,
   IonAlert,
   IonToast,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useCorte } from '../../hooks/useCorte';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -66,7 +69,12 @@ export function CortePage() {
     loading,
     error,
     registrar,
+    refresh,
   } = useCorte();
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const [entregaEf, setEntregaEf] = useState('');
   const [entregaTr, setEntregaTr] = useState('');
@@ -115,6 +123,10 @@ export function CortePage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* ── Selector ── */}
           <div>

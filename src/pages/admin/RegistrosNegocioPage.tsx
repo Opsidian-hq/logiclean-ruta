@@ -23,10 +23,13 @@ import {
   IonSelectOption,
   IonText,
   IonToast,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useRegistrosNegocio } from '../../hooks/useRegistrosNegocio';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { CATEGORIAS_BACKOFFICE } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -65,7 +68,12 @@ export function RegistrosNegocioPage() {
     nombreProducto,
     crearSuministro,
     crearGastoBackoffice,
+    refresh,
   } = useRegistrosNegocio();
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const [seg, setSeg] = useState<'moderna' | 'backoffice'>('moderna');
   const [toast, setToast] = useState<string | null>(null);
@@ -149,6 +157,10 @@ export function RegistrosNegocioPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* ── Segmento La Moderna ── */}
           {seg === 'moderna' && (

@@ -16,9 +16,13 @@ import {
   IonButtons,
   IonSpinner,
   IonText,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
+import { useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { CICLO_OBJETIVO } from '../../lib/prospectos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -71,6 +75,10 @@ export function DashboardPage() {
   const { dashboard, loading, error, refresh } = useDashboard();
   const maxEtapa = Math.max(1, ...(dashboard?.embudo.etapas.map((e) => e.count) ?? [1]));
 
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
+
   return (
     <IonPage>
       <IonHeader>
@@ -85,6 +93,10 @@ export function DashboardPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {loading && (
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />

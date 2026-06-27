@@ -25,6 +25,8 @@ import {
   IonFab,
   IonFabButton,
   IonToast,
+  IonRefresher,
+  IonRefresherContent,
   useIonViewWillEnter,
 } from '@ionic/react';
 import {
@@ -35,12 +37,13 @@ import {
   timeOutline,
   chevronForwardOutline,
 } from 'ionicons/icons';
-import { useState, type ReactNode } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useRutaDelDia } from '../../hooks/useRutaDelDia';
 import { useSeguimiento } from '../../hooks/useSeguimiento';
 import { clasificarVencimiento, CICLO_OBJETIVO } from '../../lib/prospectos';
 import type { Vencimiento } from '../../lib/prospectos';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -99,6 +102,13 @@ export function VisitasPage() {
   const [toast, setToast] = useState<string | null>(null);
   const location = useLocation<{ toast?: string } | undefined>();
 
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => {
+      await ruta.refresh();
+      await seg.refresh();
+    }, [ruta.refresh, seg.refresh])
+  );
+
   // Al volver de un flujo (cobro/entrega/seguimiento): refrescar la ruta para
   // que el pendiente resuelto desaparezca, y mostrar el toast de confirmación.
   useIonViewWillEnter(() => {
@@ -143,6 +153,10 @@ export function VisitasPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* ── Segmento HOY: ruta del día ── */}
         {segmento === 'hoy' && (
           <>

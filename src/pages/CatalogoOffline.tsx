@@ -16,9 +16,12 @@ import {
   IonSearchbar,
   IonSpinner,
   IonText,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCatalog } from '../hooks/useCatalog';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../components/SyncStatusBadge';
 import { CuentaButton } from '../components/CuentaButton';
 import { ConnectivityStrip } from '../components/ui/ConnectivityStrip';
@@ -30,8 +33,12 @@ const money = (n: number) => `$${n.toFixed(2)}`;
 // ── Componente ────────────────────────────────────────────────
 
 export function CatalogoOfflinePage() {
-  const { productos, loading, error } = useCatalog();
+  const { productos, loading, error, refresh } = useCatalog();
   const [search, setSearch] = useState('');
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const filtrados = productos.filter((p) =>
     p.nombre.toLowerCase().includes(search.toLowerCase())
@@ -51,6 +58,10 @@ export function CatalogoOfflinePage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* Buscador */}
         <IonSearchbar
           value={search}

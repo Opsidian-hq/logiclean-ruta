@@ -17,6 +17,8 @@ import {
   IonSearchbar,
   IonSpinner,
   IonText,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
 import { useState, useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -24,6 +26,7 @@ import { personOutline } from 'ionicons/icons';
 import { IonIcon } from '@ionic/react';
 import { db } from '../../db/index';
 import { useAuthContext } from '../../context/AuthContext';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -59,6 +62,10 @@ export function MisClientesPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await load(); }, [load])
+  );
 
   const filtrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(search.toLowerCase())
@@ -97,6 +104,10 @@ export function MisClientesPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         <IonSearchbar
           value={search}
           onIonInput={(e) => setSearch(e.detail.value ?? '')}

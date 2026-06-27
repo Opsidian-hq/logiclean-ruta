@@ -25,10 +25,13 @@ import {
   IonText,
   IonSpinner,
   IonToast,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useGastos } from '../../hooks/useGastos';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { CATEGORIAS_RUTA } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -51,7 +54,11 @@ const sectionLabel: CSSProperties = {
 const OTRO = '__otro__';
 
 export function GastosPage() {
-  const { gastosHoy, totales, loading, registrarGasto } = useGastos();
+  const { gastosHoy, totales, loading, registrarGasto, refresh } = useGastos();
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const [categoria, setCategoria] = useState<string>('');
   const [categoriaLibre, setCategoriaLibre] = useState('');
@@ -95,6 +102,10 @@ export function GastosPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* ── Formulario ── */}
         <IonList>
           <span style={sectionLabel}>Registrar gasto</span>
