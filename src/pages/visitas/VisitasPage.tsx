@@ -31,6 +31,7 @@ import {
 } from '@ionic/react';
 import {
   addOutline,
+  cartOutline,
   personOutline,
   cashOutline,
   cubeOutline,
@@ -239,6 +240,16 @@ export function VisitasPage() {
                 ))}
               </div>
             )}
+
+            {/* FAB: nueva venta directa */}
+            <IonFab vertical="bottom" horizontal="end" slot="fixed">
+              <IonFabButton
+                style={{ '--background': 'var(--color-primary)' }}
+                onClick={() => history.push('/venta')}
+              >
+                <IonIcon icon={cartOutline} />
+              </IonFabButton>
+            </IonFab>
           </>
         )}
 
