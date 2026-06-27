@@ -25,12 +25,18 @@ const OPCIONES: OpcionDef[] = [
 interface OpcionesCobroProps {
   value: ModoCobro | null;
   onChange: (modo: ModoCobro) => void;
+  /**
+   * Modos a ofrecer. Por defecto los tres. Permite ocultar "A crédito" cuando se
+   * cobra un saldo pendiente (cobrar a crédito un saldo ya a crédito es redundante).
+   */
+  modos?: ModoCobro[];
 }
 
-export function OpcionesCobro({ value, onChange }: OpcionesCobroProps) {
+export function OpcionesCobro({ value, onChange, modos }: OpcionesCobroProps) {
+  const opciones = modos ? OPCIONES.filter((op) => modos.includes(op.modo)) : OPCIONES;
   return (
     <div role="radiogroup" aria-label="¿Cómo se cobra?" style={{ display: 'flex', gap: '8px' }}>
-      {OPCIONES.map((op) => {
+      {opciones.map((op) => {
         const selected = value === op.modo;
         return (
           <button

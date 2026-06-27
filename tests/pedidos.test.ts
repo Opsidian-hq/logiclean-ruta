@@ -23,6 +23,8 @@ vi.mock('../src/sync/SyncEngine', () => ({
 
 import {
   entregarPedido,
+  confirmarEntrega,
+  pedidosParaEntrega,
   pedidosPendientesDeCliente,
   pedidosPendientesVista,
 } from '../src/lib/pedidos';
@@ -217,5 +219,151 @@ describe('entregarPedido · reagenda la próxima visita del cliente', () => {
 
     const cli = await db.cliente.get('cli-1');
     expect(cli?.fecha_proxima_visita).toBe('2026-06-15'); // intacta
+  });
+});
+
+// ── Confirmar entrega parcial (rediseño de Visitas) ───────────
+describe('confirmarEntrega · entrega parcial (entregar / reprogramar / cancelar)', () => {
+  const PRES2: Presentacion = {
+    id: 'pres-2', producto_base_id: 'prod-2', nombre: 'Jabón 950 ml',
+    unidad_venta: 'pieza', factor_conversion: 1, precio_mayoreo: 30, precio_menudeo: 43, activo: true,
+  };
+
+  async function sembrarDos(): Promise<void> {
+    await db.presentacion.put(toDexieRow(PRES2));
+    await sembrarPedido(1); // ped-1, pres-1, fecha 2026-06-20
+    await db.pedido_pendiente.put({
+      id: 'ped-2', cliente_id: 'cli-1', vendedor_id: VENDEDOR,
+      presentacion_id: PRES2.id, cantidad: 1, fecha_compromiso: '2026-06-20', estado: 'pendiente',
+    });
+  }
+
+  it('ENTREGA-201: todos entregados → una sola venta con N líneas y total sumado', async () => {
+    await sembrarCliente('menudeo');
+    await sembrarDos();
+
+    const res = await confirmarEntrega({
+      decisiones: [
+        { pedidoId: 'ped-1', accion: 'entregar' },
+        { pedidoId: 'ped-2', accion: 'entregar' },
+      ],
+    });
+
+    expect(res.venta).toBeTruthy();
+    const lineas = await db.linea_venta.where('venta_id').equals(res.venta!.id).toArray();
+    expect(lineas).toHaveLength(2);
+    expect(res.total).toBe(130 + 43); // menudeo: pres-1 130 + pres-2 43
+    expect(res.venta!.total).toBe(173);
+    expect((await db.pedido_pendiente.get('ped-1'))?.estado).toBe('surtido');
+    expect((await db.pedido_pendiente.get('ped-2'))?.estado).toBe('surtido');
+  });
+
+  it('ENTREGA-202: parcial → entregado va a la venta; reprogramado actualiza fecha y sigue pendiente', async () => {
+    await sembrarCliente('menudeo');
+    await sembrarDos();
+
+    const res = await confirmarEntrega({
+      decisiones: [
+        { pedidoId: 'ped-1', accion: 'entregar' },
+        { pedidoId: 'ped-2', accion: 'reprogramar' },
+      ],
+      fechaReprogramacion: '2026-07-01',
+    });
+
+    // Solo el entregado entra a la venta.
+    expect(res.total).toBe(130);
+    const lineas = await db.linea_venta.where('venta_id').equals(res.venta!.id).toArray();
+    expect(lineas).toHaveLength(1);
+    // El reprogramado sigue pendiente con la nueva fecha.
+    const ped2 = await db.pedido_pendiente.get('ped-2');
+    expect(ped2?.estado).toBe('pendiente');
+    expect(ped2?.fecha_compromiso).toBe('2026-07-01');
+  });
+
+  it('ENTREGA-203: cancelado pasa a cancelado, sin venta ni inventario', async () => {
+    await sembrarCliente('menudeo');
+    await sembrarDos();
+    await db.inventario_vehiculo.put({ id: 'inv-2', vendedor_id: VENDEDOR, presentacion_id: PRES2.id, cantidad: 5 });
+
+    const res = await confirmarEntrega({
+      decisiones: [
+        { pedidoId: 'ped-1', accion: 'entregar' },
+        { pedidoId: 'ped-2', accion: 'cancelar' },
+      ],
+    });
+
+    expect(res.cancelados).toHaveLength(1);
+    expect((await db.pedido_pendiente.get('ped-2'))?.estado).toBe('cancelado');
+    // Inventario de pres-2 intacto (no se entregó).
+    const inv2 = await db.inventario_vehiculo.get('inv-2');
+    expect(inv2?.cantidad).toBe(5);
+  });
+
+  it('ENTREGA-204: inventario baja solo por los productos entregados', async () => {
+    await sembrarCliente('menudeo');
+    await sembrarDos();
+    await db.inventario_vehiculo.put({ id: 'inv-1', vendedor_id: VENDEDOR, presentacion_id: PRES.id, cantidad: 4 });
+
+    await confirmarEntrega({
+      decisiones: [
+        { pedidoId: 'ped-1', accion: 'entregar' },
+        { pedidoId: 'ped-2', accion: 'cancelar' },
+      ],
+    });
+
+    const inv1 = await db.inventario_vehiculo.get('inv-1');
+    expect(inv1?.cantidad).toBe(3); // 4 − 1
+  });
+
+  it('ENTREGA-205: si la visita la agendó esta entrega, se reapunta al reprogramado', async () => {
+    const cliente: Cliente = {
+      id: 'cli-1', vendedor_id: VENDEDOR, nombre: 'X', tipo: 'menudeo',
+      estado: 'activo', ciclo_visita: 1, fecha_proxima_visita: '2026-06-20', activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    await sembrarDos();
+
+    await confirmarEntrega({
+      decisiones: [
+        { pedidoId: 'ped-1', accion: 'entregar' },
+        { pedidoId: 'ped-2', accion: 'reprogramar' },
+      ],
+      fechaReprogramacion: '2026-07-01',
+    });
+
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita).toBe('2026-07-01');
+  });
+
+  it('ENTREGA-206: sin reprogramados ni pendientes, la visita agendada por la entrega queda en null', async () => {
+    const cliente: Cliente = {
+      id: 'cli-1', vendedor_id: VENDEDOR, nombre: 'X', tipo: 'menudeo',
+      estado: 'activo', ciclo_visita: 1, fecha_proxima_visita: '2026-06-20', activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    await sembrarPedido(1);
+
+    await confirmarEntrega({ decisiones: [{ pedidoId: 'ped-1', accion: 'entregar' }] });
+
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.fecha_proxima_visita ?? null).toBeNull();
+  });
+
+  it('ENTREGA-207: reprogramar sin fecha lanza error', async () => {
+    await sembrarCliente('menudeo');
+    await sembrarPedido(1);
+    await expect(
+      confirmarEntrega({ decisiones: [{ pedidoId: 'ped-1', accion: 'reprogramar' }] })
+    ).rejects.toThrow(/fecha de reprogramación/);
+  });
+
+  it('ENTREGA-208: pedidosParaEntrega calcula precio congelado e importe', async () => {
+    await sembrarCliente('mayoreo');
+    await sembrarPedido(3); // pres-1 mayoreo 100
+
+    const vista = await pedidosParaEntrega('cli-1');
+    expect(vista).toHaveLength(1);
+    expect(vista[0].precio_unitario).toBe(100);
+    expect(vista[0].importe).toBe(300);
   });
 });

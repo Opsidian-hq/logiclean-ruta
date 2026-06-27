@@ -141,7 +141,12 @@ export function CobrosPendientesPage() {
               <button
                 key={p.clienteId}
                 type="button"
-                onClick={() => history.push(`/cobranza/${p.clienteId}`)}
+                onClick={() =>
+                  history.push({
+                    pathname: `/cobro/${p.clienteId}`,
+                    state: { origen: 'cobro-pendiente', total: p.saldoTotal },
+                  })
+                }
                 style={{
                   textAlign: 'left',
                   border: 'none',

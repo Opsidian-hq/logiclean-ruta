@@ -48,6 +48,12 @@ interface ConfirmacionCobroProps {
   /** Forma de pago del cobro; null si fue a crédito (sin cobro). */
   formaPago: FormaPago | null;
   saldo: number;
+  /** Título del header. Por defecto "Venta cobrada"; "Entrega cobrada" para entregas. */
+  titulo?: string;
+  /** Etiqueta de la fila de total. Por defecto "Total de la venta". */
+  totalLabel?: string;
+  /** Faltantes reprogramados de una entrega (caja azul informativa). */
+  reprogramacion?: { productos: string[]; fecha: string };
   /** Pedidos pendientes levantados en la misma venta (preventa), si los hay. */
   pedidos?: PedidoConfirmado[];
   onVolverRuta: () => void;
@@ -79,6 +85,9 @@ export function ConfirmacionCobro({
   montoCobrado,
   formaPago,
   saldo,
+  titulo = 'Venta cobrada',
+  totalLabel,
+  reprogramacion,
   pedidos = [],
   onVolverRuta,
   onVerFicha,
@@ -96,7 +105,7 @@ export function ConfirmacionCobro({
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <span style={{ fontSize: '18px', fontWeight: 800, color: '#fff', paddingLeft: 'var(--space-md)' }}>
-            Venta cobrada
+            {titulo}
           </span>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
@@ -171,7 +180,7 @@ export function ConfirmacionCobro({
               filaResumen('Subtotal (lista)', <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-body)' }}>{money(subtotal)}</span>)}
             {iva > 0 &&
               filaResumen('IVA (16%)', <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-body)' }}>{money(iva)}</span>)}
-            {filaResumen(iva > 0 ? 'Total con factura' : 'Total de la venta', <span className="numeric" style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--color-navy)' }}>{money(total)}</span>)}
+            {filaResumen(iva > 0 ? 'Total con factura' : (totalLabel ?? 'Total de la venta'), <span className="numeric" style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--color-navy)' }}>{money(total)}</span>)}
             {filaResumen(
               'Forma de pago',
               formaPago ? (
@@ -201,6 +210,18 @@ export function ConfirmacionCobro({
                 <span style={{ color: '#3E6B22' }}>✓</span>Venta liquidada
               </span>
               <span className="numeric" style={{ fontSize: '15px', fontWeight: 800, color: '#3E6B22' }}>Saldo {money(0)}</span>
+            </div>
+          )}
+
+          {/* Entrega reprogramada: faltantes que se entregarán en otra fecha */}
+          {reprogramacion && reprogramacion.productos.length > 0 && (
+            <div style={{ background: 'var(--color-primary-bg)', border: '1px solid var(--color-primary-line)', borderRadius: '14px', padding: '14px 16px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>↻</span>Entrega reprogramada
+              </div>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#3B82F6', marginTop: '4px' }}>
+                {reprogramacion.productos.join(', ')} · {reprogramacion.fecha}
+              </div>
             </div>
           )}
 

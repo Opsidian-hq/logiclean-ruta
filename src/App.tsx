@@ -76,7 +76,10 @@ const VisitasPage = lazyPage(() => import('./pages/visitas/VisitasPage'), 'Visit
 const InventarioPage = lazyPage(() => import('./pages/venta/InventarioPage'), 'InventarioPage');
 const VentaPage = lazyPage(() => import('./pages/venta/VentaPage'), 'VentaPage');
 const CobrarSaldoPage = lazyPage(() => import('./pages/cobranza/CobrarSaldoPage'), 'CobrarSaldoPage');
+const CobroFlowPage = lazyPage(() => import('./pages/cobranza/CobroFlowPage'), 'CobroFlowPage');
 const CobrosPendientesPage = lazyPage(() => import('./pages/cobranza/CobrosPendientesPage'), 'CobrosPendientesPage');
+const EntregaPage = lazyPage(() => import('./pages/visitas/EntregaPage'), 'EntregaPage');
+const SeguimientoPage = lazyPage(() => import('./pages/visitas/SeguimientoPage'), 'SeguimientoPage');
 const GastosPage = lazyPage(() => import('./pages/gastos/GastosPage'), 'GastosPage');
 const CatalogoPage = lazyPage(() => import('./pages/admin/CatalogoPage'), 'CatalogoPage');
 const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'ClientesPage');
@@ -107,7 +110,7 @@ function App() {
               <Route exact path="/login" component={LoginPage} />
 
               {/* Rutas vendedor: shell con tabs */}
-              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobros', '/mis-clientes', '/clientes']}>
+              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobro', '/cobros', '/entrega', '/seguimiento', '/mis-clientes', '/clientes']}>
                 <ProtectedRoute requiredRol="vendedor">
                   <VendedorTabs />
                 </ProtectedRoute>
@@ -180,6 +183,9 @@ function VendedorTabs() {
           <Route exact path="/venta" component={VentaPage} />
           <Route exact path="/cobros" component={CobrosPendientesPage} />
           <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
+          <Route exact path="/cobro/:clienteId" component={CobroFlowPage} />
+          <Route exact path="/entrega/:clienteId" component={EntregaPage} />
+          <Route exact path="/seguimiento/:clienteId" component={SeguimientoPage} />
           <Route exact path="/gastos" component={GastosPage} />
           <Route exact path="/mis-clientes" component={MisClientesPage} />
           <Route exact path="/clientes/:clienteId" component={ClienteDetallePage} />

@@ -50,10 +50,17 @@ export interface DecisionCobro {
 interface CobroVentaStepProps {
   clienteNombre: string;
   tipo: 'mayoreo' | 'menudeo';
+  /** Resumen de productos (p. ej. "2 productos"); vacío para cobro de saldo. */
   productosResumen: string;
   total: number;
   /** IVA incluido en el total cuando la venta requiere factura (H-06). 0 si no. */
   iva?: number;
+  /** Etiqueta sobre el total. Por defecto "Total de la venta". */
+  tituloTotal?: string;
+  /** Etiqueta del botón atrás. Por defecto "Carrito". */
+  backLabel?: string;
+  /** Modos de cobro a ofrecer; por defecto los tres (total/parcial/crédito). */
+  modos?: ModoCobro[];
   /** Skeleton mientras carga el saldo del cliente (cálculo local breve). */
   loading?: boolean;
   submitting?: boolean;
@@ -76,6 +83,9 @@ export function CobroVentaStep({
   productosResumen,
   total,
   iva = 0,
+  tituloTotal = 'Total de la venta',
+  backLabel = 'Carrito',
+  modos,
   loading = false,
   submitting = false,
   onConfirm,
@@ -110,7 +120,7 @@ export function CobroVentaStep({
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonButtons slot="start">
             <IonButton onClick={onBack} style={{ color: 'var(--color-cyan)', fontSize: '15px', fontWeight: 700 }}>
-              ‹ Carrito
+              ‹ {backLabel}
             </IonButton>
           </IonButtons>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
@@ -133,7 +143,7 @@ export function CobroVentaStep({
             {/* Total grande */}
             <div style={{ textAlign: 'center', padding: '2px 0' }}>
               <div style={{ fontSize: '12.5px', fontWeight: 800, letterSpacing: '.6px', textTransform: 'uppercase', color: '#8A94A6' }}>
-                Total de la venta
+                {tituloTotal}
               </div>
               <div className="numeric" style={{ fontSize: '46px', fontWeight: 800, color: 'var(--color-navy)', letterSpacing: '-1.4px', lineHeight: 1, marginTop: '6px' }}>
                 {money(total)}
@@ -141,7 +151,7 @@ export function CobroVentaStep({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', marginTop: '8px' }}>
                 <Chip tone={tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>{tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}</Chip>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                  {clienteNombre} · {productosResumen}
+                  {clienteNombre}{productosResumen ? ` · ${productosResumen}` : ''}
                 </span>
               </div>
               {iva > 0 && (
@@ -154,7 +164,7 @@ export function CobroVentaStep({
             {/* 3 opciones de cobro */}
             <div>
               <div style={sectionLabel}>¿Cómo se cobra?</div>
-              <OpcionesCobro value={modo} onChange={setModo} />
+              <OpcionesCobro value={modo} onChange={setModo} modos={modos} />
             </div>
 
             {/* Forma de pago (no aplica a crédito) */}
