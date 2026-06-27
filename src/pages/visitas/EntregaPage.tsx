@@ -28,7 +28,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { arrowBackOutline, checkmarkOutline, closeOutline, cubeOutline, alertCircleOutline } from 'ionicons/icons';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { StepsBar } from '../../components/ui/StepsBar';
@@ -423,7 +422,6 @@ function CabeceraEntrega({ titulo, onBack }: { titulo: string; onBack: () => voi
           <SyncStatusBadge />
         </IonButtons>
       </IonToolbar>
-      <ConnectivityStrip text="Venta y cobro se guardan en el equipo al instante" />
     </IonHeader>
   );
 }

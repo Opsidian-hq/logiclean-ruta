@@ -15,7 +15,6 @@ import {
   IonFooter,
 } from '@ionic/react';
 import { SyncStatusBadge } from '../../../components/SyncStatusBadge';
-import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { ClienteAvatar } from '../../../components/ui/ClienteAvatar';
@@ -66,13 +65,6 @@ export function ConfirmacionPreventa({
             <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip
-          text={
-            isOnline
-              ? 'En línea · sincronizado hace un momento'
-              : 'Sin conexión · subirá sola al volver la señal'
-          }
-        />
       </IonHeader>
 
       <IonContent>

@@ -30,7 +30,6 @@ import {
 import { useMemo, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
@@ -95,7 +94,6 @@ export function CobrarSaldoPage() {
             <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="Cálculo local · ventas menos cobros" />
       </IonHeader>
 
       <IonContent>

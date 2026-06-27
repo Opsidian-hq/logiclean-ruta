@@ -35,7 +35,6 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { CATEGORIAS_RUTA } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
@@ -98,7 +97,6 @@ export function GastosPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="El gasto se guarda en el equipo al instante" />
       </IonHeader>
 
       <IonContent>

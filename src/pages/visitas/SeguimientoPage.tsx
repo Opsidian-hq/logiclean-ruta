@@ -24,7 +24,6 @@ import { useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { arrowBackOutline, checkmarkOutline, calendarOutline } from 'ionicons/icons';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { useClientes } from '../../hooks/useClientes';
@@ -138,7 +137,6 @@ export function SeguimientoPage() {
               <SyncStatusBadge />
             </IonButtons>
           </IonToolbar>
-          <ConnectivityStrip text="En línea · sincronizado hace un momento" />
         </IonHeader>
         <IonContent>
           <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -281,7 +279,6 @@ function Cabecera({ titulo, onBack }: { titulo: string; onBack: () => void }) {
           <SyncStatusBadge />
         </IonButtons>
       </IonToolbar>
-      <ConnectivityStrip text="Se guarda en el equipo al instante" />
     </IonHeader>
   );
 }

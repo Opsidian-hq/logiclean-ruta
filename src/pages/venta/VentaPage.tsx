@@ -42,7 +42,6 @@ import { NuevoClienteForm, type NuevoClienteArgs } from './components/NuevoClien
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
@@ -340,8 +339,6 @@ export function VentaPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        {/* Franja offline-first permanente (ADR-0001) */}
-        <ConnectivityStrip text="La venta se guarda en el equipo al instante" />
       </IonHeader>
 
       <IonContent>
