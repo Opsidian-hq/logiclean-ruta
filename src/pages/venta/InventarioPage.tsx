@@ -16,9 +16,12 @@ import {
   IonSearchbar,
   IonSpinner,
   IonText,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useInventario } from '../../hooks/useInventario';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -26,8 +29,12 @@ import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 
 export function InventarioPage() {
-  const { rows, loading, error, setCantidad } = useInventario();
+  const { rows, loading, error, setCantidad, refresh } = useInventario();
   const [search, setSearch] = useState('');
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const filtrados = rows.filter(
     (r) =>
@@ -51,6 +58,10 @@ export function InventarioPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         <IonSearchbar
           value={search}
           onIonInput={(e) => setSearch(e.detail.value ?? '')}

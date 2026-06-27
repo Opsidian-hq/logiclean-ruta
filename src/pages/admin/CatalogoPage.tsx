@@ -10,7 +10,7 @@
  *  - Por cada producto: Editar y Dar de baja (activo=false)
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -34,9 +34,12 @@ import {
   IonFab,
   IonFabButton,
   IonToast,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
 import { addOutline, pencilOutline, archiveOutline, swapHorizontalOutline } from 'ionicons/icons';
 import { useCatalog } from '../../hooks/useCatalog';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
@@ -55,6 +58,10 @@ export function CatalogoPage() {
     savePresentacion,
     refresh,
   } = useCatalog();
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -133,6 +140,10 @@ export function CatalogoPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* Buscador */}
         <IonSearchbar
           value={search}

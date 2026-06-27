@@ -21,9 +21,11 @@ import {
   IonButtons,
   IonSpinner,
   IonSearchbar,
+  IonRefresher,
+  IonRefresherContent,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -32,12 +34,17 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { useCobrosPendientes } from '../../hooks/useCobros';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { money } from '../../lib/money';
 
 export function CobrosPendientesPage() {
   const history = useHistory();
   const { pendientes, loading, refresh } = useCobrosPendientes();
   const [search, setSearch] = useState('');
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   // Recalcular al entrar al tab: tras cobrar y volver, el saldo se actualiza.
   useIonViewWillEnter(() => {
@@ -64,6 +71,10 @@ export function CobrosPendientesPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {loading && (
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />

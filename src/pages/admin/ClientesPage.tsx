@@ -11,7 +11,7 @@
  *  - Baja lógica (activo=false)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -36,9 +36,12 @@ import {
   IonFab,
   IonFabButton,
   IonNote,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
 import { addOutline, pencilOutline, archiveOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useClientes } from '../../hooks/useClientes';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -61,6 +64,10 @@ export function ClientesPage() {
     desactivarCliente,
     refresh,
   } = useClientes();
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await refresh(); }, [refresh])
+  );
 
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [search, setSearch] = useState('');
@@ -110,6 +117,10 @@ export function ClientesPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* Buscador */}
         <IonSearchbar
           value={search}
