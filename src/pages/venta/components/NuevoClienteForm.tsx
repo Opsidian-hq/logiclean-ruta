@@ -25,7 +25,6 @@ import {
   IonText,
 } from '@ionic/react';
 import { useState } from 'react';
-import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
 
@@ -73,7 +72,6 @@ export function NuevoClienteForm({ onCrear, onClose }: NuevoClienteFormProps) {
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

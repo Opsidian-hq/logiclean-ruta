@@ -22,7 +22,6 @@ import {
 } from '@ionic/react';
 import { useEffect, useMemo, useState } from 'react';
 import { CICLO_OBJETIVO } from '../../../lib/prospectos';
-import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
@@ -164,7 +163,6 @@ export function FichaProspecto({
             </Chip>
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

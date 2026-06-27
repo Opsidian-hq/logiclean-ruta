@@ -44,7 +44,6 @@ import { useAuthContext } from '../../context/AuthContext';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import { Chip } from '../../components/ui/Chip';
 import { Card } from '../../components/ui/Card';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { EditarClienteModal } from './components/EditarClienteModal';
 import { CICLO_OBJETIVO } from '../../lib/prospectos';
 import { money } from '../../lib/money';
@@ -78,7 +77,6 @@ export function ClienteDetallePage() {
         </IonButtons>
         <IonTitle>{cliente?.nombre ?? 'Cliente'}</IonTitle>
       </IonToolbar>
-      <ConnectivityStrip />
     </IonHeader>
   );
 
@@ -159,7 +157,6 @@ function PerfilVendedor({
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
@@ -358,7 +355,6 @@ function PerfilGerente({ cliente, detalle }: PerfilProps) {
           </IonButtons>
           <IonTitle>{cliente.nombre}</IonTitle>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
