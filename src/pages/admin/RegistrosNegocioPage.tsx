@@ -33,7 +33,6 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { CATEGORIAS_BACKOFFICE } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
@@ -142,7 +141,6 @@ export function RegistrosNegocioPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
         <IonToolbar>
           {/* Segmento sobre navy: mismo patrón de contraste que Visitas (D-007). */}
           <IonSegment className="segment-on-navy" value={seg} onIonChange={(e) => setSeg((e.detail.value as 'moderna' | 'backoffice') ?? 'moderna')}>

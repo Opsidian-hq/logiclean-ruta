@@ -29,7 +29,6 @@ import { useAuthContext } from '../../context/AuthContext';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
 import type { Cliente } from '../../db/schema';
@@ -100,7 +99,6 @@ export function MisClientesPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

@@ -14,7 +14,6 @@ import {
   IonText,
 } from '@ionic/react';
 import { useState } from 'react';
-import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
 import { guardarCliente } from '../../../lib/clientes';
@@ -79,7 +78,6 @@ export function EditarClienteModal({ cliente, onGuardado, onClose }: EditarClien
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

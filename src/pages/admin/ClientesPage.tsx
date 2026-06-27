@@ -45,7 +45,6 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteForm } from './components/ClienteForm';
 import { db } from '../../db/index';
@@ -113,7 +112,6 @@ export function ClientesPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

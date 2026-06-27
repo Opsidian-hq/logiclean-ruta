@@ -42,7 +42,6 @@ import { useCatalog } from '../../hooks/useCatalog';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { ProductoForm } from './components/ProductoForm';
 import type { ProductoBase, Presentacion } from '../../db/schema';
 
@@ -136,7 +135,6 @@ export function CatalogoPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

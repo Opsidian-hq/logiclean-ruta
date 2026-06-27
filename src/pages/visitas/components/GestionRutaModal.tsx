@@ -21,7 +21,6 @@ import {
   IonText,
 } from '@ionic/react';
 import { useState } from 'react';
-import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
 import type { Cliente } from '../../../db/schema';
@@ -74,7 +73,6 @@ export function GestionRutaModal({ cliente, onGuardar, onClose }: GestionRutaMod
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>

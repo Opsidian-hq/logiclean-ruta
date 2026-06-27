@@ -47,7 +47,6 @@ import type { Vencimiento } from '../../lib/prospectos';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { CicloBar } from '../../components/ui/CicloBar';
@@ -132,7 +131,6 @@ export function VisitasPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
         <IonToolbar>
           {/* Contraste para luz solar (D-007): ambos tabs en blanco, el activo
               con subrayado de acento. Estilo compartido `.segment-on-navy`. */}

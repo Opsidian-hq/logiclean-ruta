@@ -21,7 +21,6 @@ import {
   IonText,
 } from '@ionic/react';
 import { useState } from 'react';
-import { ConnectivityStrip } from '../../../components/ui/ConnectivityStrip';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import type { CrearProspectoArgs } from '../../../hooks/useSeguimiento';
 
@@ -71,7 +70,6 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip />
       </IonHeader>
 
       <IonContent>
