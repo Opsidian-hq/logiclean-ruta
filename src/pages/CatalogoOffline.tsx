@@ -54,7 +54,6 @@ export function CatalogoOfflinePage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="Catálogo guardado en el equipo · disponible sin conexión" />
       </IonHeader>
 
       <IonContent>

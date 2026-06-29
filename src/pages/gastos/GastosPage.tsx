@@ -98,7 +98,6 @@ export function GastosPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="El gasto se guarda en el equipo al instante" />
       </IonHeader>
 
       <IonContent>

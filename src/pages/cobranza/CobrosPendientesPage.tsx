@@ -67,7 +67,6 @@ export function CobrosPendientesPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="Clientes con saldo · cobra aunque no estén en tu ruta" />
       </IonHeader>
 
       <IonContent>

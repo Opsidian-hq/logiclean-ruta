@@ -54,7 +54,6 @@ export function InventarioPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="El inventario se guarda en el equipo al instante" />
       </IonHeader>
 
       <IonContent>
