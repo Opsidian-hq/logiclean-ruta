@@ -28,7 +28,6 @@ import { CobroVentaStep, type DecisionCobro } from './CobroVentaStep';
 import { ConfirmacionCobro } from './ConfirmacionCobro';
 import { CobroSkeleton } from './components/CobroSkeleton';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import type { ModoCobro } from './components/OpcionesCobro';
 
 type Origen = 'entrega' | 'cobro-pendiente';
@@ -116,7 +115,6 @@ export function CobroFlowPage() {
               <SyncStatusBadge />
             </IonButtons>
           </IonToolbar>
-          <ConnectivityStrip text="Venta y cobro se guardan en el equipo al instante" />
         </IonHeader>
         <IonContent>
           <CobroSkeleton />
@@ -140,7 +138,6 @@ export function CobroFlowPage() {
               <SyncStatusBadge />
             </IonButtons>
           </IonToolbar>
-          <ConnectivityStrip text="Clientes al corriente" />
         </IonHeader>
         <IonContent>
           <div

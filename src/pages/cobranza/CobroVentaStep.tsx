@@ -25,7 +25,6 @@ import {
 } from '@ionic/react';
 import { useState } from 'react';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Chip } from '../../components/ui/Chip';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { useSyncContext } from '../../context/SyncContext';
@@ -135,7 +134,6 @@ export function CobroVentaStep({
             <SyncStatusBadge />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="Venta y cobro se guardan en el equipo al instante" />
       </IonHeader>
 
       {stepsBar && <StepsBar pasos={stepsBar.pasos} activo={stepsBar.activo} />}
