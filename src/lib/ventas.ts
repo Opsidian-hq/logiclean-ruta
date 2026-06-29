@@ -136,6 +136,13 @@ export async function registrarVenta(
     );
   }
 
+  // 2b) Si hubo entrega real de producto del vehículo, el prospecto pasa a
+  //     cliente activo. Un pedido pendiente sin entrega no cuenta: si se
+  //     cancela, el prospecto no debe quedar convertido.
+  if (lineasVehiculo.length > 0) {
+    await convertirEnClienteActivo(cliente.id);
+  }
+
   // 3) PEDIDOS PENDIENTES (no tocan inventario, H-05)
   const pedidosCreados: PedidoPendiente[] = [];
   for (const p of pedidos) {
@@ -213,6 +220,19 @@ async function agendarEntrega(
     id: clienteId,
     fecha_proxima_visita: proximaEntrega,
   });
+}
+
+/**
+ * Si el cliente es un prospecto y se le entregó producto del vehículo, pasa a
+ * cliente activo. Patch parcial (solo `estado`) para no pisar otros campos con
+ * una snapshot vieja, igual que `agendarEntrega`.
+ */
+async function convertirEnClienteActivo(clienteId: string): Promise<void> {
+  const cliente = await db.cliente.get(clienteId);
+  if (!cliente || cliente.estado !== 'prospecto') return;
+
+  await db.cliente.where('id').equals(clienteId).modify({ estado: 'activo' });
+  await enqueueOperation('cliente', 'patch', { id: clienteId, estado: 'activo' });
 }
 
 // ── Persistencia local + cola (sin disparar sync) ─────────────
