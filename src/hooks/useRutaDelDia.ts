@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import { clientesDeHoy } from '../lib/ruta';
+import { clientesDeHoy, fechaISOLocal } from '../lib/ruta';
 import { desgloseCliente } from '../lib/cobros';
 import { pedidosPendientesDeCliente } from '../lib/pedidos';
 import { CICLO_OBJETIVO } from '../lib/prospectos';
@@ -33,6 +33,8 @@ export interface RutaItem {
   nEntregas: number;
   /** Ciclo del prospecto (sólo para estado = 'prospecto'); null si no aplica. */
   seguimiento: SeguimientoResumen | null;
+  /** Hay al menos una visita registrada hoy para este cliente. */
+  visitadoHoy: boolean;
 }
 
 export interface UseRutaDelDiaReturn {
@@ -60,6 +62,11 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
         : todos;
       const clientes = clientesDeHoy(propios);
 
+      // Una sola consulta batch para saber qué clientes ya fueron visitados hoy.
+      const hoyISO = fechaISOLocal(new Date());
+      const visitasHoy = await db.visita.where('fecha').equals(hoyISO).toArray();
+      const idsVisitadosHoy = new Set(visitasHoy.map((v) => v.cliente_id));
+
       // Resolver los pendientes de cada cliente en paralelo (cálculo local).
       const enriquecidos = await Promise.all(
         clientes.map(async (cliente): Promise<RutaItem> => {
@@ -75,6 +82,7 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
               cliente.estado === 'prospecto'
                 ? { visita: Math.min(cliente.ciclo_visita, CICLO_OBJETIVO), objetivo: CICLO_OBJETIVO }
                 : null,
+            visitadoHoy: idsVisitadosHoy.has(cliente.id),
           };
         })
       );
