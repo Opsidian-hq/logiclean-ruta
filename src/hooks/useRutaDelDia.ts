@@ -62,10 +62,25 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
         : todos;
       const clientes = clientesDeHoy(propios);
 
-      // Una sola consulta batch para saber qué clientes ya fueron visitados hoy.
+      // Una sola consulta batch para saber qué clientes ya fueron visitados hoy
+      // (via visita formal o via venta directa).
       const hoyISO = fechaISOLocal(new Date());
       const visitasHoy = await db.visita.where('fecha').equals(hoyISO).toArray();
-      const idsVisitadosHoy = new Set(visitasHoy.map((v) => v.cliente_id));
+
+      // venta.fecha es timestamptz completo; se busca dentro del día local.
+      const inicioDia = new Date();
+      inicioDia.setHours(0, 0, 0, 0);
+      const finDia = new Date();
+      finDia.setHours(23, 59, 59, 999);
+      const ventasHoy = await db.venta
+        .where('fecha')
+        .between(inicioDia.toISOString(), finDia.toISOString(), true, true)
+        .toArray();
+
+      const idsVisitadosHoy = new Set([
+        ...visitasHoy.map((v) => v.cliente_id),
+        ...ventasHoy.map((v) => v.cliente_id),
+      ]);
 
       // Resolver los pendientes de cada cliente en paralelo (cálculo local).
       const enriquecidos = await Promise.all(
