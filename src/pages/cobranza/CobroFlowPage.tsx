@@ -196,6 +196,11 @@ export function CobroFlowPage() {
           totalLabel={esEntrega ? 'Total de la entrega' : 'Total de la venta'}
           reprogramacion={state.reprogramacion}
           onVolverRuta={volverARuta}
+          stepsBar={
+            esEntrega
+              ? { pasos: ['Productos', 'Resumen', 'Cobro'], activo: 3 }
+              : { pasos: ['Cobro', 'Listo'], activo: 1 }
+          }
         />
       </IonPage>
     );
@@ -223,6 +228,11 @@ export function CobroFlowPage() {
         onDismissSaveError={() => setSaveError(null)}
         onConfirm={confirmar}
         onBack={() => history.goBack()}
+        stepsBar={
+          esEntrega
+            ? { pasos: ['Productos', 'Resumen', 'Cobro'], activo: 2 }
+            : { pasos: ['Cobro', 'Listo'], activo: 0 }
+        }
       />
     </IonPage>
   );

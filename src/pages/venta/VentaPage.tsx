@@ -43,6 +43,7 @@ import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
+import { StepsBar } from '../../components/ui/StepsBar';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
@@ -278,6 +279,7 @@ export function VentaPage() {
           submitting={submitting}
           onConfirm={confirmarCobro}
           onBack={() => setFase('carrito')}
+          stepsBar={{ pasos: ['Carrito', 'Cobro', 'Listo'], activo: 1 }}
         />
       </IonPage>
     );
@@ -293,6 +295,7 @@ export function VentaPage() {
           tipo={tipo}
           pedidos={pedidosVista(pedidos)}
           onVolverRuta={volverARuta}
+          stepsBar={{ pasos: ['Carrito', 'Listo'], activo: 1 }}
         />
       </IonPage>
     );
@@ -325,6 +328,7 @@ export function VentaPage() {
                 }
               : undefined
           }
+          stepsBar={{ pasos: ['Carrito', 'Cobro', 'Listo'], activo: 2 }}
         />
       </IonPage>
     );
@@ -343,6 +347,8 @@ export function VentaPage() {
         {/* Franja offline-first permanente (ADR-0001) */}
         <ConnectivityStrip text="La venta se guarda en el equipo al instante" />
       </IonHeader>
+
+      <StepsBar pasos={['Carrito', 'Cobro', 'Listo']} activo={0} />
 
       <IonContent>
         {loading && (

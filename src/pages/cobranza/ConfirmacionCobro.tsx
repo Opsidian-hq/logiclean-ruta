@@ -33,6 +33,7 @@ import type { FormaPago } from '../../lib/cobros';
 import { SaldoInfo } from './components/SaldoInfo';
 import { ErrorSyncBanner } from './components/ErrorSyncBanner';
 import type { PedidoConfirmado } from '../venta/components/ConfirmacionPreventa';
+import { StepsBar } from '../../components/ui/StepsBar';
 
 interface ConfirmacionCobroProps {
   ventaId: string;
@@ -58,6 +59,7 @@ interface ConfirmacionCobroProps {
   pedidos?: PedidoConfirmado[];
   onVolverRuta: () => void;
   onVerFicha?: () => void;
+  stepsBar?: { pasos: string[]; activo: number };
 }
 
 const filaResumen = (label: string, value: React.ReactNode, last = false) => (
@@ -91,6 +93,7 @@ export function ConfirmacionCobro({
   pedidos = [],
   onVolverRuta,
   onVerFicha,
+  stepsBar,
 }: ConfirmacionCobroProps) {
   const { isOnline, syncStatus, pendingCount, syncNow } = useSyncContext();
 
@@ -119,6 +122,8 @@ export function ConfirmacionCobro({
           }
         />
       </IonHeader>
+
+      {stepsBar && <StepsBar pasos={stepsBar.pasos} activo={stepsBar.activo} />}
 
       <IonContent>
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
