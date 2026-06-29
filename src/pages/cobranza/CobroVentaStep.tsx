@@ -39,6 +39,7 @@ import { MontoCobroBox } from './components/MontoCobroBox';
 import { SaldoInfo } from './components/SaldoInfo';
 import { CobroSkeleton } from './components/CobroSkeleton';
 import { ErrorSyncBanner } from './components/ErrorSyncBanner';
+import { StepsBar } from '../../components/ui/StepsBar';
 
 export interface DecisionCobro {
   modo: ModoCobro;
@@ -69,6 +70,7 @@ interface CobroVentaStepProps {
   onDismissSaveError?: () => void;
   onConfirm: (decision: DecisionCobro) => void;
   onBack: () => void;
+  stepsBar?: { pasos: string[]; activo: number };
 }
 
 const sectionLabel = {
@@ -95,6 +97,7 @@ export function CobroVentaStep({
   onDismissSaveError,
   onConfirm,
   onBack,
+  stepsBar,
 }: CobroVentaStepProps) {
   const { syncStatus, syncNow } = useSyncContext();
   const [modo, setModo] = useState<ModoCobro | null>(null);
@@ -134,6 +137,8 @@ export function CobroVentaStep({
         </IonToolbar>
         <ConnectivityStrip text="Venta y cobro se guardan en el equipo al instante" />
       </IonHeader>
+
+      {stepsBar && <StepsBar pasos={stepsBar.pasos} activo={stepsBar.activo} />}
 
       <IonContent>
         {loading ? (

@@ -20,6 +20,7 @@ import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { ClienteAvatar } from '../../../components/ui/ClienteAvatar';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
+import { StepsBar } from '../../../components/ui/StepsBar';
 import { useSyncContext } from '../../../context/SyncContext';
 import { folioLocal } from '../../../lib/folio';
 
@@ -35,6 +36,7 @@ interface ConfirmacionPreventaProps {
   tipo: 'mayoreo' | 'menudeo';
   pedidos: PedidoConfirmado[];
   onVolverRuta: () => void;
+  stepsBar?: { pasos: string[]; activo: number };
 }
 
 export function ConfirmacionPreventa({
@@ -43,6 +45,7 @@ export function ConfirmacionPreventa({
   tipo,
   pedidos,
   onVolverRuta,
+  stepsBar,
 }: ConfirmacionPreventaProps) {
   const { isOnline, syncStatus, pendingCount } = useSyncContext();
 
@@ -74,6 +77,8 @@ export function ConfirmacionPreventa({
           }
         />
       </IonHeader>
+
+      {stepsBar && <StepsBar pasos={stepsBar.pasos} activo={stepsBar.activo} />}
 
       <IonContent>
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
