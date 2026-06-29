@@ -269,3 +269,71 @@ describe('registrarVenta · agenda la entrega del pedido', () => {
     expect(cli?.fecha_proxima_visita).toBe('2026-06-10'); // se respeta la más próxima
   });
 });
+
+// ── Prospecto que compra pasa a cliente activo ────────────────
+describe('registrarVenta · convierte prospecto en cliente activo', () => {
+  async function sembrarCliente(estado: 'prospecto' | 'activo'): Promise<Cliente> {
+    const cliente: Cliente = {
+      id: 'cli-1',
+      vendedor_id: VENDEDOR,
+      nombre: 'Tacos Los Cuates',
+      tipo: 'menudeo',
+      estado,
+      ciclo_visita: 1,
+      dia_ruta: null,
+      fecha_proxima_visita: null,
+      activo: true,
+    };
+    await db.cliente.put(toDexieRow(cliente));
+    return cliente;
+  }
+
+  it('VENTA-014: prospecto que recibe producto del vehículo pasa a activo', async () => {
+    await sembrarCliente('prospecto');
+    await cargarInventario(10);
+    await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'menudeo' },
+      lineasVehiculo: [{ presentacion: PRES, cantidad: 1 }],
+    });
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.estado).toBe('activo');
+
+    const patch = await db.sync_queue
+      .where('table_name')
+      .equals('cliente')
+      .toArray();
+    expect(patch).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          operation: 'patch',
+          payload: expect.objectContaining({ id: 'cli-1', estado: 'activo' }),
+        }),
+      ])
+    );
+  });
+
+  it('VENTA-015: un pedido pendiente sin entrega no convierte al prospecto', async () => {
+    await sembrarCliente('prospecto');
+    await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'menudeo' },
+      lineasVehiculo: [],
+      pedidos: [{ presentacion_id: PRES.id, cantidad: 2, fecha_compromiso: '2026-06-20' }],
+    });
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.estado).toBe('prospecto');
+  });
+
+  it('VENTA-016: un cliente ya activo sigue activo tras la venta', async () => {
+    await sembrarCliente('activo');
+    await cargarInventario(10);
+    await registrarVenta({
+      vendedorId: VENDEDOR,
+      cliente: { id: 'cli-1', tipo: 'menudeo' },
+      lineasVehiculo: [{ presentacion: PRES, cantidad: 1 }],
+    });
+    const cli = await db.cliente.get('cli-1');
+    expect(cli?.estado).toBe('activo');
+  });
+});
