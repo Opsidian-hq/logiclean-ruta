@@ -38,6 +38,7 @@ import {
   cubeOutline,
   timeOutline,
   chevronForwardOutline,
+  checkmarkCircleOutline,
 } from 'ionicons/icons';
 import { useState, useCallback, type ReactNode } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -182,63 +183,110 @@ export function VisitasPage() {
               </div>
             )}
 
-            {!ruta.loading && !ruta.error && ruta.items.length > 0 && (
-              <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {ruta.items.map(({ cliente: c, sumCobros, nEntregas, seguimiento }) => (
-                  // La tarjeta completa es el punto de entrada al perfil del cliente.
-                  <Card
-                    key={c.id}
-                    padding="16px"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => history.push(`/clientes/${c.id}`)}
-                    onKeyDown={(e) => e.key === 'Enter' && history.push(`/clientes/${c.id}`)}
-                    style={{ position: 'relative', cursor: 'pointer' }}
-                  >
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.1, paddingRight: '24px' }}>
-                      {c.nombre}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '10px', flexWrap: 'wrap' }}>
-                      <Chip tone={c.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
-                        {c.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
-                      </Chip>
-                      <Chip tone={c.estado === 'prospecto' ? 'amber' : 'primarySoft'}>
-                        {c.estado === 'prospecto' ? 'Prospecto' : 'Cliente'}
-                      </Chip>
-                      {c.dia_ruta && (
-                        <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{c.dia_ruta}</span>
+            {!ruta.loading && !ruta.error && ruta.items.length > 0 && (() => {
+              const porVisitar = ruta.items.filter((i) => !i.visitadoHoy);
+              const visitados  = ruta.items.filter((i) => i.visitadoHoy);
+              const hayAmbas   = porVisitar.length > 0 && visitados.length > 0;
+
+              const renderCard = (
+                { cliente: c, sumCobros, nEntregas, seguimiento, visitadoHoy }: typeof ruta.items[number]
+              ) => (
+                <Card
+                  key={c.id}
+                  padding="16px"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => history.push(`/clientes/${c.id}`)}
+                  onKeyDown={(e) => e.key === 'Enter' && history.push(`/clientes/${c.id}`)}
+                  style={{ position: 'relative', cursor: 'pointer', opacity: visitadoHoy ? 0.72 : 1 }}
+                >
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: visitadoHoy ? 'var(--color-text-secondary)' : 'var(--color-navy)', lineHeight: 1.1, paddingRight: '24px' }}>
+                    {c.nombre}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    <Chip tone={c.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
+                      {c.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
+                    </Chip>
+                    <Chip tone={c.estado === 'prospecto' ? 'amber' : 'primarySoft'}>
+                      {c.estado === 'prospecto' ? 'Prospecto' : 'Cliente'}
+                    </Chip>
+                    {c.dia_ruta && (
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{c.dia_ruta}</span>
+                    )}
+                  </div>
+
+                  {/* Alertas contextuales: sólo las que aplican, una por línea. */}
+                  {(sumCobros > 0 || nEntregas > 0 || seguimiento) && (
+                    <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      {sumCobros > 0 && (
+                        <AlertaVisita color="var(--color-error)" icon={cashOutline}>
+                          Cobro pendiente · {money(sumCobros)}
+                        </AlertaVisita>
+                      )}
+                      {nEntregas > 0 && (
+                        <AlertaVisita color="#B45309" icon={cubeOutline}>
+                          Entrega pendiente · {nEntregas} producto{nEntregas !== 1 ? 's' : ''}
+                        </AlertaVisita>
+                      )}
+                      {seguimiento && (
+                        <AlertaVisita color="var(--color-primary)" icon={timeOutline}>
+                          Seguimiento · Visita {seguimiento.visita} de {seguimiento.objetivo}
+                        </AlertaVisita>
                       )}
                     </div>
+                  )}
 
-                    {/* Alertas contextuales: sólo las que aplican, una por línea. */}
-                    {(sumCobros > 0 || nEntregas > 0 || seguimiento) && (
-                      <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        {sumCobros > 0 && (
-                          <AlertaVisita color="var(--color-error)" icon={cashOutline}>
-                            Cobro pendiente · {money(sumCobros)}
-                          </AlertaVisita>
-                        )}
-                        {nEntregas > 0 && (
-                          <AlertaVisita color="#B45309" icon={cubeOutline}>
-                            Entrega pendiente · {nEntregas} producto{nEntregas !== 1 ? 's' : ''}
-                          </AlertaVisita>
-                        )}
-                        {seguimiento && (
-                          <AlertaVisita color="var(--color-primary)" icon={timeOutline}>
-                            Seguimiento · Visita {seguimiento.visita} de {seguimiento.objetivo}
-                          </AlertaVisita>
-                        )}
+                  <IonIcon
+                    icon={visitadoHoy ? checkmarkCircleOutline : chevronForwardOutline}
+                    style={{
+                      position: 'absolute',
+                      right: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: visitadoHoy ? 'var(--ion-color-success)' : '#C8CAD0',
+                      fontSize: '20px',
+                    }}
+                  />
+                </Card>
+              );
+
+              return (
+                <>
+                  {/* Sección: Por visitar */}
+                  {porVisitar.length > 0 && (
+                    <>
+                      {hayAmbas && (
+                        <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: 'var(--color-navy)', padding: '14px var(--space-md) 2px' }}>
+                          Por visitar · {porVisitar.length}
+                        </div>
+                      )}
+                      <div style={{ padding: hayAmbas ? '0 var(--space-md)' : 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {porVisitar.map(renderCard)}
                       </div>
-                    )}
+                    </>
+                  )}
 
-                    <IonIcon
-                      icon={chevronForwardOutline}
-                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#C8CAD0', fontSize: '20px' }}
-                    />
-                  </Card>
-                ))}
-              </div>
-            )}
+                  {/* Sección: Visitados */}
+                  {visitados.length > 0 && (
+                    <>
+                      {porVisitar.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '20px var(--space-md) 4px' }}>
+                          <IonText color="medium">
+                            <p style={{ margin: 0, fontSize: '14px' }}>Todos los clientes del día ya fueron visitados.</p>
+                          </IonText>
+                        </div>
+                      )}
+                      <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '14px var(--space-md) 2px' }}>
+                        Visitados · {visitados.length}
+                      </div>
+                      <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {visitados.map(renderCard)}
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             {/* FAB: añadir prospecto */}
             <IonFab vertical="bottom" horizontal="end" slot="fixed" style={{ marginBottom: '76px' }}>
