@@ -32,6 +32,7 @@ import {
 import {
   addOutline,
   cartOutline,
+  personAddOutline,
   personOutline,
   cashOutline,
   cubeOutline,
@@ -238,6 +239,16 @@ export function VisitasPage() {
                 ))}
               </div>
             )}
+
+            {/* FAB: añadir prospecto */}
+            <IonFab vertical="bottom" horizontal="end" slot="fixed" style={{ marginBottom: '76px' }}>
+              <IonFabButton
+                style={{ '--background': 'var(--color-primary)' }}
+                onClick={() => setNuevoOpen(true)}
+              >
+                <IonIcon icon={personAddOutline} />
+              </IonFabButton>
+            </IonFab>
 
             {/* FAB: nueva venta directa */}
             <IonFab vertical="bottom" horizontal="end" slot="fixed">
