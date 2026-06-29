@@ -24,7 +24,6 @@ import { useCatalog } from '../hooks/useCatalog';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../components/SyncStatusBadge';
 import { CuentaButton } from '../components/CuentaButton';
-import { ConnectivityStrip } from '../components/ui/ConnectivityStrip';
 import { Card } from '../components/ui/Card';
 import { Chip } from '../components/ui/Chip';
 
@@ -54,7 +53,6 @@ export function CatalogoOfflinePage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="Catálogo guardado en el equipo · disponible sin conexión" />
       </IonHeader>
 
       <IonContent>

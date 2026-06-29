@@ -29,7 +29,6 @@ import { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { ConnectivityStrip } from '../../components/ui/ConnectivityStrip';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ClienteAvatar } from '../../components/ui/ClienteAvatar';
@@ -67,7 +66,6 @@ export function CobrosPendientesPage() {
             <CuentaButton />
           </IonButtons>
         </IonToolbar>
-        <ConnectivityStrip text="Clientes con saldo · cobra aunque no estén en tu ruta" />
       </IonHeader>
 
       <IonContent>
