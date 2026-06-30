@@ -41,6 +41,7 @@ import {
   timeOutline,
   chevronForwardOutline,
   checkmarkCircleOutline,
+  reorderThreeOutline,
 } from 'ionicons/icons';
 import { useState, useCallback, type ReactNode } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -274,7 +275,9 @@ export function VisitasPage() {
                         >
                           {porVisitar.map((item) => (
                             <div key={item.cliente.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '12px' }}>
-                              <IonReorder style={{ flex: 'none', width: '24px', color: 'var(--color-text-secondary)', fontSize: '18px' }} />
+                              <IonReorder style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px' }}>
+                                <IonIcon icon={reorderThreeOutline} style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }} />
+                              </IonReorder>
                               <div style={{ flex: 1 }}>{renderCard(item)}</div>
                             </div>
                           ))}
