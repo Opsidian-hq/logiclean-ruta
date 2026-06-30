@@ -28,6 +28,7 @@ export interface Cliente {
   dia_ruta?: string | null;
   fecha_proxima_visita?: string | null;  // ISO date string
   activo: boolean;
+  orden_ruta?: number | null;
 }
 
 export interface Visita {

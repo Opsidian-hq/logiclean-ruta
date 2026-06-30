@@ -14,6 +14,7 @@ import { db } from '../db/index';
 import { clientesDeHoy, fechaISOLocal } from '../lib/ruta';
 import { desgloseCliente } from '../lib/cobros';
 import { pedidosPendientesDeCliente } from '../lib/pedidos';
+import { reordenarRuta } from '../lib/visitas';
 import { CICLO_OBJETIVO } from '../lib/prospectos';
 import { useAuthContext } from '../context/AuthContext';
 import type { Cliente } from '../db/schema';
@@ -44,6 +45,7 @@ export interface UseRutaDelDiaReturn {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  reordenar: (newOrder: RutaItem[]) => Promise<void>;
 }
 
 export function useRutaDelDia(): UseRutaDelDiaReturn {
@@ -137,10 +139,24 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
     await loadFromLocal();
   }, [loadFromLocal]);
 
+  const reordenar = useCallback(async (newOrder: RutaItem[]) => {
+    // Actualización optimista: reemplaza los "por visitar" con el nuevo orden
+    // y conserva los ya visitados al final.
+    setItems((prev) => {
+      const visitados = prev.filter((i) => i.visitadoHoy);
+      const reordenados = newOrder.map((item, idx) => ({
+        ...item,
+        cliente: { ...item.cliente, orden_ruta: idx + 1 },
+      }));
+      return [...reordenados, ...visitados];
+    });
+    await reordenarRuta(newOrder.map((i) => i.cliente));
+  }, []);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFromLocal();
   }, [loadFromLocal]);
 
-  return { items, loading, error, refresh };
+  return { items, loading, error, refresh, reordenar };
 }

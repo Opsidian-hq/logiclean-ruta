@@ -55,7 +55,8 @@ export function esRutaDeHoy(cliente: Cliente, hoy: Date = new Date()): boolean {
 }
 
 /**
- * Clientes/prospectos activos a visitar hoy, ordenados por nombre.
+ * Clientes/prospectos activos a visitar hoy, ordenados por orden_ruta del
+ * vendedor (si está asignado) y luego alfabéticamente como desempate.
  * Incluye ambos estados (prospecto y activo); la urgencia/vencidos es Inc 2.
  */
 export function clientesDeHoy(
@@ -64,5 +65,10 @@ export function clientesDeHoy(
 ): Cliente[] {
   return clientes
     .filter((c) => c.activo && esRutaDeHoy(c, hoy))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    .sort((a, b) => {
+      const oa = a.orden_ruta ?? Infinity;
+      const ob = b.orden_ruta ?? Infinity;
+      if (oa !== ob) return oa - ob;
+      return a.nombre.localeCompare(b.nombre, 'es');
+    });
 }
