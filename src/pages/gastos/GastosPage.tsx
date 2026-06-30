@@ -138,6 +138,12 @@ export function GastosPage() {
                 {money(totales.transferencia)}
               </span>
             </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--color-divider)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--color-navy)' }}>Total</span>
+              <span className="numeric" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                {money(totales.efectivo + totales.transferencia)}
+              </span>
+            </div>
           </Card>
         </div>
 
