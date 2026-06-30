@@ -142,9 +142,9 @@ function App() {
 // ── Tabs del vendedor ─────────────────────────────────────────
 
 const MENU_ITEMS = [
-  { path: '/inventario', icon: cubeOutline,   label: 'Inventario' },
-  { path: '/gastos',     icon: walletOutline,  label: 'Gastos'     },
-  { path: '/catalogo',   icon: gridOutline,    label: 'Catálogo'   },
+  { path: '/cobros',       icon: cashOutline,   label: 'Cobros'   },
+  { path: '/mis-clientes', icon: personOutline, label: 'Clientes' },
+  { path: '/catalogo',     icon: gridOutline,   label: 'Catálogo' },
 ] as const;
 
 function VendedorTabs() {
@@ -195,13 +195,13 @@ function VendedorTabs() {
             <IonIcon icon={mapOutline} style={{ color: 'var(--color-on-dark)' }} />
             <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Visitas</span>
           </IonTabButton>
-<IonTabButton tab="cobros" href="/cobros">
-            <IonIcon icon={cashOutline} style={{ color: 'var(--color-on-dark)' }} />
-            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Cobros</span>
+<IonTabButton tab="gastos" href="/gastos">
+            <IonIcon icon={walletOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Gastos</span>
           </IonTabButton>
-          <IonTabButton tab="mis-clientes" href="/mis-clientes">
-            <IonIcon icon={personOutline} style={{ color: 'var(--color-on-dark)' }} />
-            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
+          <IonTabButton tab="inventario" href="/inventario">
+            <IonIcon icon={cubeOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inventario</span>
           </IonTabButton>
           <IonTabButton tab="more">
             <IonMenuToggle menu="vendedor-menu" autoHide={false}>
