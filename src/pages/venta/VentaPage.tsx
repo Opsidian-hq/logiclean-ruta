@@ -28,6 +28,7 @@ import {
   IonToast,
   IonFooter,
   IonModal,
+  IonSearchbar,
 } from '@ionic/react';
 import { addOutline, trashOutline } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
@@ -129,6 +130,8 @@ export function VentaPage() {
   const [pedPres, setPedPres] = useState<string>('');
   const [pedCant, setPedCant] = useState<number>(1);
   const [pedFecha, setPedFecha] = useState<string>('');
+  const [pedModalOpen, setPedModalOpen] = useState(false);
+  const [pedBuscador, setPedBuscador] = useState('');
 
   const cliente = clientes.find((c) => c.id === clienteId) ?? null;
   const tipo = cliente?.tipo ?? null;
@@ -174,6 +177,16 @@ export function VentaPage() {
     if (pd > 0) partes.push(`${pd} pedido${pd !== 1 ? 's' : ''}`);
     return partes.join(' · ');
   }, [lineasVehiculo.length, pedidos.length]);
+
+  const rowsFiltrados = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          r.presentacion.nombre.toLowerCase().includes(pedBuscador.toLowerCase()) ||
+          r.productoNombre.toLowerCase().includes(pedBuscador.toLowerCase())
+      ),
+    [rows, pedBuscador]
+  );
 
   const nombrePresentacion = (id: string) =>
     rows.find((r) => r.presentacion.id === id)?.presentacion.nombre ?? id;
@@ -605,19 +618,18 @@ export function VentaPage() {
                 </div>
               )}
 
-              <IonItem>
+              <IonItem button detail={false} onClick={() => setPedModalOpen(true)}>
                 <IonLabel position="stacked">Presentación</IonLabel>
-                <IonSelect
-                  value={pedPres}
-                  placeholder="Producto a pedir"
-                  onIonChange={(e) => setPedPres(e.detail.value)}
+                <div
+                  style={{
+                    width: '100%',
+                    padding: '8px 0 6px',
+                    fontSize: '16px',
+                    color: pedPres ? 'var(--color-body)' : 'var(--color-disabled)',
+                  }}
                 >
-                  {rows.map((r) => (
-                    <IonSelectOption key={r.presentacion.id} value={r.presentacion.id}>
-                      {r.presentacion.nombre}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
+                  {pedPres ? nombrePresentacion(pedPres) : 'Producto a pedir'}
+                </div>
               </IonItem>
               <IonItem>
                 <IonLabel>Cantidad</IonLabel>
@@ -713,6 +725,71 @@ export function VentaPage() {
           </div>
         </IonToolbar>
       </IonFooter>
+
+      {/* Modal: buscador de presentación para pedido pendiente */}
+      <IonModal
+        isOpen={pedModalOpen}
+        onDidDismiss={() => {
+          setPedModalOpen(false);
+          setPedBuscador('');
+        }}
+        breakpoints={[0, 0.9]}
+        initialBreakpoint={0.9}
+      >
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Seleccionar producto</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={() => setPedModalOpen(false)}>Cancelar</IonButton>
+            </IonButtons>
+          </IonToolbar>
+          <IonToolbar>
+            <IonSearchbar
+              value={pedBuscador}
+              onIonInput={(e) => setPedBuscador(e.detail.value ?? '')}
+              placeholder="Buscar producto..."
+              style={{ '--background': 'var(--color-surface)' }}
+              debounce={0}
+            />
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <IonList>
+            {rowsFiltrados.length === 0 && (
+              <IonItem>
+                <IonLabel style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                  Sin resultados
+                </IonLabel>
+              </IonItem>
+            )}
+            {rowsFiltrados.map((r) => (
+              <IonItem
+                key={r.presentacion.id}
+                button
+                detail={false}
+                onClick={() => {
+                  setPedPres(r.presentacion.id);
+                  setPedModalOpen(false);
+                  setPedBuscador('');
+                }}
+                style={pedPres === r.presentacion.id ? { '--background': 'var(--color-primary-bg)' } : undefined}
+              >
+                <IonLabel>
+                  <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--color-body)' }}>
+                    {r.presentacion.nombre}
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                    {r.productoNombre}
+                  </div>
+                </IonLabel>
+                {pedPres === r.presentacion.id && (
+                  <span slot="end" style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: '18px' }}>✓</span>
+                )}
+              </IonItem>
+            ))}
+          </IonList>
+        </IonContent>
+      </IonModal>
 
       {/* Modal: alta rápida de cliente activo desde la venta */}
       <IonModal isOpen={nuevoClienteOpen} onDidDismiss={() => setNuevoClienteOpen(false)}>
