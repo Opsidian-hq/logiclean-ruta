@@ -273,8 +273,8 @@ export function VisitasPage() {
                           }}
                         >
                           {porVisitar.map((item) => (
-                            <div key={item.cliente.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                              <IonReorder style={{ flex: 'none', color: 'var(--color-text-secondary)', fontSize: '20px' }} />
+                            <div key={item.cliente.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '12px' }}>
+                              <IonReorder style={{ flex: 'none', width: '24px', color: 'var(--color-text-secondary)', fontSize: '18px' }} />
                               <div style={{ flex: 1 }}>{renderCard(item)}</div>
                             </div>
                           ))}
