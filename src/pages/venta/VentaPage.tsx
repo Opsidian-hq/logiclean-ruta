@@ -22,7 +22,6 @@ import {
   IonSelect,
   IonSelectOption,
   IonNote,
-  IonInput,
   IonIcon,
   IonSpinner,
   IonToast,
@@ -570,7 +569,7 @@ export function VentaPage() {
             </div>
 
             {/* ── Pedido pendiente (H-05) ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '0 var(--space-md)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={sectionLabel}>Levantar pedido (preventa)</span>
                 <Chip tone="primarySoft">Preventa</Chip>
@@ -636,11 +635,32 @@ export function VentaPage() {
                     cursor: 'pointer',
                   }}
                 >
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ ...sectionLabel, marginBottom: '4px' }}>Presentación</div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: pedPres ? 'var(--color-body)' : 'var(--color-disabled)' }}>
-                      {pedPres ? nombrePresentacion(pedPres) : 'Producto a pedir'}
-                    </div>
+                    {(() => {
+                      const pedRow = pedPres ? rows.find((r) => r.presentacion.id === pedPres) : null;
+                      if (!pedRow) {
+                        return (
+                          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-disabled)' }}>
+                            Producto a pedir
+                          </div>
+                        );
+                      }
+                      const precio = tipo
+                        ? money(precioUnitario(pedRow.presentacion, tipo))
+                        : `${money(pedRow.presentacion.precio_mayoreo)} / ${money(pedRow.presentacion.precio_menudeo)}`;
+                      return (
+                        <>
+                          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-body)' }}>
+                            {pedRow.presentacion.nombre}
+                            <span style={unidadChip}>{pedRow.presentacion.unidad_venta}</span>
+                          </div>
+                          <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                            {precio} c/u
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <span style={{ fontSize: '20px', color: 'var(--color-disabled)', marginLeft: '8px' }}>›</span>
                 </div>
@@ -662,18 +682,20 @@ export function VentaPage() {
                 {/* Fecha de entrega */}
                 <div style={{ padding: '11px 14px' }}>
                   <div style={{ ...sectionLabel, marginBottom: '4px' }}>Fecha de entrega *</div>
-                  <IonInput
+                  <input
                     type="date"
                     value={pedFecha}
-                    onIonInput={(e) => setPedFecha(e.detail.value ?? '')}
+                    onChange={(e) => setPedFecha(e.target.value)}
                     style={{
-                      minHeight: 'auto',
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
                       fontSize: '16px',
                       fontWeight: 700,
-                      color: 'var(--color-body)',
-                      '--padding-start': '0',
-                      '--padding-top': '0',
-                      '--padding-bottom': '0',
+                      fontFamily: 'inherit',
+                      color: pedFecha ? 'var(--color-body)' : 'var(--color-disabled)',
+                      width: '100%',
+                      padding: 0,
                     }}
                   />
                 </div>
