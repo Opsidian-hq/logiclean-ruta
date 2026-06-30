@@ -1,9 +1,10 @@
 /**
  * Logiclean Ruta — GastosPage (vendedor) · H-12 Gastos de ruta
  *
- * Registro de baja fricción de gastos de ruta + lista del día con totales por
- * bolsa (efectivo / transferencia). Offline-first. El efecto en el corte
- * (descuento de la bolsa) se calcula en Inc 3.
+ * Registro de baja fricción de gastos de ruta + lista del periodo activo
+ * (desde el último corte) con totales por bolsa (efectivo / transferencia).
+ * Offline-first. El efecto en el corte (descuento de la bolsa) se calcula
+ * en Inc 3.
  * Ruta: /gastos
  */
 
@@ -14,6 +15,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonButton,
   IonList,
   IonItem,
   IonLabel,
@@ -27,7 +29,12 @@ import {
   IonToast,
   IonRefresher,
   IonRefresherContent,
+  IonFab,
+  IonFabButton,
+  IonModal,
+  IonIcon,
 } from '@ionic/react';
+import { addOutline, closeOutline } from 'ionicons/icons';
 import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useGastos } from '../../hooks/useGastos';
@@ -53,11 +60,13 @@ const sectionLabel: CSSProperties = {
 const OTRO = '__otro__';
 
 export function GastosPage() {
-  const { gastosHoy, totales, loading, registrarGasto, refresh } = useGastos();
+  const { gastosPeriodo, totales, loading, registrarGasto, refresh } = useGastos();
 
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
   );
+
+  const [formOpen, setFormOpen] = useState(false);
 
   const [categoria, setCategoria] = useState<string>('');
   const [categoriaLibre, setCategoriaLibre] = useState('');
@@ -71,6 +80,15 @@ export function GastosPage() {
   const monto = parseFloat(montoStr) || 0;
   const puedeGuardar = !!categoriaFinal && monto > 0 && !loading;
 
+  const resetForm = () => {
+    setCategoria('');
+    setCategoriaLibre('');
+    setMontoStr('');
+    setFormaPago('efectivo');
+    setFecha(new Date().toISOString().slice(0, 10));
+    setDescripcion('');
+  };
+
   const guardar = async () => {
     if (!puedeGuardar) return;
     await registrarGasto({
@@ -81,10 +99,8 @@ export function GastosPage() {
       descripcion: descripcion || undefined,
     });
     setToast(`Gasto guardado (en cola): ${categoriaFinal} ${money(monto)}`);
-    setCategoria('');
-    setCategoriaLibre('');
-    setMontoStr('');
-    setDescripcion('');
+    setFormOpen(false);
+    resetForm();
   };
 
   return (
@@ -104,113 +120,45 @@ export function GastosPage() {
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* ── Formulario ── */}
-        <IonList>
-          <span style={sectionLabel}>Registrar gasto</span>
+        {/* ── Gastos del periodo ── */}
+        <span style={sectionLabel}>Gastos del periodo</span>
 
-          <IonItem>
-            <IonLabel position="stacked">Categoría *</IonLabel>
-            <IonSelect
-              value={categoria}
-              placeholder="Selecciona una categoría"
-              onIonChange={(e) => setCategoria(e.detail.value)}
-            >
-              {CATEGORIAS_RUTA.map((c) => (
-                <IonSelectOption key={c} value={c}>
-                  {c}
-                </IonSelectOption>
-              ))}
-              <IonSelectOption value={OTRO}>Otro…</IonSelectOption>
-            </IonSelect>
-          </IonItem>
+        {/* Resumen por bolsa (siempre visible) */}
+        <div style={{ padding: '0 var(--space-md)' }}>
+          <Card padding="13px 14px">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Efectivo</span>
+              <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                {money(totales.efectivo)}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--color-divider)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Transferencia</span>
+              <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                {money(totales.transferencia)}
+              </span>
+            </div>
+          </Card>
+        </div>
 
-          {categoria === OTRO && (
-            <IonItem>
-              <IonLabel position="stacked">Especifica la categoría *</IonLabel>
-              <IonInput
-                value={categoriaLibre}
-                onIonInput={(e) => setCategoriaLibre(e.detail.value ?? '')}
-                placeholder="Ej. Estacionamiento"
-              />
-            </IonItem>
-          )}
-
-          <IonItem>
-            <IonLabel position="stacked">Monto *</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="decimal"
-              value={montoStr}
-              onIonInput={(e) => setMontoStr(e.detail.value ?? '')}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-            />
-          </IonItem>
-
-          <IonItem>
-            <IonSegment
-              value={formaPago}
-              onIonChange={(e) =>
-                setFormaPago(
-                  (e.detail.value as 'efectivo' | 'transferencia') ?? 'efectivo'
-                )
-              }
-            >
-              <IonSegmentButton value="efectivo">
-                <IonLabel>Efectivo</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="transferencia">
-                <IonLabel>Transferencia</IonLabel>
-              </IonSegmentButton>
-            </IonSegment>
-          </IonItem>
-
-          <IonItem>
-            <IonLabel position="stacked">Fecha</IonLabel>
-            <IonInput
-              type="date"
-              value={fecha}
-              onIonInput={(e) => setFecha(e.detail.value ?? '')}
-            />
-          </IonItem>
-
-          <IonItem>
-            <IonLabel position="stacked">Descripción (opcional)</IonLabel>
-            <IonInput
-              value={descripcion}
-              onIonInput={(e) => setDescripcion(e.detail.value ?? '')}
-              placeholder="Detalle del gasto"
-            />
-          </IonItem>
-
-          <div style={{ padding: '12px var(--space-md)' }}>
-            <PrimaryCTA disabled={!puedeGuardar} onClick={guardar}>
-              Registrar gasto
-            </PrimaryCTA>
-          </div>
-        </IonList>
-
-        {/* ── Gastos del día ── */}
-        <span style={sectionLabel}>Gastos de hoy</span>
-
+        {/* Historial */}
         {loading && (
           <div style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>
             <IonSpinner name="crescent" />
           </div>
         )}
 
-        {!loading && gastosHoy.length === 0 && (
+        {!loading && gastosPeriodo.length === 0 && (
           <IonText color="medium">
-            <p style={{ fontSize: 'var(--font-size-sm)', padding: '0 var(--space-md)' }}>
-              Aún no hay gastos registrados hoy.
+            <p style={{ fontSize: 'var(--font-size-sm)', padding: '12px var(--space-md) 0' }}>
+              Aún no hay gastos en este periodo.
             </p>
           </IonText>
         )}
 
-        {!loading && gastosHoy.length > 0 && (
-          <div style={{ padding: '0 var(--space-md)' }}>
-            {gastosHoy.map((g) => (
+        {!loading && gastosPeriodo.length > 0 && (
+          <div style={{ padding: '12px var(--space-md) 0' }}>
+            {gastosPeriodo.map((g) => (
               <div
                 key={g.id}
                 style={{
@@ -227,6 +175,9 @@ export function GastosPage() {
                     <Chip tone={g.forma_pago === 'efectivo' ? 'primarySoft' : 'neutral'}>
                       {g.forma_pago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
                     </Chip>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                      {g.fecha.slice(0, 10)}
+                    </span>
                     {g.descripcion && (
                       <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{g.descripcion}</span>
                     )}
@@ -237,27 +188,124 @@ export function GastosPage() {
                 </span>
               </div>
             ))}
-
-            {/* Totales por bolsa */}
-            <Card padding="13px 14px" style={{ marginTop: 'var(--space-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Efectivo</span>
-                <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
-                  {money(totales.efectivo)}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--color-divider)' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Transferencia</span>
-                <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
-                  {money(totales.transferencia)}
-                </span>
-              </div>
-            </Card>
           </div>
         )}
 
-        <div style={{ height: 'var(--space-lg)' }} />
+        <div style={{ height: '96px' }} />
+
+        {/* FAB: registrar nuevo gasto */}
+        <IonFab vertical="bottom" horizontal="end" slot="fixed">
+          <IonFabButton
+            style={{ '--background': 'var(--color-primary)' }}
+            onClick={() => setFormOpen(true)}
+          >
+            <IonIcon icon={addOutline} />
+          </IonFabButton>
+        </IonFab>
       </IonContent>
+
+      {/* ── Modal: formulario de nuevo gasto ── */}
+      <IonModal
+        isOpen={formOpen}
+        onDidDismiss={() => { setFormOpen(false); resetForm(); }}
+      >
+        <IonHeader>
+          <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
+            <IonButtons slot="start">
+              <IonButton onClick={() => { setFormOpen(false); resetForm(); }}>
+                <IonIcon icon={closeOutline} />
+              </IonButton>
+            </IonButtons>
+            <IonTitle>Registrar gasto</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+
+        <IonContent>
+          <IonList>
+            <IonItem>
+              <IonLabel position="stacked">Categoría *</IonLabel>
+              <IonSelect
+                value={categoria}
+                placeholder="Selecciona una categoría"
+                onIonChange={(e) => setCategoria(e.detail.value)}
+              >
+                {CATEGORIAS_RUTA.map((c) => (
+                  <IonSelectOption key={c} value={c}>
+                    {c}
+                  </IonSelectOption>
+                ))}
+                <IonSelectOption value={OTRO}>Otro…</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+
+            {categoria === OTRO && (
+              <IonItem>
+                <IonLabel position="stacked">Especifica la categoría *</IonLabel>
+                <IonInput
+                  value={categoriaLibre}
+                  onIonInput={(e) => setCategoriaLibre(e.detail.value ?? '')}
+                  placeholder="Ej. Estacionamiento"
+                />
+              </IonItem>
+            )}
+
+            <IonItem>
+              <IonLabel position="stacked">Monto *</IonLabel>
+              <IonInput
+                type="number"
+                inputmode="decimal"
+                value={montoStr}
+                onIonInput={(e) => setMontoStr(e.detail.value ?? '')}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonSegment
+                value={formaPago}
+                onIonChange={(e) =>
+                  setFormaPago(
+                    (e.detail.value as 'efectivo' | 'transferencia') ?? 'efectivo'
+                  )
+                }
+              >
+                <IonSegmentButton value="efectivo">
+                  <IonLabel>Efectivo</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="transferencia">
+                  <IonLabel>Transferencia</IonLabel>
+                </IonSegmentButton>
+              </IonSegment>
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Fecha</IonLabel>
+              <IonInput
+                type="date"
+                value={fecha}
+                onIonInput={(e) => setFecha(e.detail.value ?? '')}
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Descripción (opcional)</IonLabel>
+              <IonInput
+                value={descripcion}
+                onIonInput={(e) => setDescripcion(e.detail.value ?? '')}
+                placeholder="Detalle del gasto"
+              />
+            </IonItem>
+
+            <div style={{ padding: '12px var(--space-md)' }}>
+              <PrimaryCTA disabled={!puedeGuardar} onClick={guardar}>
+                Registrar gasto
+              </PrimaryCTA>
+            </div>
+          </IonList>
+        </IonContent>
+      </IonModal>
 
       <IonToast
         isOpen={!!toast}

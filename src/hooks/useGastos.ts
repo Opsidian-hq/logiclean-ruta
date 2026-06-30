@@ -1,8 +1,9 @@
 /**
  * Logiclean Ruta — useGastos hook (H-12)
  *
- * Gastos de ruta del vendedor actual: registro de baja fricción + lista del día
- * con totales por bolsa. Lee/escribe en Dexie (offline-first).
+ * Gastos de ruta del vendedor actual: registro de baja fricción + lista del
+ * periodo activo (desde el último corte hasta hoy) con totales por bolsa.
+ * Lee/escribe en Dexie (offline-first).
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,13 +13,16 @@ import {
   totalesPorBolsa,
 } from '../lib/gastos';
 import type { RegistrarGastoInput } from '../lib/gastos';
+import { ultimoPeriodoFin } from '../lib/corteData';
 import { useAuthContext } from '../context/AuthContext';
 import type { Gasto } from '../db/schema';
 
 export type RegistrarGastoArgs = Omit<RegistrarGastoInput, 'vendedorId'>;
 
 export interface UseGastosReturn {
-  gastosHoy: Gasto[];
+  gastosPeriodo: Gasto[];
+  /** Fecha ISO del último corte ('' si no hay cortes previos). */
+  periodoInicio: string;
   totales: { efectivo: number; transferencia: number };
   loading: boolean;
   error: string | null;
@@ -30,26 +34,28 @@ export function useGastos(): UseGastosReturn {
   const { user } = useAuthContext();
   const vendedorId = user?.id ?? null;
 
-  const [gastosHoy, setGastosHoy] = useState<Gasto[]>([]);
+  const [gastosPeriodo, setGastosPeriodo] = useState<Gasto[]>([]);
+  const [periodoInicio, setPeriodoInicio] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadFromLocal = useCallback(async () => {
     if (!vendedorId) {
-      setGastosHoy([]);
+      setGastosPeriodo([]);
       setLoading(false);
       return;
     }
     try {
-      const hoy = new Date().toISOString().slice(0, 10);
+      const inicio = await ultimoPeriodoFin(vendedorId);
+      setPeriodoInicio(inicio);
       const todos = await db.gasto
         .where('vendedor_id')
         .equals(vendedorId)
         .toArray();
-      const delDia = todos
-        .filter((g) => g.fecha.slice(0, 10) === hoy)
+      const delPeriodo = todos
+        .filter((g) => !inicio || g.fecha.slice(0, 10) > inicio)
         .sort((a, b) => b.fecha.localeCompare(a.fecha));
-      setGastosHoy(delDia);
+      setGastosPeriodo(delPeriodo);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -79,8 +85,9 @@ export function useGastos(): UseGastosReturn {
   );
 
   return {
-    gastosHoy,
-    totales: totalesPorBolsa(gastosHoy),
+    gastosPeriodo,
+    periodoInicio,
+    totales: totalesPorBolsa(gastosPeriodo),
     loading,
     error,
     registrarGasto,
