@@ -66,3 +66,16 @@ export function clientesDeHoy(
     .filter((c) => c.activo && esRutaDeHoy(c, hoy))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 }
+
+/**
+ * Clientes que tuvieron actividad hoy (venta o visita formal) pero que no
+ * estaban en la ruta programada. Deben aparecer en "VISITADOS" aunque no
+ * hayan sido planificados para ese día.
+ */
+export function clientesFueraDeRutaConActividad(
+  propios: Cliente[],
+  idsEnRuta: Set<string>,
+  idsConActividad: Set<string>
+): Cliente[] {
+  return propios.filter((c) => idsConActividad.has(c.id) && !idsEnRuta.has(c.id));
+}

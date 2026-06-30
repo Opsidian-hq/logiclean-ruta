@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { esRutaDeHoy, clientesDeHoy, diaSemana } from '../src/lib/ruta';
+import { esRutaDeHoy, clientesDeHoy, clientesFueraDeRutaConActividad, diaSemana } from '../src/lib/ruta';
 import type { Cliente } from '../src/db/schema';
 
 // Lunes 2026-06-15 (mediodía local para evitar bordes de zona horaria).
@@ -76,5 +76,45 @@ describe('clientesDeHoy', () => {
 
     expect(hoy.map((c) => c.nombre)).toEqual(['Alfa', 'Zeta']);
     expect(hoy.map((c) => c.estado)).toContain('prospecto');
+  });
+});
+
+describe('clientesFueraDeRutaConActividad', () => {
+  it('RUTA-006: cliente con venta hoy fuera de ruta aparece en el resultado', () => {
+    const propios: Cliente[] = [
+      cliente({ id: 'enRuta', nombre: 'En Ruta', dia_ruta: 'Lunes' }),
+      cliente({ id: 'fueraConVenta', nombre: 'El Doradito', dia_ruta: 'Martes' }),
+      cliente({ id: 'fueraSinVenta', nombre: 'Sin Actividad', dia_ruta: 'Martes' }),
+    ];
+    const idsEnRuta = new Set(['enRuta']);
+    const idsConActividad = new Set(['enRuta', 'fueraConVenta']);
+
+    const extras = clientesFueraDeRutaConActividad(propios, idsEnRuta, idsConActividad);
+
+    expect(extras.map((c) => c.id)).toEqual(['fueraConVenta']);
+  });
+
+  it('RUTA-007: cliente ya en ruta no se duplica en los extras', () => {
+    const propios: Cliente[] = [
+      cliente({ id: 'enRuta', dia_ruta: 'Lunes' }),
+    ];
+    const idsEnRuta = new Set(['enRuta']);
+    const idsConActividad = new Set(['enRuta']);
+
+    const extras = clientesFueraDeRutaConActividad(propios, idsEnRuta, idsConActividad);
+
+    expect(extras).toHaveLength(0);
+  });
+
+  it('RUTA-008: cliente fuera de ruta y sin actividad no aparece', () => {
+    const propios: Cliente[] = [
+      cliente({ id: 'fueraSinVenta', dia_ruta: 'Martes' }),
+    ];
+    const idsEnRuta = new Set<string>();
+    const idsConActividad = new Set<string>();
+
+    const extras = clientesFueraDeRutaConActividad(propios, idsEnRuta, idsConActividad);
+
+    expect(extras).toHaveLength(0);
   });
 });

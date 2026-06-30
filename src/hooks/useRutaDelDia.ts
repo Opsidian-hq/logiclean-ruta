@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import { clientesDeHoy, fechaISOLocal } from '../lib/ruta';
+import { clientesDeHoy, clientesFueraDeRutaConActividad, fechaISOLocal } from '../lib/ruta';
 import { desgloseCliente } from '../lib/cobros';
 import { pedidosPendientesDeCliente } from '../lib/pedidos';
 import { CICLO_OBJETIVO } from '../lib/prospectos';
@@ -82,9 +82,15 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
         ...ventasHoy.map((v) => v.cliente_id),
       ]);
 
+      // Agregar clientes que tuvieron actividad hoy pero no estaban en la
+      // ruta programada (ej. venta espontánea a un cliente sin dia_ruta).
+      const idsEnRuta = new Set(clientes.map((c) => c.id));
+      const extras = clientesFueraDeRutaConActividad(propios, idsEnRuta, idsVisitadosHoy);
+      const todosParaProcesar = [...clientes, ...extras];
+
       // Resolver los pendientes de cada cliente en paralelo (cálculo local).
       const enriquecidos = await Promise.all(
-        clientes.map(async (cliente): Promise<RutaItem> => {
+        todosParaProcesar.map(async (cliente): Promise<RutaItem> => {
           const [desglose, pendientes] = await Promise.all([
             desgloseCliente(cliente.id),
             pedidosPendientesDeCliente(cliente.id),
