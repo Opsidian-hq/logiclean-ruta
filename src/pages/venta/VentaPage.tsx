@@ -19,8 +19,6 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonSelect,
-  IonSelectOption,
   IonNote,
   IonIcon,
   IonSpinner,
@@ -92,6 +90,8 @@ export function VentaPage() {
 
   const [clienteId, setClienteId] = useState<string>('');
   const [nuevoClienteOpen, setNuevoClienteOpen] = useState(false);
+  const [clienteModalOpen, setClienteModalOpen] = useState(false);
+  const [clienteBuscador, setClienteBuscador] = useState('');
 
   // Alta de cliente activo sin salir de la venta: queda auto-seleccionado.
   const crearClienteVenta = async ({ nombre, tipo, diaRuta }: NuevoClienteArgs) => {
@@ -185,6 +185,14 @@ export function VentaPage() {
           r.productoNombre.toLowerCase().includes(pedBuscador.toLowerCase())
       ),
     [rows, pedBuscador]
+  );
+
+  const clientesFiltrados = useMemo(
+    () =>
+      clientes.filter((c) =>
+        c.nombre.toLowerCase().includes(clienteBuscador.toLowerCase())
+      ),
+    [clientes, clienteBuscador]
   );
 
   const nombrePresentacion = (id: string) =>
@@ -401,29 +409,23 @@ export function VentaPage() {
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <IonSelect
-                      aria-label="Cliente"
-                      label={cliente ? undefined : 'Cliente *'}
-                      labelPlacement="stacked"
-                      value={clienteId}
-                      placeholder="Selecciona un cliente"
-                      onIonChange={(e) => setClienteId(e.detail.value)}
-                      style={{
-                        minHeight: 'auto',
-                        fontSize: '16.5px',
-                        fontWeight: 700,
-                        color: 'var(--color-navy)',
-                        '--padding-start': '0',
-                        '--padding-top': '0',
-                        '--padding-bottom': '0',
-                      }}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setClienteModalOpen(true)}
+                      onKeyDown={(e) => e.key === 'Enter' && setClienteModalOpen(true)}
+                      style={{ cursor: 'pointer' }}
                     >
-                      {clientes.map((c) => (
-                        <IonSelectOption key={c.id} value={c.id}>
-                          {c.nombre}
-                        </IonSelectOption>
-                      ))}
-                    </IonSelect>
+                      <div
+                        style={{
+                          fontSize: '16.5px',
+                          fontWeight: 700,
+                          color: cliente ? 'var(--color-navy)' : 'var(--color-disabled)',
+                        }}
+                      >
+                        {cliente ? cliente.nombre : 'Selecciona un cliente'}
+                      </div>
+                    </div>
                     {cliente && tipo && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '4px' }}>
                         <Chip tone={tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
@@ -844,6 +846,73 @@ export function VentaPage() {
                   </div>
                 </IonLabel>
                 {pedPres === r.presentacion.id && (
+                  <span slot="end" style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: '18px' }}>✓</span>
+                )}
+              </IonItem>
+            ))}
+          </IonList>
+        </IonContent>
+      </IonModal>
+
+      {/* Modal: buscador de cliente */}
+      <IonModal
+        isOpen={clienteModalOpen}
+        onDidDismiss={() => {
+          setClienteModalOpen(false);
+          setClienteBuscador('');
+        }}
+        breakpoints={[0, 0.9]}
+        initialBreakpoint={0.9}
+      >
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Seleccionar cliente</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={() => setClienteModalOpen(false)}>Cancelar</IonButton>
+            </IonButtons>
+          </IonToolbar>
+          <IonToolbar>
+            <IonSearchbar
+              value={clienteBuscador}
+              onIonInput={(e) => setClienteBuscador(e.detail.value ?? '')}
+              placeholder="Buscar cliente..."
+              style={{ '--background': 'var(--color-surface)' }}
+              debounce={0}
+            />
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <IonList>
+            {clientesFiltrados.length === 0 && (
+              <IonItem>
+                <IonLabel style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                  Sin resultados
+                </IonLabel>
+              </IonItem>
+            )}
+            {clientesFiltrados.map((c) => (
+              <IonItem
+                key={c.id}
+                button
+                detail={false}
+                onClick={() => {
+                  setClienteId(c.id);
+                  setClienteModalOpen(false);
+                  setClienteBuscador('');
+                }}
+                style={c.id === clienteId ? { '--background': 'var(--color-primary-bg)' } : undefined}
+              >
+                <IonLabel>
+                  <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--color-body)' }}>
+                    {c.nombre}
+                  </div>
+                  <div style={{ marginTop: '3px' }}>
+                    <Chip tone={c.tipo === 'mayoreo' ? 'mayoreo' : 'menudeo'}>
+                      {c.tipo === 'mayoreo' ? 'Mayoreo' : 'Menudeo'}
+                    </Chip>
+                  </div>
+                </IonLabel>
+                {c.id === clienteId && (
                   <span slot="end" style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: '18px' }}>✓</span>
                 )}
               </IonItem>
