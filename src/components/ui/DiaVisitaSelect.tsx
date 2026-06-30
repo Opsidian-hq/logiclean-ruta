@@ -22,6 +22,12 @@ const DIAS_VISITA = [
   'Domingo',
 ] as const;
 
+/** Nombre del día de la semana actual (p. ej. "Martes"), en el mismo formato que DIAS_VISITA. */
+export function diaVisitaHoy(): string {
+  const idx = (new Date().getDay() + 6) % 7; // getDay(): 0=Dom..6=Sáb → reindexa a 0=Lunes..6=Domingo
+  return DIAS_VISITA[idx];
+}
+
 interface DiaVisitaSelectProps {
   value: string | null;
   onChange: (dia: string | null) => void;
