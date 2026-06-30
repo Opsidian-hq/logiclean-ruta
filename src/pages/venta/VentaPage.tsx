@@ -196,6 +196,11 @@ export function VentaPage() {
   // La fecha de entrega es obligatoria: con ella se agenda la visita de entrega.
   const pedidoCompleto = !!pedPres && pedCant > 0 && !!pedFecha;
 
+  const handleFechaChange = (newFecha: string) => {
+    setPedFecha(newFecha);
+    setPedidos((prev) => prev.map((p) => ({ ...p, fecha_compromiso: newFecha })));
+  };
+
   const agregarPedido = () => {
     if (!pedidoCompleto) return;
     setPedidos((prev) => [
@@ -208,7 +213,6 @@ export function VentaPage() {
     ]);
     setPedPres('');
     setPedCant(1);
-    setPedFecha('');
   };
 
   // Sólo preventa: hay pedidos pero nada que cobrar hoy → se salta el cobro.
@@ -575,6 +579,33 @@ export function VentaPage() {
                 <Chip tone="primarySoft">Preventa</Chip>
               </div>
 
+              <Card padding="0">
+                <div style={{ padding: '11px 14px' }}>
+                  <div style={{ ...sectionLabel, marginBottom: '4px' }}>Fecha de entrega *</div>
+                  <input
+                    type="date"
+                    value={pedFecha}
+                    onChange={(e) => handleFechaChange(e.target.value)}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      fontFamily: 'inherit',
+                      color: pedFecha ? 'var(--color-body)' : 'var(--color-disabled)',
+                      width: '100%',
+                      padding: 0,
+                    }}
+                  />
+                </div>
+              </Card>
+
+              <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
+                Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
+                para entregarle el pedido.
+              </IonNote>
+
               {pedidos.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {pedidos.map((p, idx) => (
@@ -672,39 +703,13 @@ export function VentaPage() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '11px 14px',
-                    borderBottom: '1px solid var(--color-divider)',
                   }}
                 >
                   <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-body)' }}>Cantidad</span>
                   <StepperCantidad value={pedCant} min={1} onChange={setPedCant} />
                 </div>
 
-                {/* Fecha de entrega */}
-                <div style={{ padding: '11px 14px' }}>
-                  <div style={{ ...sectionLabel, marginBottom: '4px' }}>Fecha de entrega *</div>
-                  <input
-                    type="date"
-                    value={pedFecha}
-                    onChange={(e) => setPedFecha(e.target.value)}
-                    style={{
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      fontSize: '16px',
-                      fontWeight: 700,
-                      fontFamily: 'inherit',
-                      color: pedFecha ? 'var(--color-body)' : 'var(--color-disabled)',
-                      width: '100%',
-                      padding: 0,
-                    }}
-                  />
-                </div>
               </Card>
-
-              <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
-                Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
-                para entregarle el pedido.
-              </IonNote>
 
               <IonButton
                 expand="block"
