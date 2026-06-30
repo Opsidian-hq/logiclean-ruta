@@ -10,17 +10,7 @@
  */
 
 import { IonSelect, IonSelectOption } from '@ionic/react';
-
-/** Días de visita en orden de la semana laboral (lunes primero). */
-const DIAS_VISITA = [
-  'Lunes',
-  'Martes',
-  'Miércoles',
-  'Jueves',
-  'Viernes',
-  'Sábado',
-  'Domingo',
-] as const;
+import { DIAS_VISITA } from '../../lib/diasVisita';
 
 interface DiaVisitaSelectProps {
   value: string | null;

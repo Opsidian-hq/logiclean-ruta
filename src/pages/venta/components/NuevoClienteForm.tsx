@@ -27,6 +27,7 @@ import {
 import { useState } from 'react';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
+import { diaVisitaHoy } from '../../../lib/diasVisita';
 
 export interface NuevoClienteArgs {
   nombre: string;
@@ -43,7 +44,7 @@ interface NuevoClienteFormProps {
 export function NuevoClienteForm({ onCrear, onClose }: NuevoClienteFormProps) {
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<'mayoreo' | 'menudeo'>('menudeo');
-  const [diaRuta, setDiaRuta] = useState<string | null>(null);
+  const [diaRuta, setDiaRuta] = useState<string | null>(diaVisitaHoy());
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
 
