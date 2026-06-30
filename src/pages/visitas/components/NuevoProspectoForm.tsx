@@ -22,6 +22,7 @@ import {
 } from '@ionic/react';
 import { useState } from 'react';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
+import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
 import type { CrearProspectoArgs } from '../../../hooks/useSeguimiento';
 
 interface NuevoProspectoFormProps {
@@ -32,7 +33,7 @@ interface NuevoProspectoFormProps {
 export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps) {
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<'mayoreo' | 'menudeo'>('menudeo');
-  const [diaRuta, setDiaRuta] = useState('');
+  const [diaRuta, setDiaRuta] = useState<string | null>(null);
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,17 +41,17 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
   const nombreInvalido = touched && !nombre.trim();
   // Sin día de ruta el prospecto no entra en la ruta recurrente (HOY/SEMANA),
   // así que se exige al darlo de alta (D-003).
-  const diaRutaInvalido = touched && !diaRuta.trim();
+  const diaRutaInvalido = touched && !diaRuta;
 
   const handleCrear = async () => {
     setTouched(true);
-    if (!nombre.trim() || !diaRuta.trim()) return;
+    if (!nombre.trim() || !diaRuta) return;
     setSaving(true);
     try {
       await onCrear({
         nombre,
         tipo,
-        dia_ruta: diaRuta || undefined,
+        dia_ruta: diaRuta ?? undefined,
         fecha,
       });
       onClose();
@@ -109,10 +110,10 @@ export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps
 
           <IonItem>
             <IonLabel position="stacked">Día de ruta *</IonLabel>
-            <IonInput
+            <DiaVisitaSelect
               value={diaRuta}
-              onIonInput={(e) => setDiaRuta(e.detail.value ?? '')}
-              placeholder="Ej. Lunes"
+              onChange={setDiaRuta}
+              placeholder="Selecciona un día"
             />
           </IonItem>
           {diaRutaInvalido ? (
