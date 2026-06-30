@@ -22,7 +22,9 @@ import {
   IonButton,
   IonContent,
   IonFooter,
+  IonToggle,
 } from '@ionic/react';
+import { Card } from '../../components/ui/Card';
 import { useState } from 'react';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { Chip } from '../../components/ui/Chip';
@@ -61,6 +63,8 @@ interface CobroVentaStepProps {
   backLabel?: string;
   /** Modos de cobro a ofrecer; por defecto los tres (total/parcial/crédito). */
   modos?: ModoCobro[];
+  requiereFactura?: boolean;
+  onRequiereFacturaChange?: (v: boolean) => void;
   /** Skeleton mientras carga el saldo del cliente (cálculo local breve). */
   loading?: boolean;
   submitting?: boolean;
@@ -90,6 +94,8 @@ export function CobroVentaStep({
   tituloTotal = 'Total de la venta',
   backLabel = 'Carrito',
   modos,
+  requiereFactura,
+  onRequiereFacturaChange,
   loading = false,
   submitting = false,
   saveError,
@@ -189,6 +195,22 @@ export function CobroVentaStep({
                 </div>
               )}
             </div>
+
+            {/* Requiere factura (H-06) */}
+            {onRequiereFacturaChange && (
+              <Card padding="11px 13px">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>Requiere factura</div>
+                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>Precio de lista + IVA</div>
+                  </div>
+                  <IonToggle
+                    checked={requiereFactura ?? false}
+                    onIonChange={(e) => onRequiereFacturaChange(e.detail.checked)}
+                  />
+                </div>
+              </Card>
+            )}
 
             {/* 3 opciones de cobro */}
             <div>
