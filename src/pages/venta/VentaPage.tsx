@@ -780,6 +780,12 @@ export function VentaPage() {
                   </div>
                   <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                     {r.productoNombre}
+                    {' · '}
+                    <span className="numeric" style={{ fontWeight: 700 }}>
+                      {tipo
+                        ? money(precioUnitario(r.presentacion, tipo))
+                        : `${money(r.presentacion.precio_mayoreo)} / ${money(r.presentacion.precio_menudeo)}`}
+                    </span>
                   </div>
                 </IonLabel>
                 {pedPres === r.presentacion.id && (
