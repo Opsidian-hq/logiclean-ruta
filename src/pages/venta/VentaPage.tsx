@@ -434,28 +434,6 @@ export function VentaPage() {
                       Nuevo cliente
                     </button>
                   </div>
-                  {/* Acceso a cobrar saldo previo desde la ficha del cliente (P3). */}
-                  {cliente && (
-                    <button
-                      type="button"
-                      onClick={() => history.push(`/cobranza/${cliente.id}`)}
-                      style={{
-                        flex: 'none',
-                        minHeight: '44px',
-                        padding: '0 12px',
-                        border: '1.5px solid var(--color-primary)',
-                        borderRadius: '12px',
-                        background: 'var(--color-surface)',
-                        color: 'var(--color-primary)',
-                        fontSize: '13.5px',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Cobrar saldo
-                    </button>
-                  )}
                 </div>
               </Card>
 
