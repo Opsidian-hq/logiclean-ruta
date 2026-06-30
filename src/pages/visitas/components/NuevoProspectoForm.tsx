@@ -22,7 +22,8 @@ import {
 } from '@ionic/react';
 import { useState } from 'react';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
-import { DiaVisitaSelect, diaVisitaHoy } from '../../../components/ui/DiaVisitaSelect';
+import { DiaVisitaSelect } from '../../../components/ui/DiaVisitaSelect';
+import { diaVisitaHoy } from '../../../lib/diasVisita';
 import type { CrearProspectoArgs } from '../../../hooks/useSeguimiento';
 
 interface NuevoProspectoFormProps {
