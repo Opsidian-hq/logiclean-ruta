@@ -191,10 +191,12 @@ export function VentaPage() {
     rows.find((r) => r.presentacion.id === id)?.presentacion.nombre ?? id;
 
   const puedeGuardar =
-    !!cliente && (lineasVehiculo.length > 0 || pedidos.length > 0) && !submitting;
+    !!cliente &&
+    (lineasVehiculo.length > 0 || pedidos.length > 0) &&
+    !submitting &&
+    (pedidos.length === 0 || !!pedFecha);
 
-  // La fecha de entrega es obligatoria: con ella se agenda la visita de entrega.
-  const pedidoCompleto = !!pedPres && pedCant > 0 && !!pedFecha;
+  const pedidoCompleto = !!pedPres && pedCant > 0;
 
   const handleFechaChange = (newFecha: string) => {
     setPedFecha(newFecha);
@@ -684,15 +686,10 @@ export function VentaPage() {
 
               </Card>
 
-              <IonButton
-                expand="block"
-                fill="outline"
-                disabled={!pedidoCompleto}
-                onClick={agregarPedido}
-              >
-                <IonIcon icon={addOutline} slot="start" />
+              <PrimaryCTA disabled={!pedidoCompleto} onClick={agregarPedido}>
+                <IonIcon icon={addOutline} style={{ marginRight: '6px' }} />
                 Agregar producto
-              </IonButton>
+              </PrimaryCTA>
 
               <Card padding="0">
                 <div style={{ padding: '11px 14px' }}>
