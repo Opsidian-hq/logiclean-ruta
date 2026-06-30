@@ -33,7 +33,8 @@ interface NuevoProspectoFormProps {
 export function NuevoProspectoForm({ onCrear, onClose }: NuevoProspectoFormProps) {
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<'mayoreo' | 'menudeo'>('menudeo');
-  const [diaRuta, setDiaRuta] = useState<string | null>(null);
+  const DIAS_NOMBRE = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as const;
+  const [diaRuta, setDiaRuta] = useState<string | null>(DIAS_NOMBRE[new Date().getDay()]);
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
