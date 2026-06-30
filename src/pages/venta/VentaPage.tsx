@@ -275,6 +275,8 @@ export function VentaPage() {
           productosResumen={productosResumen}
           total={total}
           iva={iva}
+          requiereFactura={requiereFactura}
+          onRequiereFacturaChange={setRequiereFactura}
           submitting={submitting}
           onConfirm={confirmarCobro}
           onBack={() => setFase('carrito')}
@@ -651,23 +653,7 @@ export function VentaPage() {
               </div>
             </IonList>
 
-            {/* El cobro (H-07) ocurre en el paso siguiente: "¿Cómo cobramos?". */}
-
-            {/* ── Requiere factura (H-06) ── */}
-            <div style={{ padding: '0 var(--space-md)' }}>
-              <Card padding="11px 13px">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>Requiere factura</div>
-                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>Precio de lista + IVA</div>
-                  </div>
-                  <IonToggle
-                    checked={requiereFactura}
-                    onIonChange={(e) => setRequiereFactura(e.detail.checked)}
-                  />
-                </div>
-              </Card>
-            </div>
+            {/* El cobro (H-07) y la selección de factura ocurren en el paso siguiente. */}
 
             <div style={{ height: 'var(--space-lg)' }} />
           </>
