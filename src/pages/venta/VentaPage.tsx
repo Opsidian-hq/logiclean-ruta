@@ -579,33 +579,6 @@ export function VentaPage() {
                 <Chip tone="primarySoft">Preventa</Chip>
               </div>
 
-              <Card padding="0">
-                <div style={{ padding: '11px 14px' }}>
-                  <div style={{ ...sectionLabel, marginBottom: '4px' }}>Fecha de entrega *</div>
-                  <input
-                    type="date"
-                    value={pedFecha}
-                    onChange={(e) => handleFechaChange(e.target.value)}
-                    style={{
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      fontSize: '16px',
-                      fontWeight: 700,
-                      fontFamily: 'inherit',
-                      color: pedFecha ? 'var(--color-body)' : 'var(--color-disabled)',
-                      width: '100%',
-                      padding: 0,
-                    }}
-                  />
-                </div>
-              </Card>
-
-              <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
-                Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
-                para entregarle el pedido.
-              </IonNote>
-
               {pedidos.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {pedidos.map((p, idx) => (
@@ -718,8 +691,35 @@ export function VentaPage() {
                 onClick={agregarPedido}
               >
                 <IonIcon icon={addOutline} slot="start" />
-                Agregar pedido
+                Agregar producto
               </IonButton>
+
+              <Card padding="0">
+                <div style={{ padding: '11px 14px' }}>
+                  <div style={{ ...sectionLabel, marginBottom: '4px' }}>Fecha de entrega *</div>
+                  <input
+                    type="date"
+                    value={pedFecha}
+                    onChange={(e) => handleFechaChange(e.target.value)}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      fontFamily: 'inherit',
+                      color: pedFecha ? 'var(--color-body)' : 'var(--color-disabled)',
+                      width: '100%',
+                      padding: 0,
+                    }}
+                  />
+                </div>
+              </Card>
+
+              <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
+                Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
+                para entregarle el pedido.
+              </IonNote>
             </div>
 
             {/* El cobro (H-07) y la selección de factura ocurren en el paso siguiente. */}
