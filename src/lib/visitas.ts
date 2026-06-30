@@ -207,3 +207,25 @@ export async function visitasDeCliente(clienteId: string): Promise<Visita[]> {
     .toArray();
   return visitas.sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
+
+// ── Reordenar ruta del día ────────────────────────────────────
+
+/**
+ * Persiste el nuevo orden de la ruta del día.
+ * Asigna orden_ruta = posición+1 a cada cliente, actualiza Dexie localmente
+ * y encola un patch por cliente para sincronizar con Supabase.
+ */
+export async function reordenarRuta(
+  clientes: Pick<Cliente, 'id'>[],
+): Promise<void> {
+  for (let i = 0; i < clientes.length; i++) {
+    await db.cliente.where('id').equals(clientes[i].id).modify({ orden_ruta: i + 1 });
+  }
+  for (let i = 0; i < clientes.length; i++) {
+    await enqueueOperation('cliente', 'patch', {
+      id: clientes[i].id,
+      orden_ruta: i + 1,
+    } as unknown as Record<string, unknown>);
+  }
+  syncEngine.syncNow();
+}

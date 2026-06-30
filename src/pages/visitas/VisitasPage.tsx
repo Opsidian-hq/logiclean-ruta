@@ -27,6 +27,8 @@ import {
   IonToast,
   IonRefresher,
   IonRefresherContent,
+  IonReorderGroup,
+  IonReorder,
   useIonViewWillEnter,
 } from '@ionic/react';
 import {
@@ -262,8 +264,21 @@ export function VisitasPage() {
                           Por visitar · {porVisitar.length}
                         </div>
                       )}
-                      <div style={{ padding: hayAmbas ? '0 var(--space-md)' : 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {porVisitar.map(renderCard)}
+                      <div style={{ padding: hayAmbas ? '0 var(--space-md)' : 'var(--space-md)' }}>
+                        <IonReorderGroup
+                          disabled={false}
+                          onIonItemReorder={(e) => {
+                            const reordenado = e.detail.complete(porVisitar) as typeof porVisitar;
+                            void ruta.reordenar(reordenado);
+                          }}
+                        >
+                          {porVisitar.map((item) => (
+                            <div key={item.cliente.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                              <IonReorder style={{ flex: 'none', color: 'var(--color-text-secondary)', fontSize: '20px' }} />
+                              <div style={{ flex: 1 }}>{renderCard(item)}</div>
+                            </div>
+                          ))}
+                        </IonReorderGroup>
                       </div>
                     </>
                   )}
