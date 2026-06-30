@@ -570,13 +570,14 @@ export function VentaPage() {
             </div>
 
             {/* ── Pedido pendiente (H-05) ── */}
-            <IonList>
-              <div style={{ padding: '14px var(--space-md) 6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={sectionLabel}>Levantar pedido (preventa)</span>
+                <Chip tone="primarySoft">Preventa</Chip>
               </div>
 
               {pedidos.length > 0 && (
-                <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {pedidos.map((p, idx) => (
                     <div
                       key={idx}
@@ -618,51 +619,81 @@ export function VentaPage() {
                 </div>
               )}
 
-              <IonItem button detail={false} onClick={() => setPedModalOpen(true)}>
-                <IonLabel position="stacked">Presentación</IonLabel>
+              {/* Formulario de nuevo pedido */}
+              <Card padding="0">
+                {/* Presentación */}
                 <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setPedModalOpen(true)}
+                  onKeyDown={(e) => e.key === 'Enter' && setPedModalOpen(true)}
                   style={{
-                    width: '100%',
-                    padding: '8px 0 6px',
-                    fontSize: '16px',
-                    color: pedPres ? 'var(--color-body)' : 'var(--color-disabled)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '11px 14px',
+                    borderBottom: '1px solid var(--color-divider)',
+                    cursor: 'pointer',
                   }}
                 >
-                  {pedPres ? nombrePresentacion(pedPres) : 'Producto a pedir'}
+                  <div>
+                    <div style={{ ...sectionLabel, marginBottom: '4px' }}>Presentación</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: pedPres ? 'var(--color-body)' : 'var(--color-disabled)' }}>
+                      {pedPres ? nombrePresentacion(pedPres) : 'Producto a pedir'}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '20px', color: 'var(--color-disabled)', marginLeft: '8px' }}>›</span>
                 </div>
-              </IonItem>
-              <IonItem>
-                <IonLabel>Cantidad</IonLabel>
-                <div slot="end">
+
+                {/* Cantidad */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '11px 14px',
+                    borderBottom: '1px solid var(--color-divider)',
+                  }}
+                >
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-body)' }}>Cantidad</span>
                   <StepperCantidad value={pedCant} min={1} onChange={setPedCant} />
                 </div>
-              </IonItem>
-              <IonItem>
-                <IonLabel position="stacked">Fecha de entrega *</IonLabel>
-                <IonInput
-                  type="date"
-                  value={pedFecha}
-                  onIonInput={(e) => setPedFecha(e.detail.value ?? '')}
-                />
-              </IonItem>
-              <div style={{ padding: '4px var(--space-md) 0' }}>
-                <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
-                  Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
-                  para entregarle el pedido.
-                </IonNote>
-              </div>
-              <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  disabled={!pedidoCompleto}
-                  onClick={agregarPedido}
-                >
-                  <IonIcon icon={addOutline} slot="start" />
-                  Agregar pedido
-                </IonButton>
-              </div>
-            </IonList>
+
+                {/* Fecha de entrega */}
+                <div style={{ padding: '11px 14px' }}>
+                  <div style={{ ...sectionLabel, marginBottom: '4px' }}>Fecha de entrega *</div>
+                  <IonInput
+                    type="date"
+                    value={pedFecha}
+                    onIonInput={(e) => setPedFecha(e.detail.value ?? '')}
+                    style={{
+                      minHeight: 'auto',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      color: 'var(--color-body)',
+                      '--padding-start': '0',
+                      '--padding-top': '0',
+                      '--padding-bottom': '0',
+                    }}
+                  />
+                </div>
+              </Card>
+
+              <IonNote style={{ fontSize: 'var(--font-size-sm)' }}>
+                Con la fecha de entrega, el cliente aparecerá en tu ruta ese día
+                para entregarle el pedido.
+              </IonNote>
+
+              <IonButton
+                expand="block"
+                fill="outline"
+                disabled={!pedidoCompleto}
+                onClick={agregarPedido}
+              >
+                <IonIcon icon={addOutline} slot="start" />
+                Agregar pedido
+              </IonButton>
+            </div>
 
             {/* El cobro (H-07) y la selección de factura ocurren en el paso siguiente. */}
 
