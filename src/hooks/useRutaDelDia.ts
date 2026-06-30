@@ -82,9 +82,16 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
         ...ventasHoy.map((v) => v.cliente_id),
       ]);
 
+      // Clientes no programados hoy que recibieron una venta o visita directa.
+      const idsScheduled = new Set(clientes.map((c) => c.id));
+      const visitadosExtraHoy = propios
+        .filter((c) => idsVisitadosHoy.has(c.id) && !idsScheduled.has(c.id))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+      const todosHoy = [...clientes, ...visitadosExtraHoy];
+
       // Resolver los pendientes de cada cliente en paralelo (cálculo local).
       const enriquecidos = await Promise.all(
-        clientes.map(async (cliente): Promise<RutaItem> => {
+        todosHoy.map(async (cliente): Promise<RutaItem> => {
           const [desglose, pendientes] = await Promise.all([
             desgloseCliente(cliente.id),
             pedidosPendientesDeCliente(cliente.id),
