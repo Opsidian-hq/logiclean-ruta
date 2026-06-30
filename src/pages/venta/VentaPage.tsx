@@ -23,7 +23,6 @@ import {
   IonSelectOption,
   IonNote,
   IonInput,
-  IonToggle,
   IonIcon,
   IonSpinner,
   IonToast,
