@@ -185,7 +185,9 @@ export function VisitasPage() {
 
             {!ruta.loading && !ruta.error && ruta.items.length > 0 && (() => {
               const porVisitar = ruta.items.filter((i) => !i.visitadoHoy);
-              const visitados  = ruta.items.filter((i) => i.visitadoHoy);
+              const visitados  = ruta.items
+                .filter((i) => i.visitadoHoy)
+                .sort((a, b) => (b.visitadoHoyAt ?? '') > (a.visitadoHoyAt ?? '') ? 1 : -1);
               const hayAmbas   = porVisitar.length > 0 && visitados.length > 0;
 
               const renderCard = (

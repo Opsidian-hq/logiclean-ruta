@@ -35,6 +35,8 @@ export interface RutaItem {
   seguimiento: SeguimientoResumen | null;
   /** Hay al menos una visita registrada hoy para este cliente. */
   visitadoHoy: boolean;
+  /** Timestamp (ISO) de la venta/visita más reciente de hoy; undefined si no visitado. */
+  visitadoHoyAt?: string;
 }
 
 export interface UseRutaDelDiaReturn {
@@ -82,6 +84,17 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
         ...ventasHoy.map((v) => v.cliente_id),
       ]);
 
+      // Timestamp más reciente por cliente: primero visitas (solo fecha),
+      // luego ventas (timestamp completo) que pueden sobreescribir si son más nuevas.
+      const timestampPorCliente = new Map<string, string>();
+      for (const v of visitasHoy) {
+        timestampPorCliente.set(v.cliente_id, v.fecha);
+      }
+      for (const v of ventasHoy) {
+        const prev = timestampPorCliente.get(v.cliente_id);
+        if (!prev || v.fecha > prev) timestampPorCliente.set(v.cliente_id, v.fecha);
+      }
+
       // Clientes no programados hoy que recibieron una venta o visita directa.
       const idsScheduled = new Set(clientes.map((c) => c.id));
       const visitadosExtraHoy = propios
@@ -105,6 +118,7 @@ export function useRutaDelDia(): UseRutaDelDiaReturn {
                 ? { visita: Math.min(cliente.ciclo_visita, CICLO_OBJETIVO), objetivo: CICLO_OBJETIVO }
                 : null,
             visitadoHoy: idsVisitadosHoy.has(cliente.id),
+            visitadoHoyAt: timestampPorCliente.get(cliente.id),
           };
         })
       );
