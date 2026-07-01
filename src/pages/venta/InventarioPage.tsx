@@ -26,6 +26,7 @@ import {
 } from '@ionic/react';
 import { addOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useState, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { useInventario } from '../../hooks/useInventario';
 import type { InventarioRow } from '../../hooks/useInventario';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
@@ -33,9 +34,20 @@ import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
+import { Card } from '../../components/ui/Card';
 import { CargarInventarioSheet } from './components/CargarInventarioSheet';
 import { redondear } from '../../lib/precios';
 import { money } from '../../lib/money';
+
+const sectionLabelStyle: CSSProperties = {
+  display: 'block',
+  fontSize: 'var(--font-size-xs)',
+  fontWeight: 800,
+  letterSpacing: '0.6px',
+  textTransform: 'uppercase',
+  color: 'var(--color-text-secondary)',
+  padding: '14px var(--space-md) 6px',
+};
 
 export function InventarioPage() {
   const { rows, loading, error, setCantidad, refresh } = useInventario();
@@ -98,6 +110,60 @@ export function InventarioPage() {
           </div>
         )}
 
+        {/* Tarjeta resumen — siempre visible cuando hay datos */}
+        {!loading && !error && (
+          <>
+            <span style={sectionLabelStyle}>Cargado en el vehículo</span>
+            <div style={{ padding: '0 var(--space-md)' }}>
+              <Card padding="13px 14px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                    Productos
+                  </span>
+                  <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    {cargados.length}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--color-divider)',
+                  }}
+                >
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                    Unidades
+                  </span>
+                  <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    {totalUnidades}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--color-divider)',
+                  }}
+                >
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    Valor
+                  </span>
+                  <span className="numeric" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    {money(valorTotal)}
+                  </span>
+                </div>
+              </Card>
+            </div>
+          </>
+        )}
+
+        {/* Lista de productos cargados */}
         {!loading && !error && cargados.length === 0 && (
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonText color="medium">
@@ -107,36 +173,7 @@ export function InventarioPage() {
         )}
 
         {!loading && !error && cargados.length > 0 && (
-          <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px 0 6px',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: 800,
-                  letterSpacing: '0.6px',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-text-secondary)',
-                }}
-              >
-                Cargado en el vehículo
-              </span>
-              <div style={{ textAlign: 'right' }}>
-                <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 700, color: '#8A94A6' }}>
-                  {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''}
-                </div>
-                <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 700, color: '#8A94A6' }}>
-                  {money(valorTotal)}
-                </div>
-              </div>
-            </div>
-
+          <div style={{ padding: '0 var(--space-md) var(--space-lg)', marginTop: 'var(--space-md)' }}>
             {cargados.map((row) => (
               <div
                 key={row.presentacion.id}
