@@ -1,8 +1,8 @@
 /**
  * Logiclean Ruta — InventarioPage (vendedor)
  *
- * Carga/ajuste del inventario del vehículo del día. El vendedor fija cuántas
- * unidades de cada presentación trae cargadas. Escritura local + cola de sync.
+ * Resumen del inventario cargado en el vehículo. Los productos se agregan o
+ * ajustan en bulk desde el sheet (FAB) o individualmente tocando una fila.
  * Ruta: /inventario
  */
 
@@ -13,35 +13,54 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonSearchbar,
   IonSpinner,
   IonText,
   IonRefresher,
   IonRefresherContent,
+  IonFab,
+  IonFabButton,
+  IonModal,
+  IonButton,
+  IonIcon,
+  IonToast,
 } from '@ionic/react';
+import { addOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useState, useCallback } from 'react';
 import { useInventario } from '../../hooks/useInventario';
+import type { InventarioRow } from '../../hooks/useInventario';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { StepperCantidad } from '../../components/StepperCantidad';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
-import { Chip } from '../../components/ui/Chip';
+import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
+import { CargarInventarioSheet } from './components/CargarInventarioSheet';
 
 export function InventarioPage() {
   const { rows, loading, error, setCantidad, refresh } = useInventario();
-  const [search, setSearch] = useState('');
 
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
   );
 
-  const filtrados = rows.filter(
-    (r) =>
-      r.presentacion.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      r.productoNombre.toLowerCase().includes(search.toLowerCase())
-  );
+  const [cargarOpen, setCargarOpen] = useState(false);
+  const [ajusteRow, setAjusteRow] = useState<InventarioRow | null>(null);
+  const [ajusteVal, setAjusteVal] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const totalUnidades = rows.reduce((acc, r) => acc + r.cantidad, 0);
+  const cargados = rows.filter((r) => r.cantidad > 0);
+  const totalUnidades = cargados.reduce((acc, r) => acc + r.cantidad, 0);
+
+  const abrirAjuste = (row: InventarioRow) => {
+    setAjusteRow(row);
+    setAjusteVal(row.cantidad);
+  };
+
+  const confirmarAjuste = async () => {
+    if (!ajusteRow) return;
+    await setCantidad(ajusteRow.presentacion.id, ajusteVal);
+    setAjusteRow(null);
+    setToast('Cantidad actualizada');
+  };
 
   return (
     <IonPage>
@@ -60,13 +79,6 @@ export function InventarioPage() {
           <IonRefresherContent />
         </IonRefresher>
 
-        <IonSearchbar
-          value={search}
-          onIonInput={(e) => setSearch(e.detail.value ?? '')}
-          placeholder="Buscar presentación..."
-          style={{ '--background': 'var(--color-surface)' }}
-        />
-
         {loading && (
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonSpinner name="crescent" />
@@ -81,18 +93,15 @@ export function InventarioPage() {
           </div>
         )}
 
-        {!loading && !error && rows.length === 0 && (
+        {!loading && !error && cargados.length === 0 && (
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
             <IonText color="medium">
-              <p>
-                No hay presentaciones en el catálogo local. Sincroniza con
-                conexión para descargarlo.
-              </p>
+              <p>Sin productos cargados. Toca + para cargar inventario.</p>
             </IonText>
           </div>
         )}
 
-        {!loading && !error && rows.length > 0 && (
+        {!loading && !error && cargados.length > 0 && (
           <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
             <div
               style={{
@@ -118,15 +127,21 @@ export function InventarioPage() {
               </span>
             </div>
 
-            {filtrados.map((row) => (
+            {cargados.map((row) => (
               <div
                 key={row.presentacion.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => abrirAjuste(row)}
+                onKeyDown={(e) => e.key === 'Enter' && abrirAjuste(row)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '11px',
                   padding: '11px 0',
+                  minHeight: '48px',
                   borderBottom: '1px solid var(--color-divider)',
+                  cursor: 'pointer',
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -151,17 +166,118 @@ export function InventarioPage() {
                     {row.productoNombre}
                   </div>
                 </div>
-                {row.cantidad === 0 && <Chip tone="neutral">Sin carga</Chip>}
-                <StepperCantidad
-                  value={row.cantidad}
-                  onChange={(v) => setCantidad(row.presentacion.id, v)}
-                  min={0}
+
+                <div
+                  style={{
+                    background: 'var(--color-primary)',
+                    color: '#fff',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  {row.cantidad} uds
+                </div>
+
+                <IonIcon
+                  icon={chevronForwardOutline}
+                  style={{ color: 'var(--color-text-secondary)', fontSize: '18px', flexShrink: 0 }}
                 />
               </div>
             ))}
           </div>
         )}
+
+        <div style={{ height: '96px' }} />
       </IonContent>
+
+      <IonFab vertical="bottom" horizontal="end" slot="fixed">
+        <IonFabButton
+          style={{ '--background': 'var(--color-primary)' }}
+          onClick={() => setCargarOpen(true)}
+        >
+          <IonIcon icon={addOutline} />
+        </IonFabButton>
+      </IonFab>
+
+      <CargarInventarioSheet
+        isOpen={cargarOpen}
+        rows={rows}
+        setCantidad={setCantidad}
+        onClose={() => setCargarOpen(false)}
+      />
+
+      {/* Ajuste individual */}
+      <IonModal
+        isOpen={ajusteRow !== null}
+        onDidDismiss={() => setAjusteRow(null)}
+        breakpoints={[0, 0.5]}
+        initialBreakpoint={0.5}
+      >
+        <IonHeader>
+          <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
+            <IonTitle>Ajustar cantidad</IonTitle>
+            <IonButtons slot="end">
+              <IonButton
+                onClick={() => setAjusteRow(null)}
+                style={{ '--color': 'var(--color-on-dark)' }}
+              >
+                Cancelar
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <div style={{ padding: 'var(--space-lg) var(--space-md)' }}>
+            <div
+              style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-navy)', marginBottom: '4px' }}
+            >
+              {ajusteRow?.presentacion.nombre}
+              <span
+                style={{
+                  background: 'var(--color-surface-muted)',
+                  color: '#5B6678',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  padding: '2px 6px',
+                  borderRadius: '5px',
+                  marginLeft: '8px',
+                }}
+              >
+                {ajusteRow?.presentacion.unidad_venta}
+              </span>
+            </div>
+            <div
+              style={{
+                fontSize: '13px',
+                color: 'var(--color-text-secondary)',
+                marginBottom: 'var(--space-xl)',
+              }}
+            >
+              {ajusteRow?.productoNombre}
+            </div>
+
+            <div
+              style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-xl)' }}
+            >
+              <StepperCantidad value={ajusteVal} onChange={setAjusteVal} min={0} />
+            </div>
+
+            <PrimaryCTA onClick={confirmarAjuste}>Confirmar ajuste</PrimaryCTA>
+          </div>
+        </IonContent>
+      </IonModal>
+
+      <IonToast
+        isOpen={toast !== null}
+        message={toast ?? ''}
+        duration={2000}
+        onDidDismiss={() => setToast(null)}
+        position="bottom"
+      />
     </IonPage>
   );
 }
