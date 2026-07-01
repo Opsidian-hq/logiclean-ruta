@@ -34,6 +34,8 @@ import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { CargarInventarioSheet } from './components/CargarInventarioSheet';
+import { redondear } from '../../lib/precios';
+import { money } from '../../lib/money';
 
 export function InventarioPage() {
   const { rows, loading, error, setCantidad, refresh } = useInventario();
@@ -49,6 +51,9 @@ export function InventarioPage() {
 
   const cargados = rows.filter((r) => r.cantidad > 0);
   const totalUnidades = cargados.reduce((acc, r) => acc + r.cantidad, 0);
+  const valorTotal = redondear(
+    cargados.reduce((acc, r) => acc + r.cantidad * r.presentacion.precio_mayoreo, 0)
+  );
 
   const abrirAjuste = (row: InventarioRow) => {
     setAjusteRow(row);
@@ -122,9 +127,14 @@ export function InventarioPage() {
               >
                 Cargado en el vehículo
               </span>
-              <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 700, color: '#8A94A6' }}>
-                {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''}
-              </span>
+              <div style={{ textAlign: 'right' }}>
+                <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 700, color: '#8A94A6' }}>
+                  {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''}
+                </div>
+                <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 700, color: '#8A94A6' }}>
+                  {money(valorTotal)}
+                </div>
+              </div>
             </div>
 
             {cargados.map((row) => (
