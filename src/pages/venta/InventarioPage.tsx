@@ -67,6 +67,12 @@ export function InventarioPage() {
     cargados.reduce((acc, r) => acc + r.cantidad * r.presentacion.precio_mayoreo, 0)
   );
 
+  const cantidadBadge = (n: number): { background: string; color: string } => {
+    if (n >= 3) return { background: '#12B76A', color: '#fff' };
+    if (n === 2) return { background: 'var(--color-amber)', color: '#231A05' };
+    return { background: 'var(--color-error)', color: '#fff' };
+  };
+
   const abrirAjuste = (row: InventarioRow) => {
     setAjusteRow(row);
     setAjusteVal(row.cantidad);
@@ -216,8 +222,7 @@ export function InventarioPage() {
 
                 <div
                   style={{
-                    background: 'var(--color-primary)',
-                    color: '#fff',
+                    ...cantidadBadge(row.cantidad),
                     fontSize: '13px',
                     fontWeight: 800,
                     padding: '4px 10px',
