@@ -84,7 +84,11 @@ Ejecutar en el **SQL editor** del proyecto de producción, **en este orden**:
 2. `supabase/migrations/002_rls.sql` — políticas RLS (cada una traza un caso `T4-*`).
 3. `supabase/migrations/003_roles.sql` — trigger `handle_new_vendedor` (`VENDEDOR.id = auth.users.id`).
 4. `supabase/migrations/004_grants.sql` — **GRANTs a `authenticated`** (la RLS no basta sin GRANT; ver commit `883f2de`). ⚠️ *El README histórico omitía este paso; es obligatorio.*
-5. `supabase/seed/catalog.sql` — catálogo base (productos, presentaciones, listas de precios).
+5. `supabase/migrations/005_orden_ruta.sql` — columna `orden_ruta` en `cliente`.
+6. `supabase/migrations/006_categoria_producto.sql` — columna `categoria` en `producto_base` (backfill + alta de Desengrasante Logiclean). ⚠️ *No aplicarla en producción deja el catálogo sin categoría — la UI descarta/oculta productos sin categoría reconocida.*
+7. `supabase/seed/catalog.sql` — catálogo base (productos, presentaciones, listas de precios).
+
+⚠️ **No hay CI/CD que aplique migraciones automáticamente** (revisar `.github/workflows/` — solo hay lint/test/build, backup y keepalive). Cada vez que se mergea una migración nueva a `main`, hay que correrla manualmente aquí antes o inmediatamente después del deploy del frontend, o el frontend nuevo puede quedar leyendo columnas que el backend todavía no tiene.
 
 **Verificación del backend (no avanzar sin esto):**
 - [ ] RLS **habilitada** en todas las tablas (Supabase → Authentication → Policies, o `SELECT relrowsecurity FROM pg_class` por tabla).
