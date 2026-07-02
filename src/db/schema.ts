@@ -42,10 +42,18 @@ export interface Visita {
   fecha_proxima?: string; // ISO date
 }
 
+export type CategoriaProducto =
+  | 'escobas'
+  | 'trapeadores'
+  | 'recogedores'
+  | 'papel_institucional'
+  | 'quimicos';
+
 export interface ProductoBase {
   id: string;
   nombre: string;
   unidad_compra: 'bidon' | 'docena';
+  categoria: CategoriaProducto;
   precio_preferencial?: number;
   activo: boolean;
 }

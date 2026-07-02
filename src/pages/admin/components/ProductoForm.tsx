@@ -31,7 +31,8 @@ import {
 import { addOutline, pencilOutline, trashOutline } from 'ionicons/icons';
 import { PresentacionForm } from './PresentacionForm';
 import { generateUUID } from '../../../lib/uuid';
-import type { ProductoBase, Presentacion } from '../../../db/schema';
+import { ORDEN_CATEGORIAS, NOMBRE_CATEGORIA } from '../../../lib/categoriaProducto';
+import type { ProductoBase, Presentacion, CategoriaProducto } from '../../../db/schema';
 
 // ── Tipos ─────────────────────────────────────────────────────
 
@@ -47,10 +48,15 @@ interface ProductoFormProps {
 
 // ── Validación del producto base ──────────────────────────────
 
-function validarProducto(nombre: string, unidadCompra: string): Record<string, string> {
+function validarProducto(
+  nombre: string,
+  unidadCompra: string,
+  categoria: string
+): Record<string, string> {
   const errores: Record<string, string> = {};
   if (!nombre.trim()) errores.nombre = 'El nombre es obligatorio';
   if (!unidadCompra) errores.unidad_compra = 'Selecciona la unidad de compra';
+  if (!categoria) errores.categoria = 'Selecciona la categoría';
   return errores;
 }
 
@@ -63,6 +69,9 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');
   const [unidadCompra, setUnidadCompra] = useState<'bidon' | 'docena' | ''>(
     (inicial?.unidad_compra as 'bidon' | 'docena') ?? ''
+  );
+  const [categoria, setCategoria] = useState<CategoriaProducto | ''>(
+    inicial?.categoria ?? ''
   );
   const [precioPreferencial, setPrecioPreferencial] = useState(
     String(inicial?.precio_preferencial ?? '')
@@ -86,7 +95,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
 
   // Estado derivado: los errores se recalculan en cada render una vez que
   // el usuario interactuó con el formulario (sin efecto ni setState).
-  const errores = touched ? validarProducto(nombre, unidadCompra) : {};
+  const errores = touched ? validarProducto(nombre, unidadCompra, categoria) : {};
 
   const handleSavePresentacion = (
     data: Omit<Presentacion, 'id'> & { id?: string }
@@ -114,7 +123,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    const errs = validarProducto(nombre, unidadCompra);
+    const errs = validarProducto(nombre, unidadCompra, categoria);
     if (Object.keys(errs).length > 0) {
       return;
     }
@@ -126,6 +135,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
           id: productoId,
           nombre: nombre.trim(),
           unidad_compra: unidadCompra as 'bidon' | 'docena',
+          categoria: categoria as CategoriaProducto,
           precio_preferencial: precioPreferencial
             ? parseFloat(precioPreferencial)
             : undefined,
@@ -200,6 +210,27 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
             {errores.unidad_compra && (
               <IonText color="danger">
                 <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.unidad_compra}</p>
+              </IonText>
+            )}
+
+            <IonItem>
+              <IonLabel position="stacked">Categoría *</IonLabel>
+              <IonSelect
+                value={categoria}
+                onIonChange={(e) => setCategoria(e.detail.value)}
+                placeholder="Seleccionar..."
+                style={{ minHeight: 'var(--touch-min, 48px)' }}
+              >
+                {ORDEN_CATEGORIAS.map((c) => (
+                  <IonSelectOption key={c} value={c}>
+                    {NOMBRE_CATEGORIA[c]}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
+            {errores.categoria && (
+              <IonText color="danger">
+                <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.categoria}</p>
               </IonText>
             )}
 
