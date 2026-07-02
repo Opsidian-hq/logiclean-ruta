@@ -20,6 +20,7 @@ import {
   IonButtons,
   IonIcon,
   IonList,
+  IonListHeader,
   IonItem,
   IonLabel,
   IonBadge,
@@ -43,6 +44,7 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { ProductoForm } from './components/ProductoForm';
+import { agruparPorCategoria, NOMBRE_CATEGORIA } from '../../lib/categoriaProducto';
 import type { ProductoBase, Presentacion } from '../../db/schema';
 
 // ── Componente ────────────────────────────────────────────────
@@ -73,6 +75,7 @@ export function CatalogoPage() {
   const filtrados = productos.filter((p) =>
     p.nombre.toLowerCase().includes(search.toLowerCase())
   );
+  const grupos = agruparPorCategoria(filtrados);
 
   const handleSaveProducto = async (
     productoData: Omit<ProductoBase, 'id'> & { id?: string },
@@ -195,10 +198,28 @@ export function CatalogoPage() {
           </div>
         )}
 
-        {/* Lista de productos */}
-        {!loading && !error && (
-          <IonList>
-            {filtrados.map((producto) => (
+        {/* Lista de productos, agrupada por categoría */}
+        {!loading && !error && grupos.map((grupo) => (
+          <IonList key={grupo.categoria}>
+            <IonListHeader
+              style={{
+                color: 'var(--color-navy)',
+                fontWeight: 700,
+                fontSize: 'var(--font-size-sm)',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {NOMBRE_CATEGORIA[grupo.categoria]}
+              <IonBadge
+                slot="end"
+                style={{ backgroundColor: 'var(--color-surface-muted)', color: 'var(--color-text-secondary)' }}
+              >
+                {grupo.items.length}
+              </IonBadge>
+            </IonListHeader>
+
+            {grupo.items.map((producto) => (
               <IonItemSliding key={producto.id}>
                 <IonItem>
                   <IonLabel>
@@ -253,7 +274,7 @@ export function CatalogoPage() {
               </IonItemSliding>
             ))}
           </IonList>
-        )}
+        ))}
 
         {/* FAB: Nuevo producto */}
         <IonFab vertical="bottom" horizontal="end" slot="fixed">

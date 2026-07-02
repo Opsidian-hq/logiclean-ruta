@@ -26,6 +26,7 @@ import { SyncStatusBadge } from '../components/SyncStatusBadge';
 import { CuentaButton } from '../components/CuentaButton';
 import { Card } from '../components/ui/Card';
 import { Chip } from '../components/ui/Chip';
+import { agruparPorCategoria, NOMBRE_CATEGORIA } from '../lib/categoriaProducto';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -42,6 +43,7 @@ export function CatalogoOfflinePage() {
   const filtrados = productos.filter((p) =>
     p.nombre.toLowerCase().includes(search.toLowerCase())
   );
+  const grupos = agruparPorCategoria(filtrados);
 
   return (
     <IonPage>
@@ -98,10 +100,23 @@ export function CatalogoOfflinePage() {
           </div>
         )}
 
-        {/* Lista de productos */}
-        {!loading && !error && filtrados.length > 0 && (
-          <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {filtrados.map((producto) => (
+        {/* Lista de productos, agrupada por categoría */}
+        {!loading && !error && filtrados.length > 0 && grupos.map((grupo) => (
+          <div key={grupo.categoria}>
+            <div
+              style={{
+                padding: 'var(--space-md) var(--space-md) 4px',
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {NOMBRE_CATEGORIA[grupo.categoria]}
+            </div>
+            <div style={{ padding: '0 var(--space-md) var(--space-md)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {grupo.items.map((producto) => (
               <Card key={producto.id} padding="0" style={{ overflow: 'hidden' }}>
                 {/* Encabezado del producto */}
                 <div
@@ -198,8 +213,9 @@ export function CatalogoOfflinePage() {
                 </div>
               </Card>
             ))}
+            </div>
           </div>
-        )}
+        ))}
       </IonContent>
     </IonPage>
   );

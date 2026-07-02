@@ -28,6 +28,7 @@ export async function guardarProducto(data: GuardarProductoInput): Promise<Produ
     id: data.id ?? generateUUID(),
     nombre: data.nombre,
     unidad_compra: data.unidad_compra,
+    categoria: data.categoria,
     precio_preferencial: data.precio_preferencial,
     activo: data.activo ?? true,
   };

@@ -33,6 +33,7 @@ describe('[H-13] gestión del catálogo', () => {
     const prod = await guardarProducto({
       nombre: 'Multiusos',
       unidad_compra: 'bidon',
+      categoria: 'quimicos',
       activo: true,
     });
     const pres = await guardarPresentacion({
@@ -54,7 +55,7 @@ describe('[H-13] gestión del catálogo', () => {
   });
 
   it('CAT-102: alta y baja entran a la cola de sync como pending', async () => {
-    const prod = await guardarProducto({ nombre: 'X', unidad_compra: 'bidon', activo: true });
+    const prod = await guardarProducto({ nombre: 'X', unidad_compra: 'bidon', categoria: 'quimicos', activo: true });
     await desactivarProducto(prod.id);
 
     const pendientes = await db.sync_queue.where('status').equals('pending').toArray();
@@ -63,7 +64,7 @@ describe('[H-13] gestión del catálogo', () => {
   });
 
   it('CAT-103: editar el precio → una venta posterior usa el nuevo valor', async () => {
-    const prod = await guardarProducto({ nombre: 'Multiusos', unidad_compra: 'bidon', activo: true });
+    const prod = await guardarProducto({ nombre: 'Multiusos', unidad_compra: 'bidon', categoria: 'quimicos', activo: true });
     const pres = await guardarPresentacion({
       producto_base_id: prod.id,
       nombre: 'Multiusos 1 L',
@@ -93,7 +94,7 @@ describe('[H-13] gestión del catálogo', () => {
   });
 
   it('CAT-104: baja de producto = desactiva (no borra) y sale de los activos', async () => {
-    const prod = await guardarProducto({ nombre: 'Descontinuado', unidad_compra: 'bidon', activo: true });
+    const prod = await guardarProducto({ nombre: 'Descontinuado', unidad_compra: 'bidon', categoria: 'quimicos', activo: true });
     await desactivarProducto(prod.id);
 
     // La fila sigue existiendo (no DELETE), pero ya no figura entre los activos.
@@ -110,6 +111,7 @@ describe('[H-13] gestión del catálogo', () => {
     const prod = await guardarProducto({
       nombre: 'Trapeador Microseda 1pz',
       unidad_compra: 'docena',
+      categoria: 'trapeadores',
       activo: true,
     });
     await guardarPresentacion({
@@ -136,7 +138,7 @@ describe('[H-13] gestión del catálogo', () => {
   });
 
   it('CAT-105: baja de presentación = desactiva (no borra)', async () => {
-    const prod = await guardarProducto({ nombre: 'P', unidad_compra: 'bidon', activo: true });
+    const prod = await guardarProducto({ nombre: 'P', unidad_compra: 'bidon', categoria: 'quimicos', activo: true });
     const pres = await guardarPresentacion({
       producto_base_id: prod.id,
       nombre: 'P 1 L',
