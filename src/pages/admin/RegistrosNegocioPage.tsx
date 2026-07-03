@@ -31,6 +31,7 @@ import {
 } from '@ionic/react';
 import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useRegistrosNegocio } from '../../hooks/useRegistrosNegocio';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useAuthContext } from '../../context/AuthContext';
@@ -65,6 +66,7 @@ const lineRow: CSSProperties = {
 
 export function RegistrosNegocioPage() {
   const { user } = useAuthContext();
+  const history = useHistory();
   const {
     productos,
     recepciones,
@@ -167,6 +169,22 @@ export function RegistrosNegocioPage() {
             <>
               <div>
                 <span style={sectionLabel}>Recepción de La Moderna</span>
+                <Card padding="4px 14px" style={{ marginBottom: '10px' }}>
+                  <IonItem
+                    button
+                    detail
+                    lines="none"
+                    style={{ '--background': 'transparent', '--padding-start': '0' }}
+                    onClick={() => history.push('/admin/envasado')}
+                  >
+                    <IonLabel>
+                      <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>Envasado</div>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                        Registrar un bidón o granel envasado (H-17)
+                      </div>
+                    </IonLabel>
+                  </IonItem>
+                </Card>
                 <Card padding="4px 14px">
                   <IonItem lines="full" style={{ '--background': 'transparent', '--padding-start': '0' }}>
                     <IonLabel position="stacked">Producto base *</IonLabel>

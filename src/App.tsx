@@ -85,6 +85,7 @@ const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'Clien
 const DashboardPage = lazyPage(() => import('./pages/admin/DashboardPage'), 'DashboardPage');
 const CortePage = lazyPage(() => import('./pages/admin/CortePage'), 'CortePage');
 const RegistrosNegocioPage = lazyPage(() => import('./pages/admin/RegistrosNegocioPage'), 'RegistrosNegocioPage');
+const EnvasadoPage = lazyPage(() => import('./pages/admin/EnvasadoPage'), 'EnvasadoPage');
 const MisClientesPage = lazyPage(() => import('./pages/clientes/MisClientesPage'), 'MisClientesPage');
 const ClienteDetallePage = lazyPage(() => import('./pages/clientes/ClienteDetallePage'), 'ClienteDetallePage');
 
@@ -230,6 +231,7 @@ function AdminTabs() {
         <Route exact path="/admin/clientes/:clienteId" component={ClienteDetallePage} />
         <Route exact path="/admin/corte" component={CortePage} />
         <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
+        <Route exact path="/admin/envasado" component={EnvasadoPage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
