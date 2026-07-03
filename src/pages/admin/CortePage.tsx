@@ -7,6 +7,10 @@
  * Resalta los descuadres antes de cerrar (riesgo T10), incluida la identidad
  * de control (recibido − devuelto = bidones abiertos). Toda la lógica de
  * dinero vive en `lib/corte`.
+ *
+ * Se usa tanto como ruta propia (`/admin/corte`) como incrustada en el modal
+ * del FAB de Inicio (H-15) — en ese caso recibe `onClose` para mostrar el
+ * botón de cerrar en vez de depender de la navegación por tabs.
  */
 
 import {
@@ -16,6 +20,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonButton,
   IonSelect,
   IonSelectOption,
   IonInput,
@@ -38,6 +43,11 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 
+interface CortePageProps {
+  /** Presente cuando la página vive dentro del modal del FAB de Inicio. */
+  onClose?: () => void;
+}
+
 const money = (n: number) => `$${n.toFixed(2)}`;
 
 const sectionLabel: CSSProperties = {
@@ -57,7 +67,7 @@ const rowBetween: CSSProperties = {
   gap: '10px',
 };
 
-export function CortePage() {
+export function CortePage({ onClose }: CortePageProps = {}) {
   const {
     vendedores,
     vendedorId,
@@ -113,6 +123,13 @@ export function CortePage() {
     <IonPage>
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
+          {onClose && (
+            <IonButtons slot="start">
+              <IonButton onClick={onClose} style={{ '--color': 'var(--color-on-dark)' }}>
+                Cerrar
+              </IonButton>
+            </IonButtons>
+          )}
           <IonTitle>Corte semanal</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />

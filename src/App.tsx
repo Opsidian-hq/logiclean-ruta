@@ -40,7 +40,6 @@ import {
   mapOutline,
   walletOutline,
   homeOutline,
-  receiptOutline,
   businessOutline,
   cashOutline,
   personOutline,
@@ -249,10 +248,6 @@ function AdminTabs() {
         <IonTabButton tab="clientes" href="/admin/clientes">
           <IonIcon icon={peopleOutline} style={{ color: 'var(--color-on-dark)' }} />
           <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
-        </IonTabButton>
-        <IonTabButton tab="corte" href="/admin/corte">
-          <IonIcon icon={receiptOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Corte</span>
         </IonTabButton>
         <IonTabButton tab="negocio" href="/admin/negocio">
           <IonIcon icon={businessOutline} style={{ color: 'var(--color-on-dark)' }} />

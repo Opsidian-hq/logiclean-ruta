@@ -1,10 +1,13 @@
 /**
- * Logiclean Ruta — DashboardPage (H-15 — gerente) · Inc 4
+ * Logiclean Ruta — DashboardPage (H-15 — gerente) · Inc 4, FAB de corte Inc 7
  *
  * Panel consolidado del periodo en curso: ventas y posición de caja por
  * vendedor y bolsa (netos de gastos — flujo, se reinicia al corte), más el
  * embudo, la adherencia y la cartera activa (continuos). Resalta alertas.
  * Toda la lógica vive en `lib/dashboard` / `lib/corte` (puras).
+ *
+ * El corte semanal se abre desde aquí vía el FAB — ya no vive como tab
+ * propio en la barra inferior del gerente.
  */
 
 import {
@@ -18,8 +21,13 @@ import {
   IonText,
   IonRefresher,
   IonRefresherContent,
+  IonFab,
+  IonFabButton,
+  IonIcon,
+  IonModal,
 } from '@ionic/react';
-import { useCallback } from 'react';
+import { receiptOutline } from 'ionicons/icons';
+import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
@@ -28,6 +36,7 @@ import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
+import { CortePage } from './CortePage';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -77,6 +86,8 @@ export function DashboardPage() {
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
   );
+
+  const [corteOpen, setCorteOpen] = useState(false);
 
   return (
     <IonPage>
@@ -225,7 +236,21 @@ export function DashboardPage() {
             </div>
           </div>
         )}
+
+        <IonFab vertical="bottom" horizontal="end" slot="fixed">
+          <IonFabButton
+            onClick={() => setCorteOpen(true)}
+            style={{ '--background': 'var(--color-primary)' }}
+            aria-label="Registrar corte"
+          >
+            <IonIcon icon={receiptOutline} />
+          </IonFabButton>
+        </IonFab>
       </IonContent>
+
+      <IonModal isOpen={corteOpen} onDidDismiss={() => setCorteOpen(false)}>
+        <CortePage onClose={() => setCorteOpen(false)} />
+      </IonModal>
     </IonPage>
   );
 }
