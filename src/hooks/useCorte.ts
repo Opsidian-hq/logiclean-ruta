@@ -27,8 +27,6 @@ export interface UseCorteReturn {
   periodoFin: string;
   setPeriodoFin: (d: string) => void;
   snapshot: CorteSnapshot | null;
-  /** Nombre de producto base por id (para la vista de inventario en bidones). */
-  nombresProducto: Record<string, string>;
   loading: boolean;
   error: string | null;
   registrar: (entrega?: EntregaInput) => Promise<void>;
@@ -43,7 +41,6 @@ export function useCorte(): UseCorteReturn {
   const [periodoInicio, setPeriodoInicio] = useState('');
   const [periodoFin, setPeriodoFin] = useState(hoyISO());
   const [snapshot, setSnapshot] = useState<CorteSnapshot | null>(null);
-  const [nombresProducto, setNombresProducto] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +60,6 @@ export function useCorte(): UseCorteReturn {
       setPeriodoInicio(inicio);
       const insumos = await cargarInsumosCorte(vendedorId, inicio, periodoFin);
       setSnapshot(calcularCorte(insumos));
-      setNombresProducto(Object.fromEntries(insumos.productos.map((p) => [p.id, p.nombre])));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -103,7 +99,6 @@ export function useCorte(): UseCorteReturn {
     periodoFin,
     setPeriodoFin,
     snapshot,
-    nombresProducto,
     loading,
     error,
     registrar,

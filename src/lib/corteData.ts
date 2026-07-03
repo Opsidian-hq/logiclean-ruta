@@ -1,5 +1,5 @@
 /**
- * Logiclean Ruta — Carga de insumos del corte (Inc 4)
+ * Logiclean Ruta — Carga de insumos del corte (Inc 4, actualizado Inc 6.5)
  *
  * Acota desde Dexie los datos de un vendedor para un periodo [inicio, fin] y
  * los devuelve en la forma que consume `calcularCorte`. Lo comparten la
@@ -9,7 +9,11 @@
  *  - inicio vacío ('') = periodo abierto hacia atrás (sin corte previo).
  *  - cobros: por su propia fecha, ligados a las ventas del vendedor.
  *  - gastos: de ruta del vendedor + de backoffice (negocio).
- *  - suministros: nivel negocio (solo por fecha).
+ *  - suministros / envasados: nivel negocio (solo por fecha) — igual que
+ *    antes de 6.5, la reconciliación con La Moderna y la identidad de
+ *    control son de la empresa, no por vendedor.
+ *  - bodega (base + presentaciones): estado ACTUAL de la empresa, no se
+ *    acota al periodo — el corte muestra "qué hay ahora", no un delta.
  */
 
 import { db } from '../db/index';
@@ -34,16 +38,20 @@ export async function cargarInsumosCorte(
     return (!periodoInicio || d > periodoInicio) && d <= periodoFin;
   };
 
-  const [ventasVend, todosCobros, gastos, inventario, presentaciones, suministros, productos] =
-    await Promise.all([
-      db.venta.where('vendedor_id').equals(vendedorId).toArray(),
-      db.cobro.toArray(),
-      db.gasto.toArray(),
-      db.inventario_vehiculo.where('vendedor_id').equals(vendedorId).toArray(),
-      db.presentacion.toArray(),
-      db.suministro_la_moderna.toArray(),
-      db.producto_base.toArray(),
-    ]);
+  const [
+    ventasVend, todosCobros, gastos, suministros, envasados,
+    bodegaBase, bodegaPresentaciones, presentaciones, productos,
+  ] = await Promise.all([
+    db.venta.where('vendedor_id').equals(vendedorId).toArray(),
+    db.cobro.toArray(),
+    db.gasto.toArray(),
+    db.suministro_la_moderna.toArray(),
+    db.envasado.toArray(),
+    db.inventario_bodega_base.toArray(),
+    db.inventario_bodega_presentacion.toArray(),
+    db.presentacion.toArray(),
+    db.producto_base.toArray(),
+  ]);
 
   const idsVentasVend = new Set(ventasVend.map((v) => v.id));
 
@@ -55,9 +63,11 @@ export async function cargarInsumosCorte(
         enRango(g.fecha) &&
         ((g.tipo === 'ruta' && g.vendedor_id === vendedorId) || g.tipo === 'backoffice')
     ),
-    inventario,
-    presentaciones,
     suministros: suministros.filter((s) => enRango(s.fecha)),
+    envasados: envasados.filter((e) => enRango(e.fecha)),
+    bodegaBase,
+    bodegaPresentaciones,
+    presentaciones,
     productos,
   };
 }
