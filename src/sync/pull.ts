@@ -36,6 +36,10 @@ import type { EntityTable } from '../db/schema';
  *   los vendedores, pero sin hidratarlos su BD local arranca vacía y agregaría
  *   $0 (D-004). Se traen juntos para que cada venta llegue con sus líneas y su
  *   cobro, igual que el `gasto` ya se hidrataba.
+ * - Inc 6.1: contadores y eventos de bodega. Los contadores son los mismos
+ *   para todos (RLS de lectura abierta a autenticados); los eventos de
+ *   carga/devolución llegan acotados por vendedor_id (o completos al
+ *   gerente), igual que `venta`.
  */
 export const PULL_TABLES: EntityTable[] = [
   'vendedor',
@@ -52,6 +56,16 @@ export const PULL_TABLES: EntityTable[] = [
   // Inc 3 — corte semanal y reconciliación con La Moderna.
   'suministro_la_moderna',
   'corte',
+  // Inc 6.1 — inventario de bodega (contadores + eventos).
+  'inventario_bodega_base',
+  'inventario_bodega_presentacion',
+  'movimiento_la_moderna',
+  'envasado',
+  'envasado_linea',
+  'carga_vehiculo',
+  'carga_linea',
+  'devolucion_bodega',
+  'devolucion_linea',
 ];
 
 /** Resultado de una hidratación, por tabla. */

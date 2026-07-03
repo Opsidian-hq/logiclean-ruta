@@ -6,7 +6,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
-import { DEXIE_SCHEMA } from './schema';
+import { DEXIE_SCHEMA, DEXIE_SCHEMA_V2 } from './schema';
 import type {
   Vendedor,
   Cliente,
@@ -21,6 +21,15 @@ import type {
   SuministroLaModerna,
   Gasto,
   Corte,
+  InventarioBodegaBase,
+  InventarioBodegaPresentacion,
+  MovimientoLaModerna,
+  Envasado,
+  EnvasadoLinea,
+  CargaVehiculo,
+  CargaLinea,
+  DevolucionBodega,
+  DevolucionLinea,
 } from './schema';
 import type { SyncQueueItem } from '../sync/queue';
 
@@ -39,6 +48,16 @@ class LogicleanDB extends Dexie {
   suministro_la_moderna!: Table<SuministroLaModerna>;
   gasto!:                 Table<Gasto>;
   corte!:                 Table<Corte>;
+  // ── Inc 6.1 — Inventario de bodega ─────────────────────────
+  inventario_bodega_base!:         Table<InventarioBodegaBase>;
+  inventario_bodega_presentacion!: Table<InventarioBodegaPresentacion>;
+  movimiento_la_moderna!:          Table<MovimientoLaModerna>;
+  envasado!:                       Table<Envasado>;
+  envasado_linea!:                 Table<EnvasadoLinea>;
+  carga_vehiculo!:                 Table<CargaVehiculo>;
+  carga_linea!:                    Table<CargaLinea>;
+  devolucion_bodega!:              Table<DevolucionBodega>;
+  devolucion_linea!:               Table<DevolucionLinea>;
   // ── Cola de sync offline ──────────────────────────────────
   sync_queue!:            Table<SyncQueueItem>;
 
@@ -48,6 +67,10 @@ class LogicleanDB extends Dexie {
     // Versión 1: esquema inicial (Inc 0)
     // Incrementar la versión si se añaden/modifican índices
     this.version(1).stores(DEXIE_SCHEMA);
+
+    // Versión 2 (Inc 6.1): inventario de bodega (contadores + eventos).
+    // Solo agrega stores nuevos; no toca índices existentes.
+    this.version(2).stores(DEXIE_SCHEMA_V2);
   }
 }
 
