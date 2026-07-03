@@ -142,6 +142,83 @@ export interface Corte {
   snapshot: Record<string, unknown>;
 }
 
+// ── Inc 6.1 — Inventario de bodega (contadores + eventos) ─────
+// Ver docs/modelo-datos-inc6-bodega-envasado.md. Los contadores se
+// materializan del lado servidor por trigger (ADR-0007); el cliente nunca
+// empuja un valor absoluto de bodega (a diferencia de inventario_vehiculo).
+
+export interface InventarioBodegaBase {
+  id: string;
+  producto_base_id: string;
+  bidones_disponibles: number;    // químicos: consignación La Moderna
+  litros_granel_estimado: number; // químicos: residuo abierto, de Logiclean
+}
+
+export interface InventarioBodegaPresentacion {
+  id: string;
+  presentacion_id: string;
+  cantidad: number; // vendible en bodega: químico envasado o pieza de escoba
+}
+
+export interface MovimientoLaModerna {
+  id: string;
+  producto_base_id: string;
+  tipo: 'recibido' | 'devuelto';
+  fecha: string; // ISO date
+  cantidad: number; // en unidad_compra: bidones o docenas
+  responsable_id: string;
+  nota?: string;
+}
+
+export interface Envasado {
+  id: string;
+  producto_base_id: string;
+  fecha: string; // ISO date
+  origen: 'bidon_nuevo' | 'granel';
+  bidones_abiertos: number;
+  litros_consumidos_granel: number;
+  litros_residuo_estimado: number;
+  responsable_id: string;
+  nota?: string;
+}
+
+export interface EnvasadoLinea {
+  id: string;
+  envasado_id: string;
+  presentacion_id: string;
+  cantidad: number;
+}
+
+export interface CargaVehiculo {
+  id: string;
+  vendedor_id: string;
+  fecha: string; // ISO date
+  responsable_id: string; // gerente o el propio vendedor
+  nota?: string;
+}
+
+export interface CargaLinea {
+  id: string;
+  carga_id: string;
+  presentacion_id: string;
+  cantidad: number;
+}
+
+export interface DevolucionBodega {
+  id: string;
+  vendedor_id: string;
+  fecha: string; // ISO date
+  responsable_id: string;
+  nota?: string;
+}
+
+export interface DevolucionLinea {
+  id: string;
+  devolucion_id: string;
+  presentacion_id: string;
+  cantidad: number;
+}
+
 // ── Tipo unión para todas las entidades ───────────────────────
 export type EntityTable =
   | 'vendedor'
@@ -156,7 +233,16 @@ export type EntityTable =
   | 'inventario_vehiculo'
   | 'suministro_la_moderna'
   | 'gasto'
-  | 'corte';
+  | 'corte'
+  | 'inventario_bodega_base'
+  | 'inventario_bodega_presentacion'
+  | 'movimiento_la_moderna'
+  | 'envasado'
+  | 'envasado_linea'
+  | 'carga_vehiculo'
+  | 'carga_linea'
+  | 'devolucion_bodega'
+  | 'devolucion_linea';
 
 // ── Definición de stores Dexie ────────────────────────────────
 // Formato: "++field" = autoincrement, "&field" = unique, "field" = índice
@@ -178,4 +264,21 @@ export const DEXIE_SCHEMA = {
   corte:                 '&id, vendedor_id',
   // Cola de operaciones offline (solo local, nunca sube como tabla)
   sync_queue:            '++_seq, &id, status, table_name, created_at',
+} as const;
+
+// Versión 2 (Inc 6.1): agrega el subsistema de inventario de bodega.
+// Dexie requiere repetir los stores sin cambios junto con los nuevos para
+// que la migración incremental (ver db/index.ts) construya el store set
+// completo de esta versión.
+export const DEXIE_SCHEMA_V2 = {
+  ...DEXIE_SCHEMA,
+  inventario_bodega_base:         '&id, producto_base_id',
+  inventario_bodega_presentacion: '&id, presentacion_id',
+  movimiento_la_moderna:          '&id, producto_base_id, tipo, fecha',
+  envasado:                       '&id, producto_base_id, fecha',
+  envasado_linea:                 '&id, envasado_id, presentacion_id',
+  carga_vehiculo:                 '&id, vendedor_id, fecha',
+  carga_linea:                    '&id, carga_id, presentacion_id',
+  devolucion_bodega:              '&id, vendedor_id, fecha',
+  devolucion_linea:               '&id, devolucion_id, presentacion_id',
 } as const;
