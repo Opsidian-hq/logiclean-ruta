@@ -31,6 +31,10 @@ dist-ssr
 # Backups locales generados por scripts/backup.sh
 backup_logiclean_*.sql
 
+# Conteo físico de apertura real (Inc 6.6) — datos del negocio, no del código.
+# Solo se commitea la plantilla scripts/conteo-apertura.ejemplo.json.
+scripts/conteo-apertura.json
+
 # Capacitor
 android/
 ios/
