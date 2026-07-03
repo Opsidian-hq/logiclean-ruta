@@ -23,10 +23,13 @@ import {
   IonButton,
   IonIcon,
   IonToast,
+  IonItem,
+  IonLabel,
 } from '@ionic/react';
 import { addOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useInventario } from '../../hooks/useInventario';
 import type { InventarioRow } from '../../hooks/useInventario';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
@@ -50,6 +53,7 @@ const sectionLabelStyle: CSSProperties = {
 };
 
 export function InventarioPage() {
+  const history = useHistory();
   const { rows, loading, error, setCantidad, refresh } = useInventario();
 
   const { handleRefresh } = usePullToRefresh(
@@ -165,6 +169,24 @@ export function InventarioPage() {
                   </span>
                 </div>
               </Card>
+              <div style={{ marginTop: '10px' }}>
+                <Card padding="4px 14px">
+                  <IonItem
+                    button
+                    detail
+                    lines="none"
+                    style={{ '--background': 'transparent', '--padding-start': '0' }}
+                    onClick={() => history.push('/inventario/carga-devolucion')}
+                  >
+                    <IonLabel>
+                      <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>Carga y devolución de bodega</div>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                        Registrar lo que subes o regresas a bodega (H-18/H-19)
+                      </div>
+                    </IonLabel>
+                  </IonItem>
+                </Card>
+              </div>
             </div>
           </>
         )}
