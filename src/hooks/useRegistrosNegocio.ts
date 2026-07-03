@@ -1,44 +1,48 @@
 /**
- * Logiclean Ruta — useRegistrosNegocio hook (Inc 3, Fase 4)
+ * Logiclean Ruta — useRegistrosNegocio hook (Inc 3, actualizado Inc 6.2)
  *
- * Registros del negocio que alimentan el corte: suministro/devolución con La
- * Moderna y gastos de backoffice. Carga productos (para el selector) y las
- * listas recientes; expone los registradores (delegan en las libs puras).
+ * Registros del negocio que alimentan el corte: recepción de La Moderna
+ * (bodega, H-16) y gastos de backoffice. Carga productos (para el selector) y
+ * las listas recientes; expone los registradores (delegan en las libs puras).
+ *
+ * Desde Inc 6.2 (ADR-0006), el suministro ya no se captura a mano: el
+ * gerente registra la recepción (`movimiento_la_moderna`, tipo=recibido) y el
+ * rollup `suministro_la_moderna` se materializa del lado servidor.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import { registrarSuministro } from '../lib/suministro';
+import { registrarRecepcion } from '../lib/movimientoLaModerna';
 import { registrarGasto } from '../lib/gastos';
-import type { RegistrarSuministroInput } from '../lib/suministro';
+import type { RegistrarRecepcionInput } from '../lib/movimientoLaModerna';
 import type { RegistrarGastoInput } from '../lib/gastos';
-import type { ProductoBase, SuministroLaModerna, Gasto } from '../db/schema';
+import type { ProductoBase, MovimientoLaModerna, Gasto } from '../db/schema';
 
 export interface UseRegistrosNegocioReturn {
   productos: ProductoBase[];
-  suministros: SuministroLaModerna[];
+  recepciones: MovimientoLaModerna[];
   gastosBackoffice: Gasto[];
   nombreProducto: (id: string) => string;
   loading: boolean;
-  crearSuministro: (input: RegistrarSuministroInput) => Promise<void>;
+  crearRecepcion: (input: Omit<RegistrarRecepcionInput, 'responsableId'>) => Promise<void>;
   crearGastoBackoffice: (input: Omit<RegistrarGastoInput, 'tipo' | 'vendedorId'>) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
-export function useRegistrosNegocio(): UseRegistrosNegocioReturn {
+export function useRegistrosNegocio(responsableId: string | null): UseRegistrosNegocioReturn {
   const [productos, setProductos] = useState<ProductoBase[]>([]);
-  const [suministros, setSuministros] = useState<SuministroLaModerna[]>([]);
+  const [recepciones, setRecepciones] = useState<MovimientoLaModerna[]>([]);
   const [gastosBackoffice, setGastosBackoffice] = useState<Gasto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const [prods, sums, gastos] = await Promise.all([
+    const [prods, movs, gastos] = await Promise.all([
       db.producto_base.where('activo').equals(1).toArray(),
-      db.suministro_la_moderna.toArray(),
+      db.movimiento_la_moderna.where('tipo').equals('recibido').toArray(),
       db.gasto.where('tipo').equals('backoffice').toArray(),
     ]);
     setProductos(prods);
-    setSuministros(sums.sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '')));
+    setRecepciones(movs.sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '')));
     setGastosBackoffice(gastos.sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '')));
     setLoading(false);
   }, []);
@@ -53,12 +57,13 @@ export function useRegistrosNegocio(): UseRegistrosNegocioReturn {
     [productos]
   );
 
-  const crearSuministro = useCallback(
-    async (input: RegistrarSuministroInput) => {
-      await registrarSuministro(input);
+  const crearRecepcion = useCallback(
+    async (input: Omit<RegistrarRecepcionInput, 'responsableId'>) => {
+      if (!responsableId) throw new Error('Falta el gerente responsable.');
+      await registrarRecepcion({ ...input, responsableId });
       await load();
     },
-    [load]
+    [load, responsableId]
   );
 
   const crearGastoBackoffice = useCallback(
@@ -71,11 +76,11 @@ export function useRegistrosNegocio(): UseRegistrosNegocioReturn {
 
   return {
     productos,
-    suministros,
+    recepciones,
     gastosBackoffice,
     nombreProducto,
     loading,
-    crearSuministro,
+    crearRecepcion,
     crearGastoBackoffice,
     refresh: load,
   };

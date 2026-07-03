@@ -1,5 +1,5 @@
 /**
- * Logiclean Ruta — Suministro y reconciliación con La Moderna (Inc 3)
+ * Logiclean Ruta — Reconciliación con La Moderna (Inc 3, actualizado Inc 6.2)
  *
  * El suministro es **venta-o-devolución**: Logiclean recibe producto a granel
  * (en unidad de compra) y, al cierre, paga lo que se quedó y devuelve lo no
@@ -9,61 +9,15 @@
  *
  * El `factor_conversion` NO entra en este adeudo (se calcula sobre la unidad de
  * compra); sirve solo para traducir el lado de ventas/inventario (ver
- * `lib/conversion.ts`). Cálculo puro + registro offline (solo gerente, RLS).
+ * `lib/conversion.ts`). Cálculo puro sobre `suministro_la_moderna`.
+ *
+ * Desde Inc 6.2 (ADR-0006), `suministro_la_moderna` ya no se captura a mano:
+ * es un rollup alimentado por el evento `movimiento_la_moderna` (recibido) vía
+ * trigger (migración 008). El registro de recepción vive en
+ * `lib/movimientoLaModerna.ts`.
  */
 
-import { db } from '../db/index';
-import { generateUUID } from '../lib/uuid';
-import { enqueueOperation } from '../sync/queue';
-import { syncEngine } from '../sync/SyncEngine';
 import type { SuministroLaModerna, ProductoBase } from '../db/schema';
-
-// ── Registro ──────────────────────────────────────────────────
-
-export interface RegistrarSuministroInput {
-  productoBaseId: string;
-  cantidadRecibida: number;
-  cantidadDevuelta: number;
-  /** ISO date (YYYY-MM-DD); por defecto hoy. */
-  fecha?: string;
-}
-
-export async function registrarSuministro(
-  input: RegistrarSuministroInput
-): Promise<SuministroLaModerna> {
-  const {
-    productoBaseId,
-    cantidadRecibida,
-    cantidadDevuelta,
-    fecha = new Date().toISOString().slice(0, 10),
-  } = input;
-
-  if (!productoBaseId) throw new Error('Falta el producto base.');
-  if (cantidadRecibida < 0 || cantidadDevuelta < 0) {
-    throw new Error('Las cantidades no pueden ser negativas.');
-  }
-  if (cantidadDevuelta > cantidadRecibida) {
-    throw new Error('No se puede devolver más de lo recibido.');
-  }
-
-  const suministro: SuministroLaModerna = {
-    id: generateUUID(),
-    producto_base_id: productoBaseId,
-    fecha,
-    cantidad_recibida: cantidadRecibida,
-    cantidad_devuelta: cantidadDevuelta,
-  };
-
-  await db.suministro_la_moderna.put(suministro);
-  const item = await enqueueOperation(
-    'suministro_la_moderna',
-    'upsert',
-    suministro as unknown as Record<string, unknown>
-  );
-  await syncEngine.enqueueAndSync(item);
-
-  return suministro;
-}
 
 // ── Reconciliación (cálculo puro) ─────────────────────────────
 
