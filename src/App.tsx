@@ -86,6 +86,7 @@ const DashboardPage = lazyPage(() => import('./pages/admin/DashboardPage'), 'Das
 const CortePage = lazyPage(() => import('./pages/admin/CortePage'), 'CortePage');
 const RegistrosNegocioPage = lazyPage(() => import('./pages/admin/RegistrosNegocioPage'), 'RegistrosNegocioPage');
 const EnvasadoPage = lazyPage(() => import('./pages/admin/EnvasadoPage'), 'EnvasadoPage');
+const CargaDevolucionPage = lazyPage(() => import('./pages/CargaDevolucionPage'), 'CargaDevolucionPage');
 const MisClientesPage = lazyPage(() => import('./pages/clientes/MisClientesPage'), 'MisClientesPage');
 const ClienteDetallePage = lazyPage(() => import('./pages/clientes/ClienteDetallePage'), 'ClienteDetallePage');
 
@@ -180,6 +181,7 @@ function VendedorTabs() {
           <Route exact path="/visitas" component={VisitasPage} />
           <Route exact path="/catalogo" component={CatalogoOfflinePage} />
           <Route exact path="/inventario" component={InventarioPage} />
+          <Route exact path="/inventario/carga-devolucion" component={CargaDevolucionPage} />
           <Route exact path="/venta" component={VentaPage} />
           <Route exact path="/cobros" component={CobrosPendientesPage} />
           <Route exact path="/cobranza/:clienteId" component={CobrarSaldoPage} />
@@ -232,6 +234,7 @@ function AdminTabs() {
         <Route exact path="/admin/corte" component={CortePage} />
         <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
         <Route exact path="/admin/envasado" component={EnvasadoPage} />
+        <Route exact path="/admin/carga-devolucion" component={CargaDevolucionPage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>

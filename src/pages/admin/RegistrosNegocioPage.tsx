@@ -173,7 +173,7 @@ export function RegistrosNegocioPage() {
                   <IonItem
                     button
                     detail
-                    lines="none"
+                    lines="full"
                     style={{ '--background': 'transparent', '--padding-start': '0' }}
                     onClick={() => history.push('/admin/envasado')}
                   >
@@ -181,6 +181,20 @@ export function RegistrosNegocioPage() {
                       <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>Envasado</div>
                       <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                         Registrar un bidón o granel envasado (H-17)
+                      </div>
+                    </IonLabel>
+                  </IonItem>
+                  <IonItem
+                    button
+                    detail
+                    lines="none"
+                    style={{ '--background': 'transparent', '--padding-start': '0' }}
+                    onClick={() => history.push('/admin/carga-devolucion')}
+                  >
+                    <IonLabel>
+                      <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>Carga y devolución</div>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                        Cargar o devolver el vehículo de un vendedor (H-18/H-19)
                       </div>
                     </IonLabel>
                   </IonItem>
