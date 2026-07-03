@@ -1,0 +1,29 @@
+{
+  "_leeme": "Plantilla del conteo físico de apertura (Inc 6.6, plan §6.6 y modelo §Migración). Copia este archivo (p. ej. conteo-apertura.json, NO lo commitees si tiene datos reales), llena los nombres EXACTOS como aparecen en el catálogo y las cantidades contadas físicamente en bodega y en cada vehículo. Los bidones sellados sin abrir NO van aquí — son consignación de La Moderna (ADR-0010), no se siembran como inventario propio.",
+
+  "bodegaBase": [
+    {
+      "_ejemplo": "Un renglón por cada producto químico (unidad_compra=bidon) con granel abierto en bodega.",
+      "productoBaseNombre": "Limpiador Multiusos Canela Logiclean",
+      "litrosGranelEstimado": 3.5,
+      "bidonesDisponibles": 0
+    }
+  ],
+
+  "bodegaPresentaciones": [
+    {
+      "_ejemplo": "Un renglón por cada presentación ya envasada en bodega (químicos) o pieza suelta de escoba/trapeador/recogedor que NO complete docena.",
+      "presentacionNombre": "Limpiador Multiusos Canela 1 L",
+      "cantidad": 18
+    }
+  ],
+
+  "inventarioVehiculo": [
+    {
+      "_ejemplo": "Un renglón por cada vendedor + presentación contados en su vehículo. Cualquier vendedor/presentación que NO aparezca aquí queda en 0 (reset completo, no es un ajuste parcial).",
+      "vendedorNombre": "Nombre exacto del vendedor",
+      "presentacionNombre": "Limpiador Multiusos Canela 1 L",
+      "cantidad": 4
+    }
+  ]
+}
