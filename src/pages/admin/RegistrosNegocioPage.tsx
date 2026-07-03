@@ -1,8 +1,11 @@
 /**
- * Logiclean Ruta — RegistrosNegocioPage (Inc 3, Fase 4 — gerente)
+ * Logiclean Ruta — RegistrosNegocioPage (Inc 3, actualizado Inc 6.2 — gerente)
  *
  * Registros del negocio que alimentan el corte:
- *  - La Moderna: suministro/devolución por producto base (venta-o-devolución).
+ *  - La Moderna: recepción hacia bodega (H-16). Desde Inc 6.2 (ADR-0006) esta
+ *    es la fuente única del suministro — se retiró la captura manual de
+ *    recibido/devuelto; `suministro_la_moderna` se materializa por trigger a
+ *    partir de este evento.
  *  - Backoffice: gastos del negocio (no tocan las bolsas del vendedor).
  * Toda la escritura usa las libs offline-first existentes.
  */
@@ -30,6 +33,7 @@ import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { useRegistrosNegocio } from '../../hooks/useRegistrosNegocio';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+import { useAuthContext } from '../../context/AuthContext';
 import { CATEGORIAS_BACKOFFICE } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
@@ -60,15 +64,16 @@ const lineRow: CSSProperties = {
 };
 
 export function RegistrosNegocioPage() {
+  const { user } = useAuthContext();
   const {
     productos,
-    suministros,
+    recepciones,
     gastosBackoffice,
     nombreProducto,
-    crearSuministro,
+    crearRecepcion,
     crearGastoBackoffice,
     refresh,
-  } = useRegistrosNegocio();
+  } = useRegistrosNegocio(user?.id ?? null);
 
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
@@ -77,24 +82,21 @@ export function RegistrosNegocioPage() {
   const [seg, setSeg] = useState<'moderna' | 'backoffice'>('moderna');
   const [toast, setToast] = useState<string | null>(null);
 
-  // ── Estado suministro ──
-  const [sProd, setSProd] = useState('');
-  const [sRecibido, setSRecibido] = useState('');
-  const [sDevuelto, setSDevuelto] = useState('');
-  const [sFecha, setSFecha] = useState(hoy());
+  // ── Estado recepción ──
+  const [rProd, setRProd] = useState('');
+  const [rCantidad, setRCantidad] = useState('');
+  const [rFecha, setRFecha] = useState(hoy());
 
-  const guardarSuministro = async () => {
+  const guardarRecepcion = async () => {
     try {
-      await crearSuministro({
-        productoBaseId: sProd,
-        cantidadRecibida: parseFloat(sRecibido) || 0,
-        cantidadDevuelta: parseFloat(sDevuelto) || 0,
-        fecha: sFecha,
+      await crearRecepcion({
+        productoBaseId: rProd,
+        cantidad: parseFloat(rCantidad) || 0,
+        fecha: rFecha,
       });
-      setToast('Suministro registrado (en cola).');
-      setSProd('');
-      setSRecibido('');
-      setSDevuelto('');
+      setToast('Recepción registrada (en cola).');
+      setRProd('');
+      setRCantidad('');
     } catch (e) {
       setToast(e instanceof Error ? e.message : 'No se pudo registrar.');
     }
@@ -128,7 +130,7 @@ export function RegistrosNegocioPage() {
     }
   };
 
-  const sumValido = !!sProd && (parseFloat(sRecibido) || 0) > 0;
+  const recepcionValida = !!rProd && (parseFloat(rCantidad) || 0) > 0;
   const backValido = !!bCategoriaFinal && (parseFloat(bMonto) || 0) > 0;
 
   return (
@@ -145,7 +147,7 @@ export function RegistrosNegocioPage() {
           {/* Segmento sobre navy: mismo patrón de contraste que Visitas (D-007). */}
           <IonSegment className="segment-on-navy" value={seg} onIonChange={(e) => setSeg((e.detail.value as 'moderna' | 'backoffice') ?? 'moderna')}>
             <IonSegmentButton value="moderna">
-              <IonLabel>La Moderna</IonLabel>
+              <IonLabel>Recepción</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="backoffice">
               <IonLabel>Backoffice</IonLabel>
@@ -160,15 +162,15 @@ export function RegistrosNegocioPage() {
         </IonRefresher>
 
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {/* ── Segmento La Moderna ── */}
+          {/* ── Segmento Recepción (La Moderna → bodega, H-16) ── */}
           {seg === 'moderna' && (
             <>
               <div>
-                <span style={sectionLabel}>Suministro / devolución</span>
+                <span style={sectionLabel}>Recepción de La Moderna</span>
                 <Card padding="4px 14px">
                   <IonItem lines="full" style={{ '--background': 'transparent', '--padding-start': '0' }}>
                     <IonLabel position="stacked">Producto base *</IonLabel>
-                    <IonSelect value={sProd} placeholder="Selecciona un producto" onIonChange={(e) => setSProd(e.detail.value)}>
+                    <IonSelect value={rProd} placeholder="Selecciona un producto" onIonChange={(e) => setRProd(e.detail.value)}>
                       {productos.map((p) => (
                         <IonSelectOption key={p.id} value={p.id}>
                           {p.nombre}
@@ -177,39 +179,35 @@ export function RegistrosNegocioPage() {
                     </IonSelect>
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-                    <IonLabel position="stacked">Recibido (unidad de compra) *</IonLabel>
-                    <IonInput type="number" inputmode="decimal" value={sRecibido} placeholder="0" onIonInput={(e) => setSRecibido(e.detail.value ?? '')} />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-                    <IonLabel position="stacked">Devuelto</IonLabel>
-                    <IonInput type="number" inputmode="decimal" value={sDevuelto} placeholder="0" onIonInput={(e) => setSDevuelto(e.detail.value ?? '')} />
+                    <IonLabel position="stacked">Cantidad recibida (unidad de compra) *</IonLabel>
+                    <IonInput type="number" inputmode="decimal" value={rCantidad} placeholder="0" onIonInput={(e) => setRCantidad(e.detail.value ?? '')} />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
                     <IonLabel position="stacked">Fecha</IonLabel>
-                    <IonInput type="date" value={sFecha} onIonInput={(e) => setSFecha(e.detail.value ?? '')} />
+                    <IonInput type="date" value={rFecha} onIonInput={(e) => setRFecha(e.detail.value ?? '')} />
                   </IonItem>
                   <div style={{ padding: '12px 0' }}>
-                    <PrimaryCTA disabled={!sumValido} onClick={guardarSuministro}>
-                      Registrar suministro
+                    <PrimaryCTA disabled={!recepcionValida} onClick={guardarRecepcion}>
+                      Registrar recepción
                     </PrimaryCTA>
                   </div>
                 </Card>
               </div>
 
               <div>
-                <span style={sectionLabel}>Suministros recientes</span>
-                {suministros.length === 0 && (
-                  <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay suministros registrados.</p></IonText>
+                <span style={sectionLabel}>Recepciones recientes</span>
+                {recepciones.length === 0 && (
+                  <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay recepciones registradas.</p></IonText>
                 )}
-                {suministros.map((s) => (
-                  <div key={s.id} style={lineRow}>
+                {recepciones.map((m) => (
+                  <div key={m.id} style={lineRow}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{nombreProducto(s.producto_base_id)}</div>
+                      <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{nombreProducto(m.producto_base_id)}</div>
                       <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
-                        {s.fecha} · recibido {s.cantidad_recibida} · devuelto {s.cantidad_devuelta}
+                        {m.fecha}
                       </div>
                     </div>
-                    <Chip tone="primarySoft">neto {s.cantidad_recibida - s.cantidad_devuelta}</Chip>
+                    <Chip tone="primarySoft">recibido {m.cantidad}</Chip>
                   </div>
                 ))}
               </div>

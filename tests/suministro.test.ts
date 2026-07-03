@@ -1,23 +1,17 @@
 /**
- * Logiclean Ruta — Tests: suministro y reconciliación con La Moderna (Inc 3)
+ * Logiclean Ruta — Tests: reconciliación con La Moderna (Inc 3, actualizado Inc 6.2)
  *
  * SUM-001: adeudo = (recibido − devuelto) × precio_preferencial por producto
  * SUM-002: suma varios suministros del mismo producto base
  * SUM-003: ignora productos sin catálogo; total es la suma de adeudos
- * SUM-004: registrarSuministro persiste y encola (offline-first)
- * SUM-005: valida cantidades (no negativas; devuelto ≤ recibido)
+ *
+ * El registro de suministro (antes registrarSuministro, captura manual) se
+ * retiró en Inc 6.2 (ADR-0006): ver tests/recepcion.test.ts para el registro
+ * de recepción que ahora alimenta el rollup.
  */
 
-import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-vi.mock('../src/lib/supabase', () => ({ supabase: {} }));
-vi.mock('../src/sync/SyncEngine', () => ({
-  syncEngine: { enqueueAndSync: vi.fn(async () => {}) },
-}));
-
-import { adeudoLaModerna, registrarSuministro } from '../src/lib/suministro';
-import { db } from '../src/db/index';
+import { describe, it, expect } from 'vitest';
+import { adeudoLaModerna } from '../src/lib/suministro';
 
 const productos = [
   { id: 'pb-cloro', nombre: 'Cloro', precio_preferencial: 120 },
@@ -59,35 +53,5 @@ describe('adeudoLaModerna', () => {
     );
     expect(r.porProducto).toHaveLength(2);
     expect(r.total).toBe(4 * 120 + 2 * 90);
-  });
-});
-
-describe('registrarSuministro', () => {
-  beforeEach(async () => {
-    await Promise.all(db.tables.map((t) => t.clear()));
-  });
-
-  it('SUM-004: persiste y encola como pending', async () => {
-    const s = await registrarSuministro({
-      productoBaseId: 'pb-cloro',
-      cantidadRecibida: 12,
-      cantidadDevuelta: 4,
-      fecha: '2026-06-15',
-    });
-    const enDb = await db.suministro_la_moderna.get(s.id);
-    expect(enDb?.cantidad_recibida).toBe(12);
-    const cola = await db.sync_queue.toArray();
-    expect(cola).toHaveLength(1);
-    expect(cola[0].table_name).toBe('suministro_la_moderna');
-    expect(cola[0].status).toBe('pending');
-  });
-
-  it('SUM-005: rechaza cantidades inválidas', async () => {
-    await expect(
-      registrarSuministro({ productoBaseId: 'pb-cloro', cantidadRecibida: 2, cantidadDevuelta: 5 })
-    ).rejects.toThrow();
-    await expect(
-      registrarSuministro({ productoBaseId: 'pb-cloro', cantidadRecibida: -1, cantidadDevuelta: 0 })
-    ).rejects.toThrow();
   });
 });
