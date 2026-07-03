@@ -22,8 +22,9 @@ function snap(ventas: number, efNeto: number, trNeto: number): CorteSnapshot {
       transferencia: { cobrado: trNeto, gastos: 0, neto: trNeto },
     },
     gastosBackoffice: 0,
-    inventarioBidones: [],
+    bodega: { granel: [], presentaciones: [] },
     moderna: { porProducto: [], total: 0 },
+    identidadControl: [],
     alertas: [],
   };
 }

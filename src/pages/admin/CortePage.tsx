@@ -1,10 +1,12 @@
 /**
- * Logiclean Ruta — CortePage (H-10 — gerente) · Inc 3
+ * Logiclean Ruta — CortePage (H-10 — gerente) · Inc 3, reescrito Inc 6.5
  *
  * Previsualiza y registra el corte semanal de un vendedor: bolsas netas de
- * gastos de ruta, cartera, salidas del negocio (backoffice), inventario en
- * bidones y reconciliación con La Moderna. Resalta los descuadres antes de
- * cerrar (riesgo T10). Toda la lógica de dinero vive en `lib/corte`.
+ * gastos de ruta, cartera, salidas del negocio (backoffice), inventario de
+ * bodega y reconciliación con La Moderna por consumo real (ADR-0009).
+ * Resalta los descuadres antes de cerrar (riesgo T10), incluida la identidad
+ * de control (recibido − devuelto = bidones abiertos). Toda la lógica de
+ * dinero vive en `lib/corte`.
  */
 
 import {
@@ -64,7 +66,6 @@ export function CortePage() {
     periodoFin,
     setPeriodoFin,
     snapshot,
-    nombresProducto,
     loading,
     error,
     registrar,
@@ -287,27 +288,78 @@ export function CortePage() {
                 </Card>
               </div>
 
-              {/* ── Inventario en bidones ── */}
-              {snapshot.inventarioBidones.length > 0 && (
+              {/* ── Inventario de bodega (H-10) ── */}
+              {(snapshot.bodega.granel.length > 0 || snapshot.bodega.presentaciones.length > 0) && (
                 <div>
-                  <span style={sectionLabel}>Inventario al cierre · en unidad de compra</span>
+                  <span style={sectionLabel}>Inventario de bodega · al momento del corte</span>
                   <Card padding="14px">
-                    {snapshot.inventarioBidones.map((u, idx) => (
+                    {snapshot.bodega.granel.length > 0 && (
+                      <div style={{ marginBottom: snapshot.bodega.presentaciones.length > 0 ? '10px' : 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--color-text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                          Granel estimado
+                        </div>
+                        {snapshot.bodega.granel.map((g, idx) => (
+                          <div
+                            key={g.producto_base_id}
+                            style={{
+                              ...rowBetween,
+                              paddingTop: idx ? '7px' : 0,
+                              marginTop: idx ? '7px' : 0,
+                            }}
+                          >
+                            <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-body)' }}>{g.nombre}</span>
+                            <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--color-navy)' }}>{g.litros} L</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {snapshot.bodega.presentaciones.length > 0 && (
+                      <div style={{ paddingTop: snapshot.bodega.granel.length > 0 ? '10px' : 0, borderTop: snapshot.bodega.granel.length > 0 ? '1px solid var(--color-divider)' : 'none' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--color-text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                          Presentaciones envasadas y piezas
+                        </div>
+                        {snapshot.bodega.presentaciones.map((p, idx) => (
+                          <div
+                            key={p.presentacion_id}
+                            style={{
+                              ...rowBetween,
+                              paddingTop: idx ? '7px' : 0,
+                              marginTop: idx ? '7px' : 0,
+                            }}
+                          >
+                            <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-body)' }}>{p.nombre}</span>
+                            <span className="numeric" style={{ fontSize: '14.5px', fontWeight: 800, color: p.cantidad < 0 ? 'var(--color-error)' : 'var(--color-navy)' }}>
+                              {p.cantidad}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              )}
+
+              {/* ── Identidad de control (ADR-0009) ── */}
+              {snapshot.identidadControl.length > 0 && (
+                <div>
+                  <span style={sectionLabel}>Identidad de control · recibido − devuelto = bidones abiertos</span>
+                  <Card padding="14px">
+                    {snapshot.identidadControl.map((ic, idx) => (
                       <div
-                        key={u.producto_base_id}
+                        key={ic.producto_base_id}
                         style={{
-                          ...rowBetween,
-                          paddingTop: idx ? '9px' : 0,
-                          marginTop: idx ? '9px' : 0,
+                          paddingTop: idx ? '10px' : 0,
+                          marginTop: idx ? '10px' : 0,
                           borderTop: idx ? '1px solid var(--color-divider)' : 'none',
                         }}
                       >
-                        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>
-                          {nombresProducto[u.producto_base_id] ?? u.producto_base_id}
-                        </span>
-                        <span className="numeric" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-navy)' }}>
-                          {u.unidades} u.
-                        </span>
+                        <div style={rowBetween}>
+                          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>{ic.nombre}</span>
+                          <Chip tone={ic.cuadra ? 'menudeo' : 'error'}>{ic.cuadra ? 'cuadra' : 'no cuadra'}</Chip>
+                        </div>
+                        <div className="numeric" style={{ fontSize: '12px', fontWeight: 600, color: '#8A94A6', marginTop: '2px' }}>
+                          recibido {ic.recibido} · devuelto {ic.devuelto} · bidones abiertos {ic.bidonesAbiertos}
+                        </div>
                       </div>
                     ))}
                   </Card>

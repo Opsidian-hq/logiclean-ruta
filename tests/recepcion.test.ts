@@ -2,7 +2,7 @@
  * Logiclean Ruta — Tests Inc 6.2: recepción de La Moderna (H-16, ADR-0006)
  *
  * REC-001: persiste y encola como pending (offline-first)
- * REC-002: siempre tipo='recibido' (el registro de devuelto es Inc 6.5)
+ * REC-002: siempre tipo='recibido' (la devolución vive en devolucionLaModerna.test.ts, Inc 6.5)
  * REC-003: valida cantidad > 0
  * REC-004: valida producto base y responsable obligatorios
  * REC-005: usa la fecha de hoy por defecto si no se especifica

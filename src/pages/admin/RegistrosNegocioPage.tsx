@@ -70,9 +70,11 @@ export function RegistrosNegocioPage() {
   const {
     productos,
     recepciones,
+    devolucionesLaModerna,
     gastosBackoffice,
     nombreProducto,
     crearRecepcion,
+    crearDevolucionLaModerna,
     crearGastoBackoffice,
     refresh,
   } = useRegistrosNegocio(user?.id ?? null);
@@ -84,19 +86,26 @@ export function RegistrosNegocioPage() {
   const [seg, setSeg] = useState<'moderna' | 'backoffice'>('moderna');
   const [toast, setToast] = useState<string | null>(null);
 
-  // ── Estado recepción ──
+  // ── Estado recepción / devolución con La Moderna ──
+  const [tipoMovimiento, setTipoMovimiento] = useState<'recibido' | 'devuelto'>('recibido');
   const [rProd, setRProd] = useState('');
   const [rCantidad, setRCantidad] = useState('');
   const [rFecha, setRFecha] = useState(hoy());
 
-  const guardarRecepcion = async () => {
+  const guardarMovimiento = async () => {
     try {
-      await crearRecepcion({
+      const input = {
         productoBaseId: rProd,
         cantidad: parseFloat(rCantidad) || 0,
         fecha: rFecha,
-      });
-      setToast('Recepción registrada (en cola).');
+      };
+      if (tipoMovimiento === 'recibido') {
+        await crearRecepcion(input);
+        setToast('Recepción registrada (en cola).');
+      } else {
+        await crearDevolucionLaModerna(input);
+        setToast('Devolución registrada (en cola).');
+      }
       setRProd('');
       setRCantidad('');
     } catch (e) {
@@ -132,8 +141,9 @@ export function RegistrosNegocioPage() {
     }
   };
 
-  const recepcionValida = !!rProd && (parseFloat(rCantidad) || 0) > 0;
+  const movimientoValido = !!rProd && (parseFloat(rCantidad) || 0) > 0;
   const backValido = !!bCategoriaFinal && (parseFloat(bMonto) || 0) > 0;
+  const listaRecientes = tipoMovimiento === 'recibido' ? recepciones : devolucionesLaModerna;
 
   return (
     <IonPage>
@@ -200,6 +210,24 @@ export function RegistrosNegocioPage() {
                   </IonItem>
                 </Card>
                 <Card padding="4px 14px">
+                  <div style={{ padding: '10px 14px 0' }}>
+                    <IonSegment
+                      value={tipoMovimiento}
+                      onIonChange={(e) => setTipoMovimiento((e.detail.value as 'recibido' | 'devuelto') ?? 'recibido')}
+                    >
+                      <IonSegmentButton value="recibido"><IonLabel>Recibido</IonLabel></IonSegmentButton>
+                      <IonSegmentButton value="devuelto"><IonLabel>Devuelto</IonLabel></IonSegmentButton>
+                    </IonSegment>
+                  </div>
+                  {tipoMovimiento === 'devuelto' && (
+                    <div style={{ padding: '8px 14px 0' }}>
+                      <IonText color="medium">
+                        <p style={{ fontSize: 'var(--font-size-xs)', margin: 0 }}>
+                          Bidones sellados sin abrir que regresan a La Moderna al cierre de semana (M-1).
+                        </p>
+                      </IonText>
+                    </div>
+                  )}
                   <IonItem lines="full" style={{ '--background': 'transparent', '--padding-start': '0' }}>
                     <IonLabel position="stacked">Producto base *</IonLabel>
                     <IonSelect value={rProd} placeholder="Selecciona un producto" onIonChange={(e) => setRProd(e.detail.value)}>
@@ -211,7 +239,9 @@ export function RegistrosNegocioPage() {
                     </IonSelect>
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-                    <IonLabel position="stacked">Cantidad recibida (unidad de compra) *</IonLabel>
+                    <IonLabel position="stacked">
+                      Cantidad {tipoMovimiento === 'recibido' ? 'recibida' : 'devuelta'} (unidad de compra) *
+                    </IonLabel>
                     <IonInput type="number" inputmode="decimal" value={rCantidad} placeholder="0" onIonInput={(e) => setRCantidad(e.detail.value ?? '')} />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
@@ -219,19 +249,19 @@ export function RegistrosNegocioPage() {
                     <IonInput type="date" value={rFecha} onIonInput={(e) => setRFecha(e.detail.value ?? '')} />
                   </IonItem>
                   <div style={{ padding: '12px 0' }}>
-                    <PrimaryCTA disabled={!recepcionValida} onClick={guardarRecepcion}>
-                      Registrar recepción
+                    <PrimaryCTA disabled={!movimientoValido} onClick={guardarMovimiento}>
+                      {tipoMovimiento === 'recibido' ? 'Registrar recepción' : 'Registrar devolución'}
                     </PrimaryCTA>
                   </div>
                 </Card>
               </div>
 
               <div>
-                <span style={sectionLabel}>Recepciones recientes</span>
-                {recepciones.length === 0 && (
-                  <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay recepciones registradas.</p></IonText>
+                <span style={sectionLabel}>{tipoMovimiento === 'recibido' ? 'Recepciones recientes' : 'Devoluciones recientes'}</span>
+                {listaRecientes.length === 0 && (
+                  <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay {tipoMovimiento === 'recibido' ? 'recepciones' : 'devoluciones'} registradas.</p></IonText>
                 )}
-                {recepciones.map((m) => (
+                {listaRecientes.map((m) => (
                   <div key={m.id} style={lineRow}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{nombreProducto(m.producto_base_id)}</div>
@@ -239,7 +269,7 @@ export function RegistrosNegocioPage() {
                         {m.fecha}
                       </div>
                     </div>
-                    <Chip tone="primarySoft">recibido {m.cantidad}</Chip>
+                    <Chip tone="primarySoft">{tipoMovimiento === 'recibido' ? 'recibido' : 'devuelto'} {m.cantidad}</Chip>
                   </div>
                 ))}
               </div>
