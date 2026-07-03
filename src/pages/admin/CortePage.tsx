@@ -103,13 +103,6 @@ export function CortePage({ onClose }: CortePageProps = {}) {
   const efGap = snapshot ? (parseFloat(entregaEf) || 0) - snapshot.bolsas.efectivo.neto : 0;
   const trGap = snapshot ? (parseFloat(entregaTr) || 0) - snapshot.bolsas.transferencia.neto : 0;
 
-  const hayDatos =
-    snapshot != null &&
-    (snapshot.ventasTotal > 0 ||
-      snapshot.cobradoTotal > 0 ||
-      snapshot.moderna.total !== 0 ||
-      snapshot.gastosBackoffice > 0);
-
   const doRegistrar = async () => {
     try {
       await registrar({ efectivo: parseFloat(entregaEf) || 0, transferencias: parseFloat(entregaTr) || 0 });
@@ -185,13 +178,7 @@ export function CortePage({ onClose }: CortePageProps = {}) {
             </IonText>
           )}
 
-          {!loading && !error && vendedorId && !hayDatos && (
-            <IonText color="medium">
-              <p style={{ fontSize: 'var(--font-size-sm)' }}>Sin movimientos en este periodo para el vendedor.</p>
-            </IonText>
-          )}
-
-          {!loading && !error && snapshot && hayDatos && (
+          {!loading && !error && snapshot && (
             <>
               {/* ── Alertas de descuadre (T10) ── */}
               {snapshot.alertas.length > 0 && (
