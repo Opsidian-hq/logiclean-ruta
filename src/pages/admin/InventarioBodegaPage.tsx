@@ -6,9 +6,10 @@
  * (producto ya envasado, `inventario_bodega_presentacion`) y "Materia prima"
  * (bidones sellados / granel abierto, `inventario_bodega_base`). De solo
  * lectura — ambos contadores se materializan del lado servidor por trigger
- * (ADR-0007); el cliente nunca empuja un valor absoluto de bodega. Las 3
- * acciones que sí afectan bodega (envasado, carga/devolución y recepción de
- * La Moderna) cuelgan del FAB, visible en cualquier pestaña.
+ * (ADR-0007); el cliente nunca empuja un valor absoluto de bodega. Las
+ * acciones que sí afectan bodega cuelgan del FAB, pero varían según la
+ * pestaña activa: Envasado solo en Materia prima, Carga y devolución solo
+ * en Vendible; Recepción de La Moderna aparece en ambas.
  * Ruta: /admin/inventario
  */
 
@@ -470,12 +471,16 @@ export function InventarioBodegaPage() {
           <IonIcon icon={addOutline} />
         </IonFabButton>
         <IonFabList side="top">
-          <IonFabButton aria-label="Envasado" onClick={() => history.push('/admin/envasado')}>
-            <IonIcon icon={flaskOutline} />
-          </IonFabButton>
-          <IonFabButton aria-label="Carga y devolución" onClick={() => history.push('/admin/carga-devolucion')}>
-            <IonIcon icon={swapVerticalOutline} />
-          </IonFabButton>
+          {segmento === 'materia_prima' && (
+            <IonFabButton aria-label="Envasado" onClick={() => history.push('/admin/envasado')}>
+              <IonIcon icon={flaskOutline} />
+            </IonFabButton>
+          )}
+          {segmento === 'vendible' && (
+            <IonFabButton aria-label="Carga y devolución" onClick={() => history.push('/admin/carga-devolucion')}>
+              <IonIcon icon={swapVerticalOutline} />
+            </IonFabButton>
+          )}
           <IonFabButton aria-label="Recepción La Moderna" onClick={() => history.push('/admin/recepcion-moderna')}>
             <IonIcon icon={archiveOutline} />
           </IonFabButton>
