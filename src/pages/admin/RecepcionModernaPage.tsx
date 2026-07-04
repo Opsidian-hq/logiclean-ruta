@@ -93,7 +93,12 @@ export function RecepcionModernaPage() {
       };
       if (tipoMovimiento === 'recibido') {
         await crearRecepcion(input);
-        setToast('Recepción registrada (en cola).');
+        const producto = productos.find((p) => p.id === rProd);
+        setToast(
+          producto?.unidad_compra === 'bidon'
+            ? 'Recepción registrada (en cola). Regístrala en Envasado para que aparezca como presentación vendible.'
+            : 'Recepción registrada (en cola).'
+        );
       } else {
         await crearDevolucionLaModerna(input);
         setToast('Devolución registrada (en cola).');
@@ -198,7 +203,7 @@ export function RecepcionModernaPage() {
         </div>
       </IonContent>
 
-      <IonToast isOpen={!!toast} message={toast ?? ''} duration={2500} onDidDismiss={() => setToast(null)} color="dark" />
+      <IonToast isOpen={!!toast} message={toast ?? ''} duration={3500} onDidDismiss={() => setToast(null)} color="dark" />
     </IonPage>
   );
 }
