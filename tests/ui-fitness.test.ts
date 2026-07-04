@@ -69,9 +69,10 @@ describe('[D-007] contraste de tabs sobre navy', () => {
     expect(parentBlock![1]).not.toMatch(/--color-checked/);
   });
 
-  it('UIFIT-005: ambos segmentos sobre navy usan la clase compartida .segment-on-navy', () => {
+  it('UIFIT-005: todos los segmentos sobre navy usan la clase compartida .segment-on-navy', () => {
     expect(src('pages/visitas/VisitasPage.tsx')).toMatch(/className="segment-on-navy"/);
     expect(src('pages/CargaDevolucionPage.tsx')).toMatch(/className="segment-on-navy"/);
+    expect(src('pages/admin/InventarioBodegaPage.tsx')).toMatch(/className="segment-on-navy"/);
   });
 });
 

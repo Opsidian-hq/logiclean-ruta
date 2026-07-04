@@ -1,11 +1,14 @@
 /**
  * Logiclean Ruta — InventarioBodegaPage (gerente)
  *
- * Resumen del inventario de bodega: mismo diseño que InventarioPage del
- * vendedor, pero de solo lectura (el contador `inventario_bodega_presentacion`
- * se materializa del lado servidor por trigger, ADR-0007 — el cliente nunca
- * empuja un valor absoluto de bodega). Las 3 acciones que sí lo afectan
- * (envasado, carga/devolución y recepción de La Moderna) cuelgan del FAB.
+ * Resumen del inventario de bodega, en dos pestañas (mismo patrón de
+ * `.segment-on-navy` que VisitasPage/CargaDevolucionPage): "Vendible"
+ * (producto ya envasado, `inventario_bodega_presentacion`) y "Materia prima"
+ * (bidones sellados / granel abierto, `inventario_bodega_base`). De solo
+ * lectura — ambos contadores se materializan del lado servidor por trigger
+ * (ADR-0007); el cliente nunca empuja un valor absoluto de bodega. Las 3
+ * acciones que sí afectan bodega (envasado, carga/devolución y recepción de
+ * La Moderna) cuelgan del FAB, visible en cualquier pestaña.
  * Ruta: /admin/inventario
  */
 
@@ -16,6 +19,9 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
   IonSpinner,
   IonText,
   IonRefresher,
@@ -26,7 +32,7 @@ import {
   IonIcon,
 } from '@ionic/react';
 import { addOutline, flaskOutline, swapVerticalOutline, archiveOutline } from 'ionicons/icons';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useInventarioBodega } from '../../hooks/useInventarioBodega';
@@ -50,6 +56,7 @@ const sectionLabelStyle: CSSProperties = {
 export function InventarioBodegaPage() {
   const history = useHistory();
   const { rows, bodegaBaseRows, loading, error, refresh } = useInventarioBodega();
+  const [segmento, setSegmento] = useState<'vendible' | 'materia_prima'>('vendible');
 
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
@@ -59,6 +66,9 @@ export function InventarioBodegaPage() {
   const valorTotal = redondear(
     rows.reduce((acc, r) => acc + r.cantidad * r.presentacion.precio_mayoreo, 0)
   );
+
+  const totalBidones = bodegaBaseRows.reduce((acc, r) => acc + r.bidonesDisponibles, 0);
+  const totalLitrosGranel = bodegaBaseRows.reduce((acc, r) => acc + r.litrosGranelEstimado, 0);
 
   const cantidadBadge = (n: number): { background: string; color: string } => {
     if (n >= 5) return { background: '#12B76A', color: '#fff' };
@@ -75,6 +85,20 @@ export function InventarioBodegaPage() {
             <SyncStatusBadge />
             <CuentaButton />
           </IonButtons>
+        </IonToolbar>
+        <IonToolbar>
+          <IonSegment
+            className="segment-on-navy"
+            value={segmento}
+            onIonChange={(e) => setSegmento((e.detail.value as 'vendible' | 'materia_prima') ?? 'vendible')}
+          >
+            <IonSegmentButton value="vendible">
+              <IonLabel>Vendible</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="materia_prima">
+              <IonLabel>Materia prima</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
         </IonToolbar>
       </IonHeader>
 
@@ -97,8 +121,7 @@ export function InventarioBodegaPage() {
           </div>
         )}
 
-        {/* Tarjeta resumen — siempre visible cuando hay datos */}
-        {!loading && !error && (
+        {!loading && !error && segmento === 'vendible' && (
           <>
             <span style={sectionLabelStyle}>En bodega</span>
             <div style={{ padding: '0 var(--space-md)' }}>
@@ -147,117 +170,169 @@ export function InventarioBodegaPage() {
                 </div>
               </Card>
             </div>
-          </>
-        )}
 
-        {/* Materia prima (bidones sellados / granel abierto) aún sin envasar */}
-        {!loading && !error && bodegaBaseRows.length > 0 && (
-          <>
-            <span style={sectionLabelStyle}>Materia prima sin envasar</span>
-            <div style={{ padding: '0 var(--space-md)' }}>
-              {bodegaBaseRows.map((row) => (
-                <div
-                  key={row.productoBase.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '11px',
-                    padding: '11px 0',
-                    minHeight: '48px',
-                    borderBottom: '1px solid var(--color-divider)',
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
-                      {row.productoBase.nombre}
-                    </div>
-                  </div>
+            {rows.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+                <IonText color="medium">
+                  <p>Sin presentaciones activas en el catálogo.</p>
+                </IonText>
+              </div>
+            )}
 
+            {rows.length > 0 && (
+              <div style={{ padding: '0 var(--space-md) var(--space-lg)', marginTop: 'var(--space-md)' }}>
+                {rows.map((row) => (
                   <div
+                    key={row.presentacion.id}
                     style={{
-                      background: 'var(--color-surface-muted)',
-                      color: 'var(--color-navy)',
-                      fontSize: '13px',
-                      fontWeight: 800,
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                      textAlign: 'right',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '11px',
+                      padding: '11px 0',
+                      minHeight: '48px',
+                      borderBottom: '1px solid var(--color-divider)',
                     }}
                   >
-                    {row.bidonesDisponibles} bidones · {row.litrosGranelEstimado} L granel
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                        {row.presentacion.nombre}
+                        <span
+                          style={{
+                            background: 'var(--color-surface-muted)',
+                            color: '#5B6678',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '2px 6px',
+                            borderRadius: '5px',
+                            marginLeft: '6px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {row.presentacion.unidad_venta}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                        {row.productoNombre}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        ...cantidadBadge(row.cantidad),
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {row.cantidad} uds
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
-        {/* Lista de presentaciones en bodega */}
-        {!loading && !error && rows.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
-            <IonText color="medium">
-              <p>Sin presentaciones activas en el catálogo.</p>
-            </IonText>
-          </div>
-        )}
-
-        {!loading && !error && rows.length > 0 && (
+        {!loading && !error && segmento === 'materia_prima' && (
           <>
-            <span style={sectionLabelStyle}>Presentaciones envasadas</span>
-            <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
-              {rows.map((row) => (
-              <div
-                key={row.presentacion.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '11px',
-                  padding: '11px 0',
-                  minHeight: '48px',
-                  borderBottom: '1px solid var(--color-divider)',
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
-                    {row.presentacion.nombre}
-                    <span
-                      style={{
-                        background: 'var(--color-surface-muted)',
-                        color: '#5B6678',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        padding: '2px 6px',
-                        borderRadius: '5px',
-                        marginLeft: '6px',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.presentacion.unidad_venta}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
-                    {row.productoNombre}
-                  </div>
+            <span style={sectionLabelStyle}>Sin envasar</span>
+            <div style={{ padding: '0 var(--space-md)' }}>
+              <Card padding="13px 14px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                    Productos
+                  </span>
+                  <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    {bodegaBaseRows.length}
+                  </span>
                 </div>
-
                 <div
                   style={{
-                    ...cantidadBadge(row.cantidad),
-                    fontSize: '13px',
-                    fontWeight: 800,
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--color-divider)',
                   }}
                 >
-                  {row.cantidad} uds
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                    Bidones disponibles
+                  </span>
+                  <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    {totalBidones}
+                  </span>
                 </div>
-              </div>
-              ))}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--color-divider)',
+                  }}
+                >
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    Litros a granel
+                  </span>
+                  <span className="numeric" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                    {totalLitrosGranel}
+                  </span>
+                </div>
+              </Card>
             </div>
+
+            {bodegaBaseRows.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+                <IonText color="medium">
+                  <p>Sin materia prima pendiente de envasar.</p>
+                </IonText>
+              </div>
+            )}
+
+            {bodegaBaseRows.length > 0 && (
+              <div style={{ padding: '0 var(--space-md) var(--space-lg)', marginTop: 'var(--space-md)' }}>
+                {bodegaBaseRows.map((row) => (
+                  <div
+                    key={row.productoBase.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '11px',
+                      padding: '11px 0',
+                      minHeight: '48px',
+                      borderBottom: '1px solid var(--color-divider)',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                        {row.productoBase.nombre}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'var(--color-surface-muted)',
+                        color: 'var(--color-navy)',
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {row.bidonesDisponibles} bidones · {row.litrosGranelEstimado} L granel
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
