@@ -100,6 +100,7 @@ export function EnvasadoPage() {
 
   const [productoId, setProductoId] = useState('');
   const [origen, setOrigen] = useState<'bidon_nuevo' | 'granel'>('bidon_nuevo');
+  const [bidonesAbiertos, setBidonesAbiertos] = useState('1');
   const [residuo, setResiduo] = useState('');
   const [consumoGranel, setConsumoGranel] = useState('');
   const [fecha, setFecha] = useState(hoy());
@@ -117,7 +118,9 @@ export function EnvasadoPage() {
 
   const lineasValidas = lineas.filter((l) => l.presentacionId && (parseFloat(l.cantidad) || 0) > 0);
   const campoOrigenValido =
-    origen === 'bidon_nuevo' ? residuo !== '' && (parseFloat(residuo) || 0) >= 0 : (parseFloat(consumoGranel) || 0) > 0;
+    origen === 'bidon_nuevo'
+      ? residuo !== '' && (parseFloat(residuo) || 0) >= 0 && (parseInt(bidonesAbiertos, 10) || 0) >= 1
+      : (parseFloat(consumoGranel) || 0) > 0;
   const envasadoValido = !!productoId && campoOrigenValido && lineasValidas.length > 0;
 
   const guardarEnvasado = async () => {
@@ -125,6 +128,7 @@ export function EnvasadoPage() {
       await crearEnvasado({
         productoBaseId: productoId,
         origen,
+        bidonesAbiertos: origen === 'bidon_nuevo' ? parseInt(bidonesAbiertos, 10) || 1 : undefined,
         litrosResiduoEstimado: origen === 'bidon_nuevo' ? parseFloat(residuo) || 0 : undefined,
         litrosConsumidosGranel: origen === 'granel' ? parseFloat(consumoGranel) || 0 : undefined,
         fecha,
@@ -135,6 +139,7 @@ export function EnvasadoPage() {
       });
       setToast('Envasado registrado (en cola).');
       setProductoId('');
+      setBidonesAbiertos('1');
       setResiduo('');
       setConsumoGranel('');
       setLineas([nuevaLinea()]);
@@ -196,10 +201,16 @@ export function EnvasadoPage() {
               </IonSegment>
 
               {origen === 'bidon_nuevo' ? (
-                <IonItem lines="full" style={itemStyle}>
-                  <IonLabel position="stacked">Residuo estimado al terminar (L) *</IonLabel>
-                  <IonInput type="number" inputmode="decimal" value={residuo} placeholder="0" onIonInput={(e) => setResiduo(e.detail.value ?? '')} />
-                </IonItem>
+                <>
+                  <IonItem lines="full" style={itemStyle}>
+                    <IonLabel position="stacked">¿Cuántos bidones nuevos se abrieron? *</IonLabel>
+                    <IonInput type="number" inputmode="numeric" min={1} value={bidonesAbiertos} placeholder="1" onIonInput={(e) => setBidonesAbiertos(e.detail.value ?? '')} />
+                  </IonItem>
+                  <IonItem lines="full" style={itemStyle}>
+                    <IonLabel position="stacked">Residuo estimado al terminar (L) *</IonLabel>
+                    <IonInput type="number" inputmode="decimal" value={residuo} placeholder="0" onIonInput={(e) => setResiduo(e.detail.value ?? '')} />
+                  </IonItem>
+                </>
               ) : (
                 <IonItem lines="full" style={itemStyle}>
                   <IonLabel position="stacked">Litros consumidos del granel *</IonLabel>
@@ -276,7 +287,10 @@ export function EnvasadoPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{nombreProducto(e.producto_base_id)}</div>
                     <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
-                      {e.fecha} · {e.origen === 'bidon_nuevo' ? `residuo ${e.litros_residuo_estimado} L` : `granel ${e.litros_consumidos_granel} L`}
+                      {e.fecha} ·{' '}
+                      {e.origen === 'bidon_nuevo'
+                        ? `${e.bidones_abiertos > 1 ? `${e.bidones_abiertos} bidones abiertos · ` : ''}residuo ${e.litros_residuo_estimado} L`
+                        : `granel ${e.litros_consumidos_granel} L`}
                     </div>
                     {resumenLineas && (
                       <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{resumenLineas}</div>

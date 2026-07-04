@@ -11,6 +11,9 @@
  * ENV-006: bidon_nuevo exige residuo >= 0
  * ENV-007: granel exige consumo > 0
  * ENV-008: exige producto base y responsable
+ * ENV-009: bidon_nuevo con bidonesAbiertos > 1 registra el lote completo en un
+ *   solo envasado (varios bidones "tal cual", sin fraccionar)
+ * ENV-010: bidon_nuevo exige bidonesAbiertos >= 1
  */
 
 import 'fake-indexeddb/auto';
@@ -61,6 +64,41 @@ describe('registrarEnvasado', () => {
     expect(cola.map((c) => c.table_name).sort()).toEqual(
       ['envasado', 'envasado_linea', 'envasado_linea'].sort()
     );
+  });
+
+  it('ENV-002b: bidon_nuevo sin bidonesAbiertos explícito por defecto abre 1', async () => {
+    const { envasado } = await registrarEnvasado({
+      ...base,
+      origen: 'bidon_nuevo',
+      litrosResiduoEstimado: 3.5,
+      lineas: [{ presentacionId: 'pres-1L', cantidad: 10 }],
+    });
+    expect(envasado.bidones_abiertos).toBe(1);
+  });
+
+  it('ENV-009: bidon_nuevo con bidonesAbiertos > 1 registra el lote completo (vender tal cual, sin fraccionar)', async () => {
+    const { envasado, lineas } = await registrarEnvasado({
+      ...base,
+      origen: 'bidon_nuevo',
+      bidonesAbiertos: 5,
+      litrosResiduoEstimado: 0,
+      lineas: [{ presentacionId: 'pres-20L', cantidad: 5 }],
+    });
+    expect(envasado.bidones_abiertos).toBe(5);
+    expect(envasado.litros_residuo_estimado).toBe(0);
+    expect(lineas[0].cantidad).toBe(5);
+  });
+
+  it('ENV-010: bidon_nuevo exige bidonesAbiertos >= 1', async () => {
+    await expect(
+      registrarEnvasado({
+        ...base,
+        origen: 'bidon_nuevo',
+        bidonesAbiertos: 0,
+        litrosResiduoEstimado: 1,
+        lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }],
+      })
+    ).rejects.toThrow();
   });
 
   it('ENV-002: bidon_nuevo abre exactamente 1 bidón y usa el residuo capturado', async () => {

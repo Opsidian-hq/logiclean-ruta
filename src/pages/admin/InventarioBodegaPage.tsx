@@ -49,7 +49,7 @@ const sectionLabelStyle: CSSProperties = {
 
 export function InventarioBodegaPage() {
   const history = useHistory();
-  const { rows, loading, error, refresh } = useInventarioBodega();
+  const { rows, bodegaBaseRows, loading, error, refresh } = useInventarioBodega();
 
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
@@ -150,6 +150,50 @@ export function InventarioBodegaPage() {
           </>
         )}
 
+        {/* Materia prima (bidones sellados / granel abierto) aún sin envasar */}
+        {!loading && !error && bodegaBaseRows.length > 0 && (
+          <>
+            <span style={sectionLabelStyle}>Materia prima sin envasar</span>
+            <div style={{ padding: '0 var(--space-md)' }}>
+              {bodegaBaseRows.map((row) => (
+                <div
+                  key={row.productoBase.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '11px',
+                    padding: '11px 0',
+                    minHeight: '48px',
+                    borderBottom: '1px solid var(--color-divider)',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                      {row.productoBase.nombre}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: 'var(--color-surface-muted)',
+                      color: 'var(--color-navy)',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {row.bidonesDisponibles} bidones · {row.litrosGranelEstimado} L granel
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {/* Lista de presentaciones en bodega */}
         {!loading && !error && rows.length === 0 && (
           <div style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
@@ -160,8 +204,10 @@ export function InventarioBodegaPage() {
         )}
 
         {!loading && !error && rows.length > 0 && (
-          <div style={{ padding: '0 var(--space-md) var(--space-lg)', marginTop: 'var(--space-md)' }}>
-            {rows.map((row) => (
+          <>
+            <span style={sectionLabelStyle}>Presentaciones envasadas</span>
+            <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
+              {rows.map((row) => (
               <div
                 key={row.presentacion.id}
                 style={{
@@ -210,8 +256,9 @@ export function InventarioBodegaPage() {
                   {row.cantidad} uds
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
 
         <div style={{ height: '96px' }} />

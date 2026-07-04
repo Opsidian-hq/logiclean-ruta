@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
-import type { Presentacion } from '../db/schema';
+import type { Presentacion, ProductoBase } from '../db/schema';
 
 // ── Tipos ─────────────────────────────────────────────────────
 
@@ -20,8 +20,16 @@ export interface InventarioBodegaRow {
   cantidad: number;
 }
 
+export interface InventarioBodegaBaseRow {
+  productoBase: ProductoBase;
+  bidonesDisponibles: number;
+  litrosGranelEstimado: number;
+}
+
 export interface UseInventarioBodegaReturn {
   rows: InventarioBodegaRow[];
+  /** Materia prima (bidones sellados / granel abierto) aún sin envasar. */
+  bodegaBaseRows: InventarioBodegaBaseRow[];
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -31,15 +39,21 @@ export interface UseInventarioBodegaReturn {
 
 export function useInventarioBodega(): UseInventarioBodegaReturn {
   const [rows, setRows] = useState<InventarioBodegaRow[]>([]);
+  const [bodegaBaseRows, setBodegaBaseRows] = useState<InventarioBodegaBaseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadFromLocal = useCallback(async () => {
     try {
-      const [presentaciones, productos, inventario] = await Promise.all([
+      const [presentaciones, productos, inventario, productosBidon, inventarioBase] = await Promise.all([
         db.presentacion.where('activo').equals(1).toArray(),
         db.producto_base.toArray(),
         db.inventario_bodega_presentacion.toArray(),
+        db.producto_base
+          .where('activo').equals(1)
+          .filter((p) => p.unidad_compra === 'bidon')
+          .toArray(),
+        db.inventario_bodega_base.toArray(),
       ]);
 
       const nombrePorProducto = new Map(productos.map((p) => [p.id, p.nombre]));
@@ -53,7 +67,18 @@ export function useInventarioBodega(): UseInventarioBodegaReturn {
         cantidad: cantidadPorPresentacion.get(p.id) ?? 0,
       }));
 
+      const basePorProducto = new Map(inventarioBase.map((i) => [i.producto_base_id, i]));
+      const mergedBase: InventarioBodegaBaseRow[] = productosBidon.map((productoBase) => {
+        const base = basePorProducto.get(productoBase.id);
+        return {
+          productoBase,
+          bidonesDisponibles: base?.bidones_disponibles ?? 0,
+          litrosGranelEstimado: base?.litros_granel_estimado ?? 0,
+        };
+      });
+
       setRows(merged);
+      setBodegaBaseRows(mergedBase);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -72,5 +97,5 @@ export function useInventarioBodega(): UseInventarioBodegaReturn {
     loadFromLocal();
   }, [loadFromLocal]);
 
-  return { rows, loading, error, refresh };
+  return { rows, bodegaBaseRows, loading, error, refresh };
 }

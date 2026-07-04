@@ -30,6 +30,8 @@ export interface EnvasadoLineaInput {
 export interface RegistrarEnvasadoInput {
   productoBaseId: string;
   origen: 'bidon_nuevo' | 'granel';
+  /** Cuántos bidones nuevos se abrieron en este envasado (default 1, si origen=bidon_nuevo). */
+  bidonesAbiertos?: number;
   /** Litros que quedan en el bidón al terminar (obligatorio si origen=bidon_nuevo). */
   litrosResiduoEstimado?: number;
   /** Litros tomados del granel (obligatorio si origen=granel). */
@@ -52,6 +54,7 @@ export async function registrarEnvasado(
   const {
     productoBaseId,
     origen,
+    bidonesAbiertos = 1,
     litrosResiduoEstimado,
     litrosConsumidosGranel,
     lineas: lineasInput,
@@ -71,6 +74,9 @@ export async function registrarEnvasado(
   if (origen === 'bidon_nuevo' && !(litrosResiduoEstimado! >= 0)) {
     throw new Error('Captura el residuo estimado (0 o más litros).');
   }
+  if (origen === 'bidon_nuevo' && !(bidonesAbiertos >= 1)) {
+    throw new Error('Captura cuántos bidones se abrieron (1 o más).');
+  }
   if (origen === 'granel' && !(litrosConsumidosGranel! > 0)) {
     throw new Error('Captura los litros consumidos del granel (mayor que 0).');
   }
@@ -81,7 +87,7 @@ export async function registrarEnvasado(
     producto_base_id: productoBaseId,
     fecha,
     origen,
-    bidones_abiertos: origen === 'bidon_nuevo' ? 1 : 0,
+    bidones_abiertos: origen === 'bidon_nuevo' ? bidonesAbiertos : 0,
     litros_consumidos_granel: origen === 'granel' ? litrosConsumidosGranel! : 0,
     litros_residuo_estimado: origen === 'bidon_nuevo' ? litrosResiduoEstimado! : 0,
     responsable_id: responsableId,
