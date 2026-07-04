@@ -82,7 +82,7 @@ const nuevaLinea = (): LineaForm => ({
 export function CargaDevolucionPage() {
   const { user, rol } = useAuthContext();
   const esGerente = rol === 'gerente';
-  const backUrl = esGerente ? '/admin/negocio' : '/inventario';
+  const backUrl = esGerente ? '/admin/inventario' : '/inventario';
 
   const {
     vendedores,

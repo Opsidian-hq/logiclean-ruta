@@ -71,7 +71,7 @@ describe('[D-007] contraste de tabs sobre navy', () => {
 
   it('UIFIT-005: ambos segmentos sobre navy usan la clase compartida .segment-on-navy', () => {
     expect(src('pages/visitas/VisitasPage.tsx')).toMatch(/className="segment-on-navy"/);
-    expect(src('pages/admin/RegistrosNegocioPage.tsx')).toMatch(/className="segment-on-navy"/);
+    expect(src('pages/CargaDevolucionPage.tsx')).toMatch(/className="segment-on-navy"/);
   });
 });
 

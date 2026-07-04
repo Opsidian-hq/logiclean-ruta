@@ -84,6 +84,8 @@ const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'Clien
 const DashboardPage = lazyPage(() => import('./pages/admin/DashboardPage'), 'DashboardPage');
 const CortePage = lazyPage(() => import('./pages/admin/CortePage'), 'CortePage');
 const RegistrosNegocioPage = lazyPage(() => import('./pages/admin/RegistrosNegocioPage'), 'RegistrosNegocioPage');
+const InventarioBodegaPage = lazyPage(() => import('./pages/admin/InventarioBodegaPage'), 'InventarioBodegaPage');
+const RecepcionModernaPage = lazyPage(() => import('./pages/admin/RecepcionModernaPage'), 'RecepcionModernaPage');
 const EnvasadoPage = lazyPage(() => import('./pages/admin/EnvasadoPage'), 'EnvasadoPage');
 const CargaDevolucionPage = lazyPage(() => import('./pages/CargaDevolucionPage'), 'CargaDevolucionPage');
 const MisClientesPage = lazyPage(() => import('./pages/clientes/MisClientesPage'), 'MisClientesPage');
@@ -262,6 +264,8 @@ function AdminTabs() {
           <Route exact path="/admin/clientes/:clienteId" component={ClienteDetallePage} />
           <Route exact path="/admin/corte" component={CortePage} />
           <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
+          <Route exact path="/admin/inventario" component={InventarioBodegaPage} />
+          <Route exact path="/admin/recepcion-moderna" component={RecepcionModernaPage} />
           <Route exact path="/admin/envasado" component={EnvasadoPage} />
           <Route exact path="/admin/carga-devolucion" component={CargaDevolucionPage} />
         </IonRouterOutlet>
@@ -274,6 +278,10 @@ function AdminTabs() {
           <IonTabButton tab="negocio" href="/admin/negocio">
             <IonIcon icon={businessOutline} style={{ color: 'var(--color-on-dark)' }} />
             <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Negocio</span>
+          </IonTabButton>
+          <IonTabButton tab="inventario" href="/admin/inventario">
+            <IonIcon icon={cubeOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inventario</span>
           </IonTabButton>
           <IonTabButton tab="more">
             <IonMenuToggle menu="admin-menu" autoHide={false}>
