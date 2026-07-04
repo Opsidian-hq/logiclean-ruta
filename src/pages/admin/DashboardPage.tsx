@@ -37,6 +37,7 @@ import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { CortePage } from './CortePage';
+import { ResumenVendedorPage } from './ResumenVendedorPage';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -88,6 +89,7 @@ export function DashboardPage() {
   );
 
   const [corteOpen, setCorteOpen] = useState(false);
+  const [resumenVendedorId, setResumenVendedorId] = useState<string | null>(null);
 
   return (
     <IonPage>
@@ -161,10 +163,15 @@ export function DashboardPage() {
                 {dashboard.porVendedor.map((v, idx) => (
                   <div
                     key={v.vendedorId}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setResumenVendedorId(v.vendedorId)}
+                    onKeyDown={(ev) => ev.key === 'Enter' && setResumenVendedorId(v.vendedorId)}
                     style={{
                       paddingTop: idx ? '12px' : 0,
                       marginTop: idx ? '12px' : 0,
                       borderTop: idx ? '1px solid var(--color-divider)' : 'none',
+                      cursor: 'pointer',
                     }}
                   >
                     <div style={rowBetween}>
@@ -250,6 +257,12 @@ export function DashboardPage() {
 
       <IonModal isOpen={corteOpen} onDidDismiss={() => setCorteOpen(false)}>
         <CortePage onClose={() => setCorteOpen(false)} />
+      </IonModal>
+
+      <IonModal isOpen={!!resumenVendedorId} onDidDismiss={() => setResumenVendedorId(null)}>
+        {resumenVendedorId && (
+          <ResumenVendedorPage vendedorId={resumenVendedorId} onClose={() => setResumenVendedorId(null)} />
+        )}
       </IonModal>
     </IonPage>
   );
