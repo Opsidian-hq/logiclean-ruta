@@ -26,7 +26,7 @@ import {
   IonIcon,
   IonModal,
 } from '@ionic/react';
-import { receiptOutline } from 'ionicons/icons';
+import { receiptOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
@@ -176,7 +176,10 @@ export function DashboardPage() {
                   >
                     <div style={rowBetween}>
                       <span style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{v.nombre}</span>
-                      {v.descuadre && <Chip tone="error">descuadre</Chip>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {v.descuadre && <Chip tone="error">descuadre</Chip>}
+                        <IonIcon icon={chevronForwardOutline} style={{ color: 'var(--color-text-secondary)', fontSize: '16px' }} />
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: '16px', marginTop: '6px', flexWrap: 'wrap' }}>
                       <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
