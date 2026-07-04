@@ -219,42 +219,71 @@ function VendedorTabs() {
 
 // ── Tabs del panel de administración ─────────────────────────
 
+const ADMIN_MENU_ITEMS = [
+  { path: '/admin/catalogo', icon: gridOutline,   label: 'Catálogo' },
+  { path: '/admin/clientes', icon: peopleOutline, label: 'Clientes' },
+] as const;
+
 function AdminTabs() {
   return (
-    <IonTabs>
-      <IonRouterOutlet>
-        <Route exact path="/admin">
-          <Redirect to="/admin/dashboard" />
-        </Route>
-        <Route exact path="/admin/dashboard" component={DashboardPage} />
-        <Route exact path="/admin/catalogo" component={CatalogoPage} />
-        <Route exact path="/admin/clientes" component={ClientesPage} />
-        <Route exact path="/admin/clientes/:clienteId" component={ClienteDetallePage} />
-        <Route exact path="/admin/corte" component={CortePage} />
-        <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
-        <Route exact path="/admin/envasado" component={EnvasadoPage} />
-        <Route exact path="/admin/carga-devolucion" component={CargaDevolucionPage} />
-      </IonRouterOutlet>
+    <>
+      <IonMenu contentId="admin-content" menuId="admin-menu" side="end">
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Más opciones</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <IonList lines="none">
+            {ADMIN_MENU_ITEMS.map(({ path, icon, label }) => (
+              <IonMenuToggle key={path} menu="admin-menu" autoHide={false}>
+                <IonItem
+                  routerLink={path}
+                  routerDirection="none"
+                  style={{ '--min-height': 'var(--touch-min)' }}
+                >
+                  <IonIcon icon={icon} slot="start" color="primary" />
+                  <IonLabel>{label}</IonLabel>
+                </IonItem>
+              </IonMenuToggle>
+            ))}
+          </IonList>
+        </IonContent>
+      </IonMenu>
 
-      <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
-        <IonTabButton tab="dashboard" href="/admin/dashboard">
-          <IonIcon icon={homeOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inicio</span>
-        </IonTabButton>
-        <IonTabButton tab="catalogo" href="/admin/catalogo">
-          <IonIcon icon={gridOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Catálogo</span>
-        </IonTabButton>
-        <IonTabButton tab="clientes" href="/admin/clientes">
-          <IonIcon icon={peopleOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Clientes</span>
-        </IonTabButton>
-        <IonTabButton tab="negocio" href="/admin/negocio">
-          <IonIcon icon={businessOutline} style={{ color: 'var(--color-on-dark)' }} />
-          <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Negocio</span>
-        </IonTabButton>
-      </IonTabBar>
-    </IonTabs>
+      <IonTabs>
+        <IonRouterOutlet id="admin-content">
+          <Route exact path="/admin">
+            <Redirect to="/admin/dashboard" />
+          </Route>
+          <Route exact path="/admin/dashboard" component={DashboardPage} />
+          <Route exact path="/admin/catalogo" component={CatalogoPage} />
+          <Route exact path="/admin/clientes" component={ClientesPage} />
+          <Route exact path="/admin/clientes/:clienteId" component={ClienteDetallePage} />
+          <Route exact path="/admin/corte" component={CortePage} />
+          <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
+          <Route exact path="/admin/envasado" component={EnvasadoPage} />
+          <Route exact path="/admin/carga-devolucion" component={CargaDevolucionPage} />
+        </IonRouterOutlet>
+
+        <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
+          <IonTabButton tab="dashboard" href="/admin/dashboard">
+            <IonIcon icon={homeOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Inicio</span>
+          </IonTabButton>
+          <IonTabButton tab="negocio" href="/admin/negocio">
+            <IonIcon icon={businessOutline} style={{ color: 'var(--color-on-dark)' }} />
+            <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Negocio</span>
+          </IonTabButton>
+          <IonTabButton tab="more">
+            <IonMenuToggle menu="admin-menu" autoHide={false}>
+              <IonIcon icon={menuOutline} style={{ color: 'var(--color-on-dark)' }} />
+              <span style={{ color: 'var(--color-on-dark)', fontSize: 'var(--font-size-2xs)' }}>Más</span>
+            </IonMenuToggle>
+          </IonTabButton>
+        </IonTabBar>
+      </IonTabs>
+    </>
   );
 }
 
