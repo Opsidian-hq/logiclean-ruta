@@ -6,7 +6,7 @@
  * estimado. Los contadores de bodega se materializan del lado servidor
  * (migración 007) — esta pantalla solo registra el evento.
  *
- * No es un tab del gerente (la barra ya tiene 5); se llega desde "Negocio".
+ * No es un tab del gerente; se llega desde el FAB de "Inventario" (bodega).
  * Ruta: /admin/envasado
  */
 
@@ -148,7 +148,7 @@ export function EnvasadoPage() {
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/admin/negocio" style={{ '--color': 'var(--color-on-dark)' }} />
+            <IonBackButton defaultHref="/admin/inventario" style={{ '--color': 'var(--color-on-dark)' }} />
           </IonButtons>
           <IonTitle>Envasado</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
