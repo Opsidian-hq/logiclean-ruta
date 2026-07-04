@@ -32,7 +32,7 @@ import {
   IonIcon,
 } from '@ionic/react';
 import { addOutline, flaskOutline, swapVerticalOutline, archiveOutline } from 'ionicons/icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useInventarioBodega } from '../../hooks/useInventarioBodega';
@@ -70,7 +70,26 @@ export function InventarioBodegaPage() {
   const totalBidones = bodegaBaseRows.reduce((acc, r) => acc + r.bidonesDisponibles, 0);
   const totalLitrosGranel = bodegaBaseRows.reduce((acc, r) => acc + r.litrosGranelEstimado, 0);
 
+  const rowsDisponibles = useMemo(
+    () => rows.filter((r) => r.cantidad >= 1).sort((a, b) => a.cantidad - b.cantidad),
+    [rows]
+  );
+  const rowsAgotados = useMemo(() => rows.filter((r) => r.cantidad === 0), [rows]);
+
+  const baseDisponibles = useMemo(
+    () =>
+      bodegaBaseRows
+        .filter((r) => r.bidonesDisponibles >= 1)
+        .sort((a, b) => a.bidonesDisponibles - b.bidonesDisponibles),
+    [bodegaBaseRows]
+  );
+  const baseAgotados = useMemo(
+    () => bodegaBaseRows.filter((r) => r.bidonesDisponibles === 0),
+    [bodegaBaseRows]
+  );
+
   const cantidadBadge = (n: number): { background: string; color: string } => {
+    if (n === 0) return { background: 'var(--color-surface-muted)', color: '#5B6678' };
     if (n >= 5) return { background: '#12B76A', color: '#fff' };
     if (n >= 3) return { background: 'var(--color-amber)', color: '#231A05' };
     return { background: 'var(--color-error)', color: '#fff' };
@@ -179,59 +198,120 @@ export function InventarioBodegaPage() {
               </div>
             )}
 
-            {rows.length > 0 && (
-              <div style={{ padding: '0 var(--space-md) var(--space-lg)', marginTop: 'var(--space-md)' }}>
-                {rows.map((row) => (
-                  <div
-                    key={row.presentacion.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '11px',
-                      padding: '11px 0',
-                      minHeight: '48px',
-                      borderBottom: '1px solid var(--color-divider)',
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
-                        {row.presentacion.nombre}
-                        <span
-                          style={{
-                            background: 'var(--color-surface-muted)',
-                            color: '#5B6678',
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 6px',
-                            borderRadius: '5px',
-                            marginLeft: '6px',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {row.presentacion.unidad_venta}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
-                        {row.productoNombre}
-                      </div>
-                    </div>
-
+            {rowsDisponibles.length > 0 && (
+              <>
+                <span style={sectionLabelStyle}>Disponibles</span>
+                <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
+                  {rowsDisponibles.map((row) => (
                     <div
+                      key={row.presentacion.id}
                       style={{
-                        ...cantidadBadge(row.cantidad),
-                        fontSize: '13px',
-                        fontWeight: 800,
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '11px',
+                        padding: '11px 0',
+                        minHeight: '48px',
+                        borderBottom: '1px solid var(--color-divider)',
                       }}
                     >
-                      {row.cantidad} uds
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                          {row.presentacion.nombre}
+                          <span
+                            style={{
+                              background: 'var(--color-surface-muted)',
+                              color: '#5B6678',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              padding: '2px 6px',
+                              borderRadius: '5px',
+                              marginLeft: '6px',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {row.presentacion.unidad_venta}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                          {row.productoNombre}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          ...cantidadBadge(row.cantidad),
+                          fontSize: '13px',
+                          fontWeight: 800,
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {row.cantidad} uds
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {rowsAgotados.length > 0 && (
+              <>
+                <span style={sectionLabelStyle}>Agotados</span>
+                <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
+                  {rowsAgotados.map((row) => (
+                    <div
+                      key={row.presentacion.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '11px',
+                        padding: '11px 0',
+                        minHeight: '48px',
+                        borderBottom: '1px solid var(--color-divider)',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                          {row.presentacion.nombre}
+                          <span
+                            style={{
+                              background: 'var(--color-surface-muted)',
+                              color: '#5B6678',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              padding: '2px 6px',
+                              borderRadius: '5px',
+                              marginLeft: '6px',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {row.presentacion.unidad_venta}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                          {row.productoNombre}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          ...cantidadBadge(row.cantidad),
+                          fontSize: '13px',
+                          fontWeight: 800,
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {row.cantidad} uds
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}
@@ -294,44 +374,90 @@ export function InventarioBodegaPage() {
               </div>
             )}
 
-            {bodegaBaseRows.length > 0 && (
-              <div style={{ padding: '0 var(--space-md) var(--space-lg)', marginTop: 'var(--space-md)' }}>
-                {bodegaBaseRows.map((row) => (
-                  <div
-                    key={row.productoBase.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '11px',
-                      padding: '11px 0',
-                      minHeight: '48px',
-                      borderBottom: '1px solid var(--color-divider)',
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
-                        {row.productoBase.nombre}
-                      </div>
-                    </div>
-
+            {baseDisponibles.length > 0 && (
+              <>
+                <span style={sectionLabelStyle}>Disponibles</span>
+                <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
+                  {baseDisponibles.map((row) => (
                     <div
+                      key={row.productoBase.id}
                       style={{
-                        background: 'var(--color-surface-muted)',
-                        color: 'var(--color-navy)',
-                        fontSize: '13px',
-                        fontWeight: 800,
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                        textAlign: 'right',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '11px',
+                        padding: '11px 0',
+                        minHeight: '48px',
+                        borderBottom: '1px solid var(--color-divider)',
                       }}
                     >
-                      {row.bidonesDisponibles} bidones · {row.litrosGranelEstimado} L granel
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                          {row.productoBase.nombre}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: 'var(--color-surface-muted)',
+                          color: 'var(--color-navy)',
+                          fontSize: '13px',
+                          fontWeight: 800,
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          textAlign: 'right',
+                        }}
+                      >
+                        {row.bidonesDisponibles} bidones · {row.litrosGranelEstimado} L granel
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {baseAgotados.length > 0 && (
+              <>
+                <span style={sectionLabelStyle}>Agotados</span>
+                <div style={{ padding: '0 var(--space-md) var(--space-lg)' }}>
+                  {baseAgotados.map((row) => (
+                    <div
+                      key={row.productoBase.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '11px',
+                        padding: '11px 0',
+                        minHeight: '48px',
+                        borderBottom: '1px solid var(--color-divider)',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                          {row.productoBase.nombre}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: 'var(--color-surface-muted)',
+                          color: 'var(--color-disabled)',
+                          fontSize: '13px',
+                          fontWeight: 800,
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          textAlign: 'right',
+                        }}
+                      >
+                        {row.bidonesDisponibles} bidones · {row.litrosGranelEstimado} L granel
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}
