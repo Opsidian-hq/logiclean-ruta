@@ -9,7 +9,7 @@
 
 import type { CorteSnapshot } from './corte';
 import type { Embudo, Adherencia } from './prospectos';
-import type { MovimientoLaModerna } from '../db/schema';
+import type { MovimientoLaModerna, Envasado, EnvasadoLinea } from '../db/schema';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -39,6 +39,20 @@ export interface ResumenLaModerna {
   movimientos: MovimientoLaModernaVista[];
 }
 
+export interface EnvasadoVista {
+  id: string;
+  productoNombre: string;
+  litrosEnvasados: number;
+  fecha: string;
+  /** "5 × Limpia Vidrios Logiclean 3.75 L" */
+  resumenLineas: string;
+}
+
+export interface ResumenEnvasado {
+  totalLitros: number;
+  envasados: EnvasadoVista[];
+}
+
 export interface DashboardModel {
   // ── Flujo (se reinicia al generar corte) ──
   ventasTotal: number;
@@ -51,6 +65,8 @@ export interface DashboardModel {
   carteraActiva: number;
   // ── La Moderna (flujo, mismo periodo que ventas) ──
   laModerna: ResumenLaModerna;
+  // ── Envasado (flujo, mismo periodo que ventas) ──
+  envasados: ResumenEnvasado;
   // ── Alertas ──
   vencidos: number;
   alertas: string[];
@@ -71,6 +87,8 @@ export interface ConstruirDashboardInput {
   vencidos: number;
   /** Movimientos de La Moderna ya acotados al periodo (desde useDashboard). */
   laModerna: ResumenLaModerna;
+  /** Envasados ya acotados al periodo (desde useDashboard). */
+  envasados: ResumenEnvasado;
 }
 
 /** Resumen combinado (recibido + devuelto) de movimientos ya filtrados por periodo. */
@@ -96,6 +114,37 @@ export function resumenLaModerna(
   );
 
   return { totalRecibido, totalDevuelto, movimientos: vista };
+}
+
+/** Resumen de envasados ya filtrados por periodo. */
+export function resumenEnvasado(
+  envasados: Envasado[],
+  lineas: EnvasadoLinea[],
+  nombreProducto: (id: string) => string,
+  nombrePresentacion: (id: string) => string
+): ResumenEnvasado {
+  const lineasPorEnvasado = new Map<string, EnvasadoLinea[]>();
+  for (const l of lineas) {
+    const arr = lineasPorEnvasado.get(l.envasado_id) ?? [];
+    arr.push(l);
+    lineasPorEnvasado.set(l.envasado_id, arr);
+  }
+
+  const vista: EnvasadoVista[] = envasados
+    .map((e) => ({
+      id: e.id,
+      productoNombre: nombreProducto(e.producto_base_id),
+      litrosEnvasados: e.litros_envasados,
+      fecha: e.fecha,
+      resumenLineas: (lineasPorEnvasado.get(e.id) ?? [])
+        .map((l) => `${l.cantidad} × ${nombrePresentacion(l.presentacion_id)}`)
+        .join(' · '),
+    }))
+    .sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''));
+
+  const totalLitros = round2(envasados.reduce((s, e) => s + e.litros_envasados, 0));
+
+  return { totalLitros, envasados: vista };
 }
 
 export function construirDashboard(input: ConstruirDashboardInput): DashboardModel {
@@ -133,6 +182,7 @@ export function construirDashboard(input: ConstruirDashboardInput): DashboardMod
     adherencia: input.adherencia,
     carteraActiva: input.embudo.convertidos,
     laModerna: input.laModerna,
+    envasados: input.envasados,
     vencidos: input.vencidos,
     alertas,
   };
