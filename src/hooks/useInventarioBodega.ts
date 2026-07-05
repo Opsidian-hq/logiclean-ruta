@@ -24,6 +24,8 @@ export interface InventarioBodegaBaseRow {
   productoBase: ProductoBase;
   bidonesDisponibles: number;
   litrosGranelEstimado: number;
+  /** bidonesDisponibles × litros_por_bidon + litrosGranelEstimado. */
+  litrosDisponibles: number;
 }
 
 export interface UseInventarioBodegaReturn {
@@ -70,10 +72,13 @@ export function useInventarioBodega(): UseInventarioBodegaReturn {
       const basePorProducto = new Map(inventarioBase.map((i) => [i.producto_base_id, i]));
       const mergedBase: InventarioBodegaBaseRow[] = productosBidon.map((productoBase) => {
         const base = basePorProducto.get(productoBase.id);
+        const bidonesDisponibles = base?.bidones_disponibles ?? 0;
+        const litrosGranelEstimado = base?.litros_granel_estimado ?? 0;
         return {
           productoBase,
-          bidonesDisponibles: base?.bidones_disponibles ?? 0,
-          litrosGranelEstimado: base?.litros_granel_estimado ?? 0,
+          bidonesDisponibles,
+          litrosGranelEstimado,
+          litrosDisponibles: bidonesDisponibles * (productoBase.litros_por_bidon ?? 0) + litrosGranelEstimado,
         };
       });
 

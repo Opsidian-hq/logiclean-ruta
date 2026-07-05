@@ -77,15 +77,19 @@ export function InventarioBodegaPage() {
   );
   const rowsAgotados = useMemo(() => rows.filter((r) => r.cantidad === 0), [rows]);
 
+  // Ruido de punto flotante en contadores DECIMAL acumulados por trigger
+  // (mismo criterio que EPSILON_STOCK en useEnvasado.ts / EPSILON_IDENTIDAD en corte.ts).
+  const EPSILON_STOCK = 0.001;
+
   const baseDisponibles = useMemo(
     () =>
       bodegaBaseRows
-        .filter((r) => r.bidonesDisponibles >= 1)
-        .sort((a, b) => a.bidonesDisponibles - b.bidonesDisponibles),
+        .filter((r) => r.litrosDisponibles > EPSILON_STOCK)
+        .sort((a, b) => a.litrosDisponibles - b.litrosDisponibles),
     [bodegaBaseRows]
   );
   const baseAgotados = useMemo(
-    () => bodegaBaseRows.filter((r) => r.bidonesDisponibles === 0),
+    () => bodegaBaseRows.filter((r) => r.litrosDisponibles <= EPSILON_STOCK),
     [bodegaBaseRows]
   );
 
