@@ -176,28 +176,16 @@ export function RecepcionModernaPage() {
         </IonRefresher>
 
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {/* ── Fecha (primero) ── */}
+          {/* ── Tipo de movimiento (aplica a todo el lote, primero) ── */}
           <div>
-            <span style={sectionLabel}>Fecha</span>
-            <Card padding="4px 14px">
-              <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-                <IonLabel position="stacked">Fecha de recepción/devolución</IonLabel>
-                <IonInput type="date" value={fecha} onIonInput={(e) => setFecha(e.detail.value ?? '')} />
-              </IonItem>
-            </Card>
-          </div>
-
-          {/* ── Tipo de movimiento (aplica a todo el lote) ── */}
-          <div>
-            <span style={sectionLabel}>Recepción de La Moderna</span>
             <Card padding="4px 14px">
               <div style={{ padding: '10px 14px 0' }}>
                 <IonSegment
                   value={tipoMovimiento}
                   onIonChange={(e) => cambiarTipoMovimiento((e.detail.value as 'recibido' | 'devuelto') ?? 'recibido')}
                 >
-                  <IonSegmentButton value="recibido"><IonLabel>Recibido</IonLabel></IonSegmentButton>
-                  <IonSegmentButton value="devuelto"><IonLabel>Devuelto</IonLabel></IonSegmentButton>
+                  <IonSegmentButton value="recibido"><IonLabel>Recepción</IonLabel></IonSegmentButton>
+                  <IonSegmentButton value="devuelto"><IonLabel>Devolución</IonLabel></IonSegmentButton>
                 </IonSegment>
               </div>
               {tipoMovimiento === 'devuelto' && (
@@ -209,6 +197,17 @@ export function RecepcionModernaPage() {
                   </IonText>
                 </div>
               )}
+            </Card>
+          </div>
+
+          {/* ── Fecha ── */}
+          <div>
+            <span style={sectionLabel}>Fecha</span>
+            <Card padding="4px 14px">
+              <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+                <IonLabel position="stacked">Fecha de recepción/devolución</IonLabel>
+                <IonInput type="date" value={fecha} onIonInput={(e) => setFecha(e.detail.value ?? '')} />
+              </IonItem>
             </Card>
           </div>
 
