@@ -58,6 +58,14 @@ const rowBetween: CSSProperties = {
   gap: '10px',
 };
 
+const lineRow: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '11px',
+  padding: '11px 0',
+  borderBottom: '1px solid var(--color-divider)',
+};
+
 function Kpi({ label, valor, tono }: { label: string; valor: string; tono?: 'error' }) {
   return (
     <Card padding="13px 12px" style={{ flex: 1, minWidth: 0 }}>
@@ -151,6 +159,43 @@ export function DashboardPage() {
                 <Kpi label="Efectivo" valor={money(dashboard.cajaEfectivo)} tono={dashboard.cajaEfectivo < 0 ? 'error' : undefined} />
                 <Kpi label="Banco" valor={money(dashboard.cajaTransferencia)} tono={dashboard.cajaTransferencia < 0 ? 'error' : undefined} />
               </div>
+            </div>
+
+            {/* ── La Moderna · periodo (recepciones y devoluciones, combinado) ── */}
+            <div>
+              <span style={sectionLabel}>La Moderna · periodo</span>
+              <Card padding="14px">
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '16px',
+                    marginBottom: dashboard.laModerna.movimientos.length ? '10px' : 0,
+                  }}
+                >
+                  <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: '#8A94A6' }}>
+                    recibido <strong style={{ color: 'var(--color-navy)' }}>{dashboard.laModerna.totalRecibido}</strong>
+                  </span>
+                  <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: '#8A94A6' }}>
+                    devuelto <strong style={{ color: 'var(--color-navy)' }}>{dashboard.laModerna.totalDevuelto}</strong>
+                  </span>
+                </div>
+                {dashboard.laModerna.movimientos.length === 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#8A94A6' }}>
+                    Sin movimientos con La Moderna en este periodo.
+                  </div>
+                )}
+                {dashboard.laModerna.movimientos.map((m) => (
+                  <div key={m.id} style={lineRow}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{m.productoNombre}</div>
+                      <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                        {m.fecha}
+                      </div>
+                    </div>
+                    <Chip tone={m.tipo === 'recibido' ? 'primarySoft' : 'amber'}>{m.tipo} {m.cantidad}</Chip>
+                  </div>
+                ))}
+              </Card>
             </div>
 
             {/* ── Caja por vendedor ── */}
