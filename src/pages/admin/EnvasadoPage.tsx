@@ -1,10 +1,11 @@
 /**
  * Logiclean Ruta — EnvasadoPage (Inc 6.3, H-17 — gerente)
  *
- * Registra el envasado de un bidón de 20 L (origen=bidon_nuevo) o de granel ya
- * abierto (origen=granel): qué presentaciones salieron y el residuo/consumo
- * estimado. Los contadores de bodega se materializan del lado servidor
- * (migración 007) — esta pantalla solo registra el evento.
+ * Registra qué presentaciones salieron de un producto base envasado. Los
+ * litros totales (Σ cantidad × factor_conversion) se descuentan de la
+ * materia prima disponible (bidones sellados + granel abierto) del lado
+ * servidor (migración 010) — el gerente ya no elige "origen" ni captura
+ * residuo/consumo a mano, y ya no ve productos sin stock en el selector.
  *
  * No es un tab del gerente; se llega desde el FAB de "Inventario" (bodega).
  * Ruta: /admin/envasado
@@ -18,8 +19,6 @@ import {
   IonContent,
   IonButtons,
   IonBackButton,
-  IonSegment,
-  IonSegmentButton,
   IonLabel,
   IonItem,
   IonInput,
@@ -32,15 +31,15 @@ import {
   IonRefresherContent,
 } from '@ionic/react';
 import { addOutline, trashOutline } from 'ionicons/icons';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { useEnvasado } from '../../hooks/useEnvasado';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useAuthContext } from '../../context/AuthContext';
+import { calcularLitrosEnvasados } from '../../lib/conversion';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
-import { Chip } from '../../components/ui/Chip';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
@@ -98,16 +97,16 @@ export function EnvasadoPage() {
 
   const [toast, setToast] = useState<string | null>(null);
 
-  const [productoId, setProductoId] = useState('');
-  const [origen, setOrigen] = useState<'bidon_nuevo' | 'granel'>('bidon_nuevo');
-  const [bidonesAbiertos, setBidonesAbiertos] = useState('1');
-  const [residuo, setResiduo] = useState('');
-  const [consumoGranel, setConsumoGranel] = useState('');
   const [fecha, setFecha] = useState(hoy());
+  const [productoId, setProductoId] = useState('');
   const [lineas, setLineas] = useState<LineaForm[]>([nuevaLinea()]);
 
+  const producto = productos.find((p) => p.id === productoId);
   const bodegaActual = productoId ? bodegaDe(productoId) : undefined;
-  const presentacionesDisponibles = productoId ? presentacionesDe(productoId) : [];
+  const presentacionesDisponibles = useMemo(
+    () => (productoId ? presentacionesDe(productoId) : []),
+    [productoId, presentacionesDe]
+  );
 
   const actualizarLinea = (key: string, cambios: Partial<LineaForm>) => {
     setLineas((prev) => prev.map((l) => (l.key === key ? { ...l, ...cambios } : l)));
@@ -117,20 +116,26 @@ export function EnvasadoPage() {
     setLineas((prev) => (prev.length > 1 ? prev.filter((l) => l.key !== key) : prev));
 
   const lineasValidas = lineas.filter((l) => l.presentacionId && (parseFloat(l.cantidad) || 0) > 0);
-  const campoOrigenValido =
-    origen === 'bidon_nuevo'
-      ? residuo !== '' && (parseFloat(residuo) || 0) >= 0 && (parseInt(bidonesAbiertos, 10) || 0) >= 1
-      : (parseFloat(consumoGranel) || 0) > 0;
-  const envasadoValido = !!productoId && campoOrigenValido && lineasValidas.length > 0;
+
+  const litrosAEnvasar = useMemo(
+    () =>
+      calcularLitrosEnvasados(
+        lineasValidas.map((l) => ({ presentacionId: l.presentacionId, cantidad: parseFloat(l.cantidad) || 0 })),
+        presentacionesDisponibles
+      ),
+    [lineasValidas, presentacionesDisponibles]
+  );
+  const litrosDisponibles = bodegaActual
+    ? bodegaActual.bidones_disponibles * (producto?.litros_por_bidon ?? 0) + bodegaActual.litros_granel_estimado
+    : 0;
+  const excedeDisponible = litrosAEnvasar > litrosDisponibles;
+
+  const envasadoValido = !!productoId && !!fecha && lineasValidas.length > 0 && litrosAEnvasar > 0;
 
   const guardarEnvasado = async () => {
     try {
       await crearEnvasado({
         productoBaseId: productoId,
-        origen,
-        bidonesAbiertos: origen === 'bidon_nuevo' ? parseInt(bidonesAbiertos, 10) || 1 : undefined,
-        litrosResiduoEstimado: origen === 'bidon_nuevo' ? parseFloat(residuo) || 0 : undefined,
-        litrosConsumidosGranel: origen === 'granel' ? parseFloat(consumoGranel) || 0 : undefined,
         fecha,
         lineas: lineasValidas.map((l) => ({
           presentacionId: l.presentacionId,
@@ -139,9 +144,6 @@ export function EnvasadoPage() {
       });
       setToast('Envasado registrado (en cola).');
       setProductoId('');
-      setBidonesAbiertos('1');
-      setResiduo('');
-      setConsumoGranel('');
       setLineas([nuevaLinea()]);
     } catch (e) {
       setToast(e instanceof Error ? e.message : 'No se pudo registrar.');
@@ -173,6 +175,11 @@ export function EnvasadoPage() {
             <span style={sectionLabel}>Nuevo envasado</span>
             <Card padding="4px 14px">
               <IonItem lines="full" style={itemStyle}>
+                <IonLabel position="stacked">Fecha *</IonLabel>
+                <IonInput type="date" value={fecha} onIonInput={(e) => setFecha(e.detail.value ?? '')} />
+              </IonItem>
+
+              <IonItem lines="none" style={itemStyle}>
                 <IonLabel position="stacked">Producto base (bidón) *</IonLabel>
                 <IonSelect value={productoId} placeholder="Selecciona un producto" onIonChange={(e) => setProductoId(e.detail.value)}>
                   {productos.map((p) => (
@@ -185,43 +192,12 @@ export function EnvasadoPage() {
                 <div style={{ padding: '8px 0 4px' }}>
                   <IonText color="medium">
                     <p style={{ fontSize: 'var(--font-size-xs)', margin: 0 }}>
-                      En bodega ahora mismo: {bodegaActual?.bidones_disponibles ?? 0} bidones disponibles ·{' '}
-                      {bodegaActual?.litros_granel_estimado ?? 0} L a granel
+                      En bodega ahora mismo: {litrosDisponibles} L disponibles ({bodegaActual?.bidones_disponibles ?? 0}{' '}
+                      bidones · {bodegaActual?.litros_granel_estimado ?? 0} L a granel)
                     </p>
                   </IonText>
                 </div>
               )}
-
-              <IonItem lines="full" style={itemStyle}>
-                <IonLabel position="stacked">Origen *</IonLabel>
-              </IonItem>
-              <IonSegment value={origen} onIonChange={(e) => setOrigen((e.detail.value as 'bidon_nuevo' | 'granel') ?? 'bidon_nuevo')}>
-                <IonSegmentButton value="bidon_nuevo"><IonLabel>Bidón nuevo</IonLabel></IonSegmentButton>
-                <IonSegmentButton value="granel"><IonLabel>Granel ya abierto</IonLabel></IonSegmentButton>
-              </IonSegment>
-
-              {origen === 'bidon_nuevo' ? (
-                <>
-                  <IonItem lines="full" style={itemStyle}>
-                    <IonLabel position="stacked">¿Cuántos bidones nuevos se abrieron? *</IonLabel>
-                    <IonInput type="number" inputmode="numeric" min={1} value={bidonesAbiertos} placeholder="1" onIonInput={(e) => setBidonesAbiertos(e.detail.value ?? '')} />
-                  </IonItem>
-                  <IonItem lines="full" style={itemStyle}>
-                    <IonLabel position="stacked">Residuo estimado al terminar (L) *</IonLabel>
-                    <IonInput type="number" inputmode="decimal" value={residuo} placeholder="0" onIonInput={(e) => setResiduo(e.detail.value ?? '')} />
-                  </IonItem>
-                </>
-              ) : (
-                <IonItem lines="full" style={itemStyle}>
-                  <IonLabel position="stacked">Litros consumidos del granel *</IonLabel>
-                  <IonInput type="number" inputmode="decimal" value={consumoGranel} placeholder="0" onIonInput={(e) => setConsumoGranel(e.detail.value ?? '')} />
-                </IonItem>
-              )}
-
-              <IonItem lines="none" style={itemStyle}>
-                <IonLabel position="stacked">Fecha</IonLabel>
-                <IonInput type="date" value={fecha} onIonInput={(e) => setFecha(e.detail.value ?? '')} />
-              </IonItem>
             </Card>
           </div>
 
@@ -269,6 +245,15 @@ export function EnvasadoPage() {
             </Card>
           </div>
 
+          {productoId && litrosAEnvasar > 0 && (
+            <IonText color={excedeDisponible ? 'danger' : 'medium'}>
+              <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, fontWeight: excedeDisponible ? 700 : 400 }}>
+                {litrosAEnvasar} L a envasar de {litrosDisponibles} L disponibles
+                {excedeDisponible ? ' — esto deja el producto en negativo (sobreventa). Revisa antes de continuar.' : ''}
+              </p>
+            </IonText>
+          )}
+
           <PrimaryCTA disabled={!envasadoValido} onClick={guardarEnvasado}>
             Registrar envasado
           </PrimaryCTA>
@@ -287,18 +272,12 @@ export function EnvasadoPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{nombreProducto(e.producto_base_id)}</div>
                     <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
-                      {e.fecha} ·{' '}
-                      {e.origen === 'bidon_nuevo'
-                        ? `${e.bidones_abiertos > 1 ? `${e.bidones_abiertos} bidones abiertos · ` : ''}residuo ${e.litros_residuo_estimado} L`
-                        : `granel ${e.litros_consumidos_granel} L`}
+                      {e.fecha} · {e.litros_envasados} L envasados
                     </div>
                     {resumenLineas && (
                       <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{resumenLineas}</div>
                     )}
                   </div>
-                  <Chip tone={e.origen === 'bidon_nuevo' ? 'primarySoft' : 'neutral'}>
-                    {e.origen === 'bidon_nuevo' ? 'Bidón nuevo' : 'Granel'}
-                  </Chip>
                 </div>
               );
             })}

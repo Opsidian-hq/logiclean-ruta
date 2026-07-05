@@ -70,3 +70,23 @@ export function inventarioAUnidadCompra(
     unidades,
   }));
 }
+
+/**
+ * Litros envasados a partir de las líneas de un envasado (H-17). Para
+ * presentaciones de químicos (unidad_venta='litro'), factor_conversion es
+ * de-facto el número de litros que contiene una unidad de esa presentación
+ * (ver seed: 1 L/3.75 L/20 L → factor_conversion 1/3.75/20) — no
+ * "presentaciones por unidad de compra" como en el resto de este archivo.
+ * Presentaciones sin catálogo conocido se ignoran (igual que
+ * `inventarioAUnidadCompra`).
+ */
+export function calcularLitrosEnvasados(
+  lineas: { presentacionId: string; cantidad: number }[],
+  presentaciones: Pick<Presentacion, 'id' | 'factor_conversion'>[]
+): number {
+  const factorPorId = new Map(presentaciones.map((p) => [p.id, p.factor_conversion]));
+  return lineas.reduce((sum, l) => {
+    const factor = factorPorId.get(l.presentacionId);
+    return factor && factor > 0 ? sum + l.cantidad * factor : sum;
+  }, 0);
+}

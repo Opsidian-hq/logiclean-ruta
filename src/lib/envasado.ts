@@ -2,24 +2,28 @@
  * Logiclean Ruta — Registro de envasado (Inc 6.3, H-17, ADR-0007)
  *
  * Compone, en una sola operación local e instantánea:
- *  - ENVASADO (origen bidón nuevo / granel, residuo o consumo de granel)
+ *  - ENVASADO (litros_envasados: Σ cantidad × factor_conversion de las líneas)
  *  - ENVASADO_LINEA por cada presentación que salió
  *
- * Los contadores de bodega (bidones_disponibles, litros_granel_estimado,
- * presentaciones) se materializan del lado servidor por trigger (migración
- * 007) al sincronizar — no se calculan ni se empujan aquí (ADR-0007, mismo
- * patrón que `lib/ventas.ts` con `inventario_vehiculo`, pero server-side por
- * ser bodega compartida).
+ * El gerente ya no captura origen (bidón nuevo/granel), residuo ni consumo
+ * de granel: solo elige las presentaciones que salieron. Los contadores de
+ * bodega (bidones_disponibles, litros_granel_estimado, presentaciones) se
+ * materializan del lado servidor por trigger (migración 010) — ese trigger
+ * decide cuánto de litros_envasados salió de bidones sellados vs. de granel
+ * ya abierto, usando producto_base.litros_por_bidon. Esta pantalla solo
+ * registra el evento (ADR-0007, mismo patrón que `lib/ventas.ts` con
+ * `inventario_vehiculo`, pero server-side por ser bodega compartida).
  *
- * `origen='bidon_nuevo'` siempre abre exactamente un bidón (H-17: "un bidón
- * de 20 L… registro un envasado"); `origen='granel'` no abre ningún bidón
- * nuevo (ya se contó al abrirse).
+ * `bidones_abiertos` se envía en 0: el trigger lo sobreescribe justo después
+ * del INSERT (alimenta la identidad de control de ADR-0009 en
+ * `lib/corte.ts`); el próximo `pull` trae el valor real de vuelta a Dexie.
  */
 
 import { db } from '../db/index';
 import { generateUUID } from '../lib/uuid';
 import { enqueueOperation } from '../sync/queue';
 import { syncEngine } from '../sync/SyncEngine';
+import { calcularLitrosEnvasados } from './conversion';
 import type { Envasado, EnvasadoLinea } from '../db/schema';
 
 export interface EnvasadoLineaInput {
@@ -29,13 +33,6 @@ export interface EnvasadoLineaInput {
 
 export interface RegistrarEnvasadoInput {
   productoBaseId: string;
-  origen: 'bidon_nuevo' | 'granel';
-  /** Cuántos bidones nuevos se abrieron en este envasado (default 1, si origen=bidon_nuevo). */
-  bidonesAbiertos?: number;
-  /** Litros que quedan en el bidón al terminar (obligatorio si origen=bidon_nuevo). */
-  litrosResiduoEstimado?: number;
-  /** Litros tomados del granel (obligatorio si origen=granel). */
-  litrosConsumidosGranel?: number;
   lineas: EnvasadoLineaInput[];
   responsableId: string;
   /** ISO date (YYYY-MM-DD); por defecto hoy. */
@@ -53,10 +50,6 @@ export async function registrarEnvasado(
 ): Promise<RegistrarEnvasadoResult> {
   const {
     productoBaseId,
-    origen,
-    bidonesAbiertos = 1,
-    litrosResiduoEstimado,
-    litrosConsumidosGranel,
     lineas: lineasInput,
     responsableId,
     fecha = new Date().toISOString().slice(0, 10),
@@ -71,14 +64,18 @@ export async function registrarEnvasado(
   if (lineasInput.some((l) => !l.presentacionId || !(l.cantidad > 0))) {
     throw new Error('Cada línea necesita una presentación y una cantidad mayor que 0.');
   }
-  if (origen === 'bidon_nuevo' && !(litrosResiduoEstimado! >= 0)) {
-    throw new Error('Captura el residuo estimado (0 o más litros).');
-  }
-  if (origen === 'bidon_nuevo' && !(bidonesAbiertos >= 1)) {
-    throw new Error('Captura cuántos bidones se abrieron (1 o más).');
-  }
-  if (origen === 'granel' && !(litrosConsumidosGranel! > 0)) {
-    throw new Error('Captura los litros consumidos del granel (mayor que 0).');
+
+  // Recalculado aquí (no confiado del caller): el mismo criterio que ya
+  // aplica al resto de las validaciones de este módulo.
+  const presentaciones = await db.presentacion.bulkGet(
+    lineasInput.map((l) => l.presentacionId)
+  );
+  const litrosEnvasados = calcularLitrosEnvasados(
+    lineasInput,
+    presentaciones.filter((p): p is NonNullable<typeof p> => !!p)
+  );
+  if (!(litrosEnvasados > 0)) {
+    throw new Error('No se pudo calcular los litros envasados (revisa las presentaciones elegidas).');
   }
 
   const envasadoId = generateUUID();
@@ -86,10 +83,8 @@ export async function registrarEnvasado(
     id: envasadoId,
     producto_base_id: productoBaseId,
     fecha,
-    origen,
-    bidones_abiertos: origen === 'bidon_nuevo' ? bidonesAbiertos : 0,
-    litros_consumidos_granel: origen === 'granel' ? litrosConsumidosGranel! : 0,
-    litros_residuo_estimado: origen === 'bidon_nuevo' ? litrosResiduoEstimado! : 0,
+    litros_envasados: litrosEnvasados,
+    bidones_abiertos: 0,
     responsable_id: responsableId,
     nota,
   };

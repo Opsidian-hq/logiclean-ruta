@@ -30,6 +30,7 @@ export async function guardarProducto(data: GuardarProductoInput): Promise<Produ
     unidad_compra: data.unidad_compra,
     categoria: data.categoria,
     precio_preferencial: data.precio_preferencial,
+    litros_por_bidon: data.litros_por_bidon,
     activo: data.activo ?? true,
   };
 
