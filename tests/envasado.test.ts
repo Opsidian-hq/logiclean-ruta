@@ -1,19 +1,14 @@
 /**
  * Logiclean Ruta — Tests Inc 6.3: envasado (H-17, ADR-0007)
  *
- * ENV-001: bidon_nuevo persiste envasado + líneas, encola en un solo lote
- * ENV-002: bidon_nuevo abre exactamente 1 bidón (bidones_abiertos=1) y usa el
- *   residuo capturado
- * ENV-003: granel no abre ningún bidón (bidones_abiertos=0) y usa el consumo
- *   capturado; no toca litros_residuo_estimado
+ * ENV-001: persiste envasado + líneas, encola en un solo lote, con
+ *   litros_envasados calculado a partir de las líneas
  * ENV-004: exige al menos una línea
  * ENV-005: valida cada línea (presentación + cantidad > 0)
- * ENV-006: bidon_nuevo exige residuo >= 0
- * ENV-007: granel exige consumo > 0
  * ENV-008: exige producto base y responsable
- * ENV-009: bidon_nuevo con bidonesAbiertos > 1 registra el lote completo en un
- *   solo envasado (varios bidones "tal cual", sin fraccionar)
- * ENV-010: bidon_nuevo exige bidonesAbiertos >= 1
+ * ENV-011: calcula litros_envasados como Σ cantidad × factor_conversion con
+ *   líneas mixtas
+ * ENV-012: rechaza si el total calculado es 0 (presentación sin catálogo)
  */
 
 import 'fake-indexeddb/auto';
@@ -31,22 +26,25 @@ vi.mock('../src/sync/SyncEngine', () => ({
 import { registrarEnvasado } from '../src/lib/envasado';
 import { db } from '../src/db/index';
 
-beforeEach(async () => {
-  await Promise.all(db.tables.map((t) => t.clear()));
-});
-
 const base = {
   productoBaseId: 'pb-multiusos',
   responsableId: 'gerente-uuid-001',
   fecha: '2026-07-09',
 };
 
+beforeEach(async () => {
+  await Promise.all(db.tables.map((t) => t.clear()));
+  await db.presentacion.bulkPut([
+    { id: 'pres-1L', producto_base_id: 'pb-multiusos', nombre: 'Multiusos 1 L', unidad_venta: 'litro', factor_conversion: 1, precio_mayoreo: 30, precio_menudeo: 30, activo: true },
+    { id: 'pres-3.7L', producto_base_id: 'pb-multiusos', nombre: 'Multiusos 3.75 L', unidad_venta: 'litro', factor_conversion: 3.75, precio_mayoreo: 90, precio_menudeo: 90, activo: true },
+    { id: 'pres-20L', producto_base_id: 'pb-multiusos', nombre: 'Multiusos 20 L', unidad_venta: 'litro', factor_conversion: 20, precio_mayoreo: 450, precio_menudeo: 450, activo: true },
+  ]);
+});
+
 describe('registrarEnvasado', () => {
   it('ENV-001: persiste envasado + líneas y encola en un solo lote', async () => {
     const { envasado, lineas } = await registrarEnvasado({
       ...base,
-      origen: 'bidon_nuevo',
-      litrosResiduoEstimado: 2,
       lineas: [
         { presentacionId: 'pres-1L', cantidad: 15 },
         { presentacionId: 'pres-3.7L', cantidad: 1 },
@@ -54,6 +52,8 @@ describe('registrarEnvasado', () => {
     });
 
     expect(await db.envasado.get(envasado.id)).toBeDefined();
+    expect(envasado.litros_envasados).toBe(15 * 1 + 1 * 3.75);
+    expect(envasado.bidones_abiertos).toBe(0); // lo sobreescribe el trigger server-side
     expect(lineas).toHaveLength(2);
     for (const l of lineas) {
       expect(await db.envasado_linea.get(l.id)).toBeDefined();
@@ -66,68 +66,9 @@ describe('registrarEnvasado', () => {
     );
   });
 
-  it('ENV-002b: bidon_nuevo sin bidonesAbiertos explícito por defecto abre 1', async () => {
-    const { envasado } = await registrarEnvasado({
-      ...base,
-      origen: 'bidon_nuevo',
-      litrosResiduoEstimado: 3.5,
-      lineas: [{ presentacionId: 'pres-1L', cantidad: 10 }],
-    });
-    expect(envasado.bidones_abiertos).toBe(1);
-  });
-
-  it('ENV-009: bidon_nuevo con bidonesAbiertos > 1 registra el lote completo (vender tal cual, sin fraccionar)', async () => {
-    const { envasado, lineas } = await registrarEnvasado({
-      ...base,
-      origen: 'bidon_nuevo',
-      bidonesAbiertos: 5,
-      litrosResiduoEstimado: 0,
-      lineas: [{ presentacionId: 'pres-20L', cantidad: 5 }],
-    });
-    expect(envasado.bidones_abiertos).toBe(5);
-    expect(envasado.litros_residuo_estimado).toBe(0);
-    expect(lineas[0].cantidad).toBe(5);
-  });
-
-  it('ENV-010: bidon_nuevo exige bidonesAbiertos >= 1', async () => {
-    await expect(
-      registrarEnvasado({
-        ...base,
-        origen: 'bidon_nuevo',
-        bidonesAbiertos: 0,
-        litrosResiduoEstimado: 1,
-        lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }],
-      })
-    ).rejects.toThrow();
-  });
-
-  it('ENV-002: bidon_nuevo abre exactamente 1 bidón y usa el residuo capturado', async () => {
-    const { envasado } = await registrarEnvasado({
-      ...base,
-      origen: 'bidon_nuevo',
-      litrosResiduoEstimado: 3.5,
-      lineas: [{ presentacionId: 'pres-1L', cantidad: 10 }],
-    });
-    expect(envasado.bidones_abiertos).toBe(1);
-    expect(envasado.litros_residuo_estimado).toBe(3.5);
-    expect(envasado.litros_consumidos_granel).toBe(0);
-  });
-
-  it('ENV-003: granel no abre bidón y usa el consumo capturado', async () => {
-    const { envasado } = await registrarEnvasado({
-      ...base,
-      origen: 'granel',
-      litrosConsumidosGranel: 4,
-      lineas: [{ presentacionId: 'pres-1L', cantidad: 4 }],
-    });
-    expect(envasado.bidones_abiertos).toBe(0);
-    expect(envasado.litros_consumidos_granel).toBe(4);
-    expect(envasado.litros_residuo_estimado).toBe(0);
-  });
-
   it('ENV-004: exige al menos una línea', async () => {
     await expect(
-      registrarEnvasado({ ...base, origen: 'bidon_nuevo', litrosResiduoEstimado: 1, lineas: [] })
+      registrarEnvasado({ ...base, lineas: [] })
     ).rejects.toThrow();
   });
 
@@ -135,38 +76,13 @@ describe('registrarEnvasado', () => {
     await expect(
       registrarEnvasado({
         ...base,
-        origen: 'bidon_nuevo',
-        litrosResiduoEstimado: 1,
         lineas: [{ presentacionId: '', cantidad: 5 }],
       })
     ).rejects.toThrow();
     await expect(
       registrarEnvasado({
         ...base,
-        origen: 'bidon_nuevo',
-        litrosResiduoEstimado: 1,
         lineas: [{ presentacionId: 'pres-1L', cantidad: 0 }],
-      })
-    ).rejects.toThrow();
-  });
-
-  it('ENV-006: bidon_nuevo exige residuo >= 0', async () => {
-    await expect(
-      registrarEnvasado({
-        ...base,
-        origen: 'bidon_nuevo',
-        lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }],
-      })
-    ).rejects.toThrow();
-  });
-
-  it('ENV-007: granel exige consumo > 0', async () => {
-    await expect(
-      registrarEnvasado({
-        ...base,
-        origen: 'granel',
-        litrosConsumidosGranel: 0,
-        lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }],
       })
     ).rejects.toThrow();
   });
@@ -176,8 +92,6 @@ describe('registrarEnvasado', () => {
       registrarEnvasado({
         ...base,
         productoBaseId: '',
-        origen: 'bidon_nuevo',
-        litrosResiduoEstimado: 1,
         lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }],
       })
     ).rejects.toThrow();
@@ -185,9 +99,28 @@ describe('registrarEnvasado', () => {
       registrarEnvasado({
         ...base,
         responsableId: '',
-        origen: 'bidon_nuevo',
-        litrosResiduoEstimado: 1,
         lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }],
+      })
+    ).rejects.toThrow();
+  });
+
+  it('ENV-011: calcula litros_envasados como Σ cantidad × factor_conversion con líneas mixtas', async () => {
+    const { envasado } = await registrarEnvasado({
+      ...base,
+      lineas: [
+        { presentacionId: 'pres-1L', cantidad: 10 },
+        { presentacionId: 'pres-3.7L', cantidad: 2 },
+        { presentacionId: 'pres-20L', cantidad: 1 },
+      ],
+    });
+    expect(envasado.litros_envasados).toBe(10 * 1 + 2 * 3.75 + 1 * 20);
+  });
+
+  it('ENV-012: rechaza si el total calculado es 0 (presentación sin catálogo)', async () => {
+    await expect(
+      registrarEnvasado({
+        ...base,
+        lineas: [{ presentacionId: 'pres-inexistente', cantidad: 5 }],
       })
     ).rejects.toThrow();
   });

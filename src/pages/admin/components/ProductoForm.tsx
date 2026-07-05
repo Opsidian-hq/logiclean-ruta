@@ -51,12 +51,16 @@ interface ProductoFormProps {
 function validarProducto(
   nombre: string,
   unidadCompra: string,
-  categoria: string
+  categoria: string,
+  litrosPorBidon: string
 ): Record<string, string> {
   const errores: Record<string, string> = {};
   if (!nombre.trim()) errores.nombre = 'El nombre es obligatorio';
   if (!unidadCompra) errores.unidad_compra = 'Selecciona la unidad de compra';
   if (!categoria) errores.categoria = 'Selecciona la categoría';
+  if (unidadCompra === 'bidon' && !((parseFloat(litrosPorBidon) || 0) > 0)) {
+    errores.litros_por_bidon = 'Los litros por bidón deben ser mayores que 0';
+  }
   return errores;
 }
 
@@ -75,6 +79,9 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
   );
   const [precioPreferencial, setPrecioPreferencial] = useState(
     String(inicial?.precio_preferencial ?? '')
+  );
+  const [litrosPorBidon, setLitrosPorBidon] = useState(
+    String(inicial?.litros_por_bidon ?? '')
   );
 
   // Estado de presentaciones
@@ -95,7 +102,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
 
   // Estado derivado: los errores se recalculan en cada render una vez que
   // el usuario interactuó con el formulario (sin efecto ni setState).
-  const errores = touched ? validarProducto(nombre, unidadCompra, categoria) : {};
+  const errores = touched ? validarProducto(nombre, unidadCompra, categoria, litrosPorBidon) : {};
 
   const handleSavePresentacion = (
     data: Omit<Presentacion, 'id'> & { id?: string }
@@ -123,7 +130,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    const errs = validarProducto(nombre, unidadCompra, categoria);
+    const errs = validarProducto(nombre, unidadCompra, categoria, litrosPorBidon);
     if (Object.keys(errs).length > 0) {
       return;
     }
@@ -138,6 +145,9 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
           categoria: categoria as CategoriaProducto,
           precio_preferencial: precioPreferencial
             ? parseFloat(precioPreferencial)
+            : undefined,
+          litros_por_bidon: unidadCompra === 'bidon' && litrosPorBidon
+            ? parseFloat(litrosPorBidon)
             : undefined,
           activo: inicial?.activo ?? true,
         },
@@ -211,6 +221,29 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
               <IonText color="danger">
                 <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.unidad_compra}</p>
               </IonText>
+            )}
+
+            {unidadCompra === 'bidon' && (
+              <>
+                <IonItem>
+                  <IonLabel position="stacked">Litros por bidón *</IonLabel>
+                  <IonInput
+                    type="number"
+                    value={litrosPorBidon}
+                    onIonInput={(e) => setLitrosPorBidon(e.detail.value ?? '')}
+                    placeholder="Ej. 20"
+                    min="0.001"
+                    step="0.001"
+                    inputmode="decimal"
+                    style={{ minHeight: 'var(--touch-min, 48px)' }}
+                  />
+                </IonItem>
+                {errores.litros_por_bidon && (
+                  <IonText color="danger">
+                    <p style={{ marginLeft: 'var(--space-md)', fontSize: 'var(--font-size-sm)' }}>{errores.litros_por_bidon}</p>
+                  </IonText>
+                )}
+              </>
             )}
 
             <IonItem>

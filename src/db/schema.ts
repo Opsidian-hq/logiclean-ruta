@@ -55,6 +55,8 @@ export interface ProductoBase {
   unidad_compra: 'bidon' | 'docena';
   categoria: CategoriaProducto;
   precio_preferencial?: number;
+  /** Litros que trae un bidón sellado completo (solo unidad_compra='bidon'). */
+  litros_por_bidon?: number;
   activo: boolean;
 }
 
@@ -174,10 +176,10 @@ export interface Envasado {
   id: string;
   producto_base_id: string;
   fecha: string; // ISO date
-  origen: 'bidon_nuevo' | 'granel';
+  /** Litros totales que salieron a presentación (Σ cantidad × factor_conversion). */
+  litros_envasados: number;
+  /** Calculado por el trigger aplicar_envasado() (no lo captura el gerente). */
   bidones_abiertos: number;
-  litros_consumidos_granel: number;
-  litros_residuo_estimado: number;
   responsable_id: string;
   nota?: string;
 }
