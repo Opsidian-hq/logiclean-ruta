@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
 import { cargarInsumosCorte, ultimoPeriodoFin } from '../lib/corteData';
-import { construirDashboard, resumenLaModerna } from '../lib/dashboard';
+import { construirDashboard, resumenLaModerna, resumenEnvasado } from '../lib/dashboard';
 import { embudoPorEtapa, adherencia, clasificarVencimiento } from '../lib/prospectos';
 import type { DashboardModel, SnapshotVendedor } from '../lib/dashboard';
 
@@ -30,12 +30,15 @@ export function useDashboard(): UseDashboardReturn {
   const cargar = useCallback(async () => {
     try {
       const hoy = new Date().toISOString().slice(0, 10);
-      const [vendedores, clientes, visitas, movimientosLaModerna, productosBase] = await Promise.all([
+      const [vendedores, clientes, visitas, movimientosLaModerna, productosBase, envasados, envasadoLineas, presentaciones] = await Promise.all([
         db.vendedor.toArray(),
         db.cliente.where('activo').equals(1).toArray(),
         db.visita.toArray(),
         db.movimiento_la_moderna.toArray(),
         db.producto_base.toArray(),
+        db.envasado.toArray(),
+        db.envasado_linea.toArray(),
+        db.presentacion.toArray(),
       ]);
 
       // Snapshot de corte del periodo en curso, por vendedor.
@@ -54,8 +57,15 @@ export function useDashboard(): UseDashboardReturn {
       // semántica que el fallback de `enRango` en corteData.ts.
       const inicioGlobal = iniciosPorVendedor.length ? iniciosPorVendedor.slice().sort()[0] : '';
       const nombreProductoBase = (id: string) => productosBase.find((p) => p.id === id)?.nombre ?? id;
+      const nombrePresentacion = (id: string) => presentaciones.find((p) => p.id === id)?.nombre ?? id;
       const movimientosPeriodo = movimientosLaModerna.filter((m) => {
         const f = (m.fecha ?? '').slice(0, 10);
+        return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
+      });
+      // Envasado tampoco tiene vendedor_id (evento de bodega): mismo criterio
+      // de ventana que movimientosLaModerna.
+      const envasadosPeriodo = envasados.filter((e) => {
+        const f = (e.fecha ?? '').slice(0, 10);
         return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
       });
 
@@ -70,6 +80,7 @@ export function useDashboard(): UseDashboardReturn {
           adherencia: adherencia(visitas),
           vencidos,
           laModerna: resumenLaModerna(movimientosPeriodo, nombreProductoBase),
+          envasados: resumenEnvasado(envasadosPeriodo, envasadoLineas, nombreProductoBase, nombrePresentacion),
         })
       );
       setError(null);

@@ -2,22 +2,17 @@
  * Logiclean Ruta — useEnvasado hook (Inc 6.3, H-17)
  *
  * Productos base envasables (químicos en bidón) con stock disponible en
- * materia prima, sus presentaciones, el estado actual de bodega (contexto
- * para el gerente) y los envasados recientes. Lee de Dexie (offline); el
- * registro delega en `lib/envasado.ts`.
+ * materia prima, sus presentaciones y el estado actual de bodega (contexto
+ * para el gerente). Lee de Dexie (offline); el registro delega en
+ * `lib/envasado.ts`. Los envasados recientes viven en el dashboard del
+ * gerente (`useDashboard`), no en este hook.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { registrarEnvasado } from '../lib/envasado';
 import type { RegistrarEnvasadoInput } from '../lib/envasado';
-import type {
-  ProductoBase,
-  Presentacion,
-  Envasado,
-  EnvasadoLinea,
-  InventarioBodegaBase,
-} from '../db/schema';
+import type { ProductoBase, Presentacion, InventarioBodegaBase } from '../db/schema';
 
 /** Ruido de punto flotante de contadores DECIMAL acumulados por trigger (ver EPSILON_IDENTIDAD en lib/corte.ts). */
 const EPSILON_STOCK = 0.001;
@@ -26,15 +21,10 @@ export interface UseEnvasadoReturn {
   /** Productos envasables: químicos en bidón (unidad_compra='bidon') con stock en materia prima. */
   productos: ProductoBase[];
   presentaciones: Presentacion[];
-  envasadosRecientes: Envasado[];
-  nombreProducto: (id: string) => string;
-  nombrePresentacion: (id: string) => string;
   /** Estado de bodega del producto base (disponibles/granel), si ya se hidrató. */
   bodegaDe: (productoBaseId: string) => InventarioBodegaBase | undefined;
   /** Presentaciones activas de un producto base (para las líneas del formulario). */
   presentacionesDe: (productoBaseId: string) => Presentacion[];
-  /** Líneas envasadas de un envasado ya registrado (para el resumen de recientes). */
-  lineasDe: (envasadoId: string) => EnvasadoLinea[];
   loading: boolean;
   crearEnvasado: (input: Omit<RegistrarEnvasadoInput, 'responsableId'>) => Promise<void>;
   refresh: () => Promise<void>;
@@ -42,22 +32,17 @@ export interface UseEnvasadoReturn {
 
 export function useEnvasado(responsableId: string | null): UseEnvasadoReturn {
   const [productos, setProductos] = useState<ProductoBase[]>([]);
-  const [todosLosProductos, setTodosLosProductos] = useState<ProductoBase[]>([]);
   const [presentaciones, setPresentaciones] = useState<Presentacion[]>([]);
-  const [envasadosRecientes, setEnvasadosRecientes] = useState<Envasado[]>([]);
-  const [envasadoLineas, setEnvasadoLineas] = useState<EnvasadoLinea[]>([]);
   const [bodegaBase, setBodegaBase] = useState<InventarioBodegaBase[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const [prodsAll, pres, envs, lineas, bodega] = await Promise.all([
+    const [prodsAll, pres, bodega] = await Promise.all([
       db.producto_base
         .where('activo').equals(1)
         .filter((p) => p.unidad_compra === 'bidon')
         .toArray(),
       db.presentacion.where('activo').equals(1).toArray(),
-      db.envasado.toArray(),
-      db.envasado_linea.toArray(),
       db.inventario_bodega_base.toArray(),
     ]);
 
@@ -71,10 +56,7 @@ export function useEnvasado(responsableId: string | null): UseEnvasadoReturn {
       return litrosDisponibles > EPSILON_STOCK;
     });
     setProductos(prods);
-    setTodosLosProductos(prodsAll);
     setPresentaciones(pres);
-    setEnvasadosRecientes(envs.sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '')));
-    setEnvasadoLineas(lineas);
     setBodegaBase(bodega);
     setLoading(false);
   }, []);
@@ -84,16 +66,6 @@ export function useEnvasado(responsableId: string | null): UseEnvasadoReturn {
     load();
   }, [load]);
 
-  const nombreProducto = useCallback(
-    (id: string) => todosLosProductos.find((p) => p.id === id)?.nombre ?? id,
-    [todosLosProductos]
-  );
-
-  const nombrePresentacion = useCallback(
-    (id: string) => presentaciones.find((p) => p.id === id)?.nombre ?? id,
-    [presentaciones]
-  );
-
   const bodegaDe = useCallback(
     (productoBaseId: string) => bodegaBase.find((b) => b.producto_base_id === productoBaseId),
     [bodegaBase]
@@ -102,11 +74,6 @@ export function useEnvasado(responsableId: string | null): UseEnvasadoReturn {
   const presentacionesDe = useCallback(
     (productoBaseId: string) => presentaciones.filter((p) => p.producto_base_id === productoBaseId),
     [presentaciones]
-  );
-
-  const lineasDe = useCallback(
-    (envasadoId: string) => envasadoLineas.filter((l) => l.envasado_id === envasadoId),
-    [envasadoLineas]
   );
 
   const crearEnvasado = useCallback(
@@ -121,12 +88,8 @@ export function useEnvasado(responsableId: string | null): UseEnvasadoReturn {
   return {
     productos,
     presentaciones,
-    envasadosRecientes,
-    nombreProducto,
-    nombrePresentacion,
     bodegaDe,
     presentacionesDe,
-    lineasDe,
     loading,
     crearEnvasado,
     refresh: load,

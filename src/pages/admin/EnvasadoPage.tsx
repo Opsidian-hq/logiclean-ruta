@@ -6,6 +6,8 @@
  * materia prima disponible (bidones sellados + granel abierto) del lado
  * servidor (migración 010) — el gerente ya no elige "origen" ni captura
  * residuo/consumo a mano, y ya no ve productos sin stock en el selector.
+ * Los envasados recientes viven en el Inicio del gerente (tarjeta "Envasado
+ * · periodo", mismo patrón que "La Moderna · periodo"), no en este formulario.
  *
  * No es un tab del gerente; se llega desde el FAB de "Inventario" (bodega).
  * Ruta: /admin/envasado
@@ -54,14 +56,6 @@ const sectionLabel: CSSProperties = {
   marginBottom: '8px',
 };
 
-const lineRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '11px',
-  padding: '11px 0',
-  borderBottom: '1px solid var(--color-divider)',
-};
-
 const itemStyle = { '--background': 'transparent', '--padding-start': '0' } as CSSProperties;
 
 interface LineaForm {
@@ -80,13 +74,8 @@ export function EnvasadoPage() {
   const { user } = useAuthContext();
   const {
     productos,
-    envasadosRecientes,
-    nombreProducto,
-    nombrePresentacion,
     bodegaDe,
     presentacionesDe,
-    lineasDe,
-    loading,
     crearEnvasado,
     refresh,
   } = useEnvasado(user?.id ?? null);
@@ -257,31 +246,6 @@ export function EnvasadoPage() {
           <PrimaryCTA disabled={!envasadoValido} onClick={guardarEnvasado}>
             Registrar envasado
           </PrimaryCTA>
-
-          <div>
-            <span style={sectionLabel}>Envasados recientes</span>
-            {!loading && envasadosRecientes.length === 0 && (
-              <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay envasados registrados.</p></IonText>
-            )}
-            {envasadosRecientes.map((e) => {
-              const resumenLineas = lineasDe(e.id)
-                .map((l) => `${l.cantidad} × ${nombrePresentacion(l.presentacion_id)}`)
-                .join(' · ');
-              return (
-                <div key={e.id} style={lineRow}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{nombreProducto(e.producto_base_id)}</div>
-                    <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
-                      {e.fecha} · {e.litros_envasados} L envasados
-                    </div>
-                    {resumenLineas && (
-                      <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{resumenLineas}</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </IonContent>
 

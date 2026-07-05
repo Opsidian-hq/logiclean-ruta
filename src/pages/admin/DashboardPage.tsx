@@ -198,6 +198,42 @@ export function DashboardPage() {
               </Card>
             </div>
 
+            {/* ── Envasado · periodo ── */}
+            <div>
+              <span style={sectionLabel}>Envasado · periodo</span>
+              <Card padding="14px">
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '16px',
+                    marginBottom: dashboard.envasados.envasados.length ? '10px' : 0,
+                  }}
+                >
+                  <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: '#8A94A6' }}>
+                    litros envasados <strong style={{ color: 'var(--color-navy)' }}>{dashboard.envasados.totalLitros}</strong>
+                  </span>
+                </div>
+                {dashboard.envasados.envasados.length === 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#8A94A6' }}>
+                    Sin envasados en este periodo.
+                  </div>
+                )}
+                {dashboard.envasados.envasados.map((e) => (
+                  <div key={e.id} style={lineRow}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{e.productoNombre}</div>
+                      <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                        {e.fecha} · {e.litrosEnvasados} L envasados
+                      </div>
+                      {e.resumenLineas && (
+                        <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{e.resumenLineas}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            </div>
+
             {/* ── Caja por vendedor ── */}
             <div>
               <span style={sectionLabel}>Caja por vendedor · neta de gastos</span>
