@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
 import { cargarInsumosCorte, ultimoPeriodoFin } from '../lib/corteData';
-import { construirDashboard } from '../lib/dashboard';
+import { construirDashboard, resumenLaModerna } from '../lib/dashboard';
 import { embudoPorEtapa, adherencia, clasificarVencimiento } from '../lib/prospectos';
 import type { DashboardModel, SnapshotVendedor } from '../lib/dashboard';
 
@@ -30,19 +30,34 @@ export function useDashboard(): UseDashboardReturn {
   const cargar = useCallback(async () => {
     try {
       const hoy = new Date().toISOString().slice(0, 10);
-      const [vendedores, clientes, visitas] = await Promise.all([
+      const [vendedores, clientes, visitas, movimientosLaModerna, productosBase] = await Promise.all([
         db.vendedor.toArray(),
         db.cliente.where('activo').equals(1).toArray(),
         db.visita.toArray(),
+        db.movimiento_la_moderna.toArray(),
+        db.producto_base.toArray(),
       ]);
 
       // Snapshot de corte del periodo en curso, por vendedor.
       const porVendedor: SnapshotVendedor[] = [];
+      const iniciosPorVendedor: string[] = [];
       for (const v of vendedores) {
         const inicio = await ultimoPeriodoFin(v.id);
+        iniciosPorVendedor.push(inicio);
         const insumos = await cargarInsumosCorte(v.id, inicio, hoy);
         porVendedor.push({ vendedorId: v.id, nombre: v.nombre, snapshot: calcularCorte(insumos) });
       }
+
+      // La Moderna es bodega (sin vendedor_id): se acota al superset de las
+      // ventanas "desde el último corte" de todos los vendedores — el
+      // inicio más antiguo (o '' si alguno nunca ha cortado), misma
+      // semántica que el fallback de `enRango` en corteData.ts.
+      const inicioGlobal = iniciosPorVendedor.length ? iniciosPorVendedor.slice().sort()[0] : '';
+      const nombreProductoBase = (id: string) => productosBase.find((p) => p.id === id)?.nombre ?? id;
+      const movimientosPeriodo = movimientosLaModerna.filter((m) => {
+        const f = (m.fecha ?? '').slice(0, 10);
+        return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
+      });
 
       const vencidos = clientes.filter(
         (c) => c.estado === 'prospecto' && clasificarVencimiento(c) === 'vencido'
@@ -54,6 +69,7 @@ export function useDashboard(): UseDashboardReturn {
           embudo: embudoPorEtapa(clientes),
           adherencia: adherencia(visitas),
           vencidos,
+          laModerna: resumenLaModerna(movimientosPeriodo, nombreProductoBase),
         })
       );
       setError(null);

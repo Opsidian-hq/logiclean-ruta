@@ -9,6 +9,7 @@
 
 import type { CorteSnapshot } from './corte';
 import type { Embudo, Adherencia } from './prospectos';
+import type { MovimientoLaModerna } from '../db/schema';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -24,6 +25,20 @@ export interface CajaVendedor {
   descuadre: boolean;
 }
 
+export interface MovimientoLaModernaVista {
+  id: string;
+  productoNombre: string;
+  tipo: 'recibido' | 'devuelto';
+  cantidad: number;
+  fecha: string;
+}
+
+export interface ResumenLaModerna {
+  totalRecibido: number;
+  totalDevuelto: number;
+  movimientos: MovimientoLaModernaVista[];
+}
+
 export interface DashboardModel {
   // ── Flujo (se reinicia al generar corte) ──
   ventasTotal: number;
@@ -34,6 +49,8 @@ export interface DashboardModel {
   embudo: Embudo;
   adherencia: Adherencia;
   carteraActiva: number;
+  // ── La Moderna (flujo, mismo periodo que ventas) ──
+  laModerna: ResumenLaModerna;
   // ── Alertas ──
   vencidos: number;
   alertas: string[];
@@ -52,6 +69,33 @@ export interface ConstruirDashboardInput {
   adherencia: Adherencia;
   /** Prospectos con visita vencida (continuo). */
   vencidos: number;
+  /** Movimientos de La Moderna ya acotados al periodo (desde useDashboard). */
+  laModerna: ResumenLaModerna;
+}
+
+/** Resumen combinado (recibido + devuelto) de movimientos ya filtrados por periodo. */
+export function resumenLaModerna(
+  movimientos: MovimientoLaModerna[],
+  nombreProducto: (id: string) => string
+): ResumenLaModerna {
+  const vista: MovimientoLaModernaVista[] = movimientos
+    .map((m) => ({
+      id: m.id,
+      productoNombre: nombreProducto(m.producto_base_id),
+      tipo: m.tipo,
+      cantidad: m.cantidad,
+      fecha: m.fecha,
+    }))
+    .sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''));
+
+  const totalRecibido = round2(
+    movimientos.filter((m) => m.tipo === 'recibido').reduce((s, m) => s + m.cantidad, 0)
+  );
+  const totalDevuelto = round2(
+    movimientos.filter((m) => m.tipo === 'devuelto').reduce((s, m) => s + m.cantidad, 0)
+  );
+
+  return { totalRecibido, totalDevuelto, movimientos: vista };
 }
 
 export function construirDashboard(input: ConstruirDashboardInput): DashboardModel {
@@ -88,6 +132,7 @@ export function construirDashboard(input: ConstruirDashboardInput): DashboardMod
     embudo: input.embudo,
     adherencia: input.adherencia,
     carteraActiva: input.embudo.convertidos,
+    laModerna: input.laModerna,
     vencidos: input.vencidos,
     alertas,
   };
