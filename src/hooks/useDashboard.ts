@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
 import { cargarInsumosCorte, ultimoPeriodoFin } from '../lib/corteData';
-import { construirDashboard, resumenLaModerna, resumenEnvasado } from '../lib/dashboard';
+import { construirDashboard, resumenLaModerna, resumenEnvasado, resumenCargaDevolucion } from '../lib/dashboard';
 import { embudoPorEtapa, adherencia, clasificarVencimiento } from '../lib/prospectos';
 import type { DashboardModel, SnapshotVendedor } from '../lib/dashboard';
 
@@ -30,7 +30,11 @@ export function useDashboard(): UseDashboardReturn {
   const cargar = useCallback(async () => {
     try {
       const hoy = new Date().toISOString().slice(0, 10);
-      const [vendedores, clientes, visitas, movimientosLaModerna, productosBase, envasados, envasadoLineas, presentaciones] = await Promise.all([
+      const [
+        vendedores, clientes, visitas, movimientosLaModerna, productosBase,
+        envasados, envasadoLineas, presentaciones, cargas, cargaLineas,
+        devoluciones, devolucionLineas,
+      ] = await Promise.all([
         db.vendedor.toArray(),
         db.cliente.where('activo').equals(1).toArray(),
         db.visita.toArray(),
@@ -39,14 +43,20 @@ export function useDashboard(): UseDashboardReturn {
         db.envasado.toArray(),
         db.envasado_linea.toArray(),
         db.presentacion.toArray(),
+        db.carga_vehiculo.toArray(),
+        db.carga_linea.toArray(),
+        db.devolucion_bodega.toArray(),
+        db.devolucion_linea.toArray(),
       ]);
 
       // Snapshot de corte del periodo en curso, por vendedor.
       const porVendedor: SnapshotVendedor[] = [];
       const iniciosPorVendedor: string[] = [];
+      const inicioPorVendedor = new Map<string, string>();
       for (const v of vendedores) {
         const inicio = await ultimoPeriodoFin(v.id);
         iniciosPorVendedor.push(inicio);
+        inicioPorVendedor.set(v.id, inicio);
         const insumos = await cargarInsumosCorte(v.id, inicio, hoy);
         porVendedor.push({ vendedorId: v.id, nombre: v.nombre, snapshot: calcularCorte(insumos) });
       }
@@ -58,6 +68,7 @@ export function useDashboard(): UseDashboardReturn {
       const inicioGlobal = iniciosPorVendedor.length ? iniciosPorVendedor.slice().sort()[0] : '';
       const nombreProductoBase = (id: string) => productosBase.find((p) => p.id === id)?.nombre ?? id;
       const nombrePresentacion = (id: string) => presentaciones.find((p) => p.id === id)?.nombre ?? id;
+      const nombreVendedor = (id: string) => vendedores.find((v) => v.id === id)?.nombre ?? id;
       const movimientosPeriodo = movimientosLaModerna.filter((m) => {
         const f = (m.fecha ?? '').slice(0, 10);
         return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
@@ -67,6 +78,20 @@ export function useDashboard(): UseDashboardReturn {
       const envasadosPeriodo = envasados.filter((e) => {
         const f = (e.fecha ?? '').slice(0, 10);
         return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
+      });
+
+      // Cargas/devoluciones sí tienen vendedor_id: cada una se acota a la
+      // ventana propia de SU vendedor (mismo criterio que ventas/gastos en
+      // `cargarInsumosCorte`), no al superset global.
+      const cargasPeriodo = cargas.filter((c) => {
+        const inicio = inicioPorVendedor.get(c.vendedor_id) ?? '';
+        const f = (c.fecha ?? '').slice(0, 10);
+        return (!inicio || f > inicio) && f <= hoy;
+      });
+      const devolucionesPeriodo = devoluciones.filter((d) => {
+        const inicio = inicioPorVendedor.get(d.vendedor_id) ?? '';
+        const f = (d.fecha ?? '').slice(0, 10);
+        return (!inicio || f > inicio) && f <= hoy;
       });
 
       const vencidos = clientes.filter(
@@ -81,6 +106,7 @@ export function useDashboard(): UseDashboardReturn {
           vencidos,
           laModerna: resumenLaModerna(movimientosPeriodo, nombreProductoBase),
           envasados: resumenEnvasado(envasadosPeriodo, envasadoLineas, nombreProductoBase, nombrePresentacion),
+          cargaDevolucion: resumenCargaDevolucion(cargasPeriodo, devolucionesPeriodo, cargaLineas, devolucionLineas, nombreVendedor, nombrePresentacion),
         })
       );
       setError(null);

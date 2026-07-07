@@ -9,6 +9,10 @@
  * 2026-07-03: ese flujo se deja intacto por ahora); esta pantalla es la nueva
  * fuente real, aditiva.
  *
+ * El historial de cargas/devoluciones recientes vive ahora en el Inicio del
+ * gerente, acotado al periodo desde el último corte (mismo criterio que
+ * RecepcionModernaPage).
+ *
  * Rutas: /admin/carga-devolucion (gerente) y /inventario/carga-devolucion (vendedor).
  */
 
@@ -42,7 +46,6 @@ import { useAuthContext } from '../context/AuthContext';
 import { SyncStatusBadge } from '../components/SyncStatusBadge';
 import { CuentaButton } from '../components/CuentaButton';
 import { Card } from '../components/ui/Card';
-import { Chip } from '../components/ui/Chip';
 import { PrimaryCTA } from '../components/ui/PrimaryCTA';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
@@ -55,14 +58,6 @@ const sectionLabel: CSSProperties = {
   textTransform: 'uppercase',
   color: 'var(--color-text-secondary)',
   marginBottom: '8px',
-};
-
-const lineRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '11px',
-  padding: '11px 0',
-  borderBottom: '1px solid var(--color-divider)',
 };
 
 const itemStyle = { '--background': 'transparent', '--padding-start': '0' } as CSSProperties;
@@ -87,14 +82,8 @@ export function CargaDevolucionPage() {
   const {
     vendedores,
     presentaciones,
-    nombrePresentacion,
     disponibleBodega,
     disponibleVehiculo,
-    cargasRecientes,
-    devolucionesRecientes,
-    lineasCargaDe,
-    lineasDevolucionDe,
-    loading,
     crearCarga,
     crearDevolucion,
     refresh,
@@ -146,11 +135,6 @@ export function CargaDevolucionPage() {
       setToast(e instanceof Error ? e.message : 'No se pudo registrar.');
     }
   };
-
-  const recientes = seg === 'carga' ? cargasRecientes : devolucionesRecientes;
-  const recientesDelVendedor = vendedorId
-    ? recientes.filter((r) => r.vendedor_id === vendedorId)
-    : [];
 
   return (
     <IonPage>
@@ -262,33 +246,6 @@ export function CargaDevolucionPage() {
           <PrimaryCTA disabled={!formularioValido} onClick={guardar}>
             {seg === 'carga' ? 'Registrar carga' : 'Registrar devolución'}
           </PrimaryCTA>
-
-          <div>
-            <span style={sectionLabel}>{seg === 'carga' ? 'Cargas recientes' : 'Devoluciones recientes'}</span>
-            {!loading && vendedorId && recientesDelVendedor.length === 0 && (
-              <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay registros para este vendedor.</p></IonText>
-            )}
-            {!vendedorId && (
-              <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Selecciona un vendedor para ver su historial.</p></IonText>
-            )}
-            {recientesDelVendedor.map((r) => {
-              const lineasDeR = seg === 'carga' ? lineasCargaDe(r.id) : lineasDevolucionDe(r.id);
-              const resumen = lineasDeR
-                .map((l) => `${l.cantidad} × ${nombrePresentacion(l.presentacion_id)}`)
-                .join(' · ');
-              return (
-                <div key={r.id} style={lineRow}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-navy)' }}>{r.fecha}</div>
-                    {resumen && (
-                      <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{resumen}</div>
-                    )}
-                  </div>
-                  <Chip tone="primarySoft">{lineasDeR.length} línea{lineasDeR.length === 1 ? '' : 's'}</Chip>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </IonContent>
 
