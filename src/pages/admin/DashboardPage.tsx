@@ -234,6 +234,46 @@ export function DashboardPage() {
               </Card>
             </div>
 
+            {/* ── Carga y devolución de vehículo · periodo ── */}
+            <div>
+              <span style={sectionLabel}>Carga y devolución · periodo</span>
+              <Card padding="14px">
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '16px',
+                    marginBottom: dashboard.cargaDevolucion.movimientos.length ? '10px' : 0,
+                  }}
+                >
+                  <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: '#8A94A6' }}>
+                    cargas <strong style={{ color: 'var(--color-navy)' }}>{dashboard.cargaDevolucion.totalCargas}</strong>
+                  </span>
+                  <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: '#8A94A6' }}>
+                    devoluciones <strong style={{ color: 'var(--color-navy)' }}>{dashboard.cargaDevolucion.totalDevoluciones}</strong>
+                  </span>
+                </div>
+                {dashboard.cargaDevolucion.movimientos.length === 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#8A94A6' }}>
+                    Sin cargas ni devoluciones en este periodo.
+                  </div>
+                )}
+                {dashboard.cargaDevolucion.movimientos.map((m) => (
+                  <div key={m.id} style={lineRow}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{m.vendedorNombre}</div>
+                      <div className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6', marginTop: '3px' }}>
+                        {m.fecha}
+                      </div>
+                      {m.resumenLineas && (
+                        <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{m.resumenLineas}</div>
+                      )}
+                    </div>
+                    <Chip tone={m.tipo === 'carga' ? 'primarySoft' : 'amber'}>{m.tipo === 'carga' ? 'carga' : 'devolución'}</Chip>
+                  </div>
+                ))}
+              </Card>
+            </div>
+
             {/* ── Caja por vendedor ── */}
             <div>
               <span style={sectionLabel}>Caja por vendedor · neta de gastos</span>

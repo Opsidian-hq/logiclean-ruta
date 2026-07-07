@@ -9,7 +9,15 @@
 
 import type { CorteSnapshot } from './corte';
 import type { Embudo, Adherencia } from './prospectos';
-import type { MovimientoLaModerna, Envasado, EnvasadoLinea } from '../db/schema';
+import type {
+  MovimientoLaModerna,
+  Envasado,
+  EnvasadoLinea,
+  CargaVehiculo,
+  CargaLinea,
+  DevolucionBodega,
+  DevolucionLinea,
+} from '../db/schema';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -53,6 +61,21 @@ export interface ResumenEnvasado {
   envasados: EnvasadoVista[];
 }
 
+export interface CargaDevolucionVista {
+  id: string;
+  vendedorNombre: string;
+  tipo: 'carga' | 'devolucion';
+  fecha: string;
+  /** "5 × Bidón 20L · 2 × Garrafa 5L" */
+  resumenLineas: string;
+}
+
+export interface ResumenCargaDevolucion {
+  totalCargas: number;
+  totalDevoluciones: number;
+  movimientos: CargaDevolucionVista[];
+}
+
 export interface DashboardModel {
   // ── Flujo (se reinicia al generar corte) ──
   ventasTotal: number;
@@ -67,6 +90,8 @@ export interface DashboardModel {
   laModerna: ResumenLaModerna;
   // ── Envasado (flujo, mismo periodo que ventas) ──
   envasados: ResumenEnvasado;
+  // ── Carga y devolución de vehículo (flujo, periodo propio de cada vendedor) ──
+  cargaDevolucion: ResumenCargaDevolucion;
   // ── Alertas ──
   vencidos: number;
   alertas: string[];
@@ -89,6 +114,8 @@ export interface ConstruirDashboardInput {
   laModerna: ResumenLaModerna;
   /** Envasados ya acotados al periodo (desde useDashboard). */
   envasados: ResumenEnvasado;
+  /** Cargas/devoluciones ya acotadas al periodo propio de cada vendedor (desde useDashboard). */
+  cargaDevolucion: ResumenCargaDevolucion;
 }
 
 /** Resumen combinado (recibido + devuelto) de movimientos ya filtrados por periodo. */
@@ -147,6 +174,41 @@ export function resumenEnvasado(
   return { totalLitros, envasados: vista };
 }
 
+/** Resumen combinado (cargas + devoluciones) ya filtradas por el periodo propio de cada vendedor. */
+export function resumenCargaDevolucion(
+  cargas: CargaVehiculo[],
+  devoluciones: DevolucionBodega[],
+  cargaLineas: CargaLinea[],
+  devolucionLineas: DevolucionLinea[],
+  nombreVendedor: (id: string) => string,
+  nombrePresentacion: (id: string) => string
+): ResumenCargaDevolucion {
+  const resumenDe = (lineas: { presentacion_id: string; cantidad: number }[]) =>
+    lineas.map((l) => `${l.cantidad} × ${nombrePresentacion(l.presentacion_id)}`).join(' · ');
+
+  const vistaCargas: CargaDevolucionVista[] = cargas.map((c) => ({
+    id: c.id,
+    vendedorNombre: nombreVendedor(c.vendedor_id),
+    tipo: 'carga' as const,
+    fecha: c.fecha,
+    resumenLineas: resumenDe(cargaLineas.filter((l) => l.carga_id === c.id)),
+  }));
+
+  const vistaDevoluciones: CargaDevolucionVista[] = devoluciones.map((d) => ({
+    id: d.id,
+    vendedorNombre: nombreVendedor(d.vendedor_id),
+    tipo: 'devolucion' as const,
+    fecha: d.fecha,
+    resumenLineas: resumenDe(devolucionLineas.filter((l) => l.devolucion_id === d.id)),
+  }));
+
+  const movimientos = [...vistaCargas, ...vistaDevoluciones].sort(
+    (a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '')
+  );
+
+  return { totalCargas: cargas.length, totalDevoluciones: devoluciones.length, movimientos };
+}
+
 export function construirDashboard(input: ConstruirDashboardInput): DashboardModel {
   const porVendedor: CajaVendedor[] = input.porVendedor.map((v) => {
     const ef = v.snapshot.bolsas.efectivo.neto;
@@ -183,6 +245,7 @@ export function construirDashboard(input: ConstruirDashboardInput): DashboardMod
     carteraActiva: input.embudo.convertidos,
     laModerna: input.laModerna,
     envasados: input.envasados,
+    cargaDevolucion: input.cargaDevolucion,
     vencidos: input.vencidos,
     alertas,
   };
