@@ -161,6 +161,88 @@ export function DashboardPage() {
               </div>
             </div>
 
+            {/* ── Caja por vendedor ── */}
+            <div>
+              <span style={sectionLabel}>Caja por vendedor · neta de gastos</span>
+              <Card padding="14px">
+                {dashboard.porVendedor.length === 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#8A94A6' }}>Sin vendedores.</div>
+                )}
+                {dashboard.porVendedor.map((v, idx) => (
+                  <div
+                    key={v.vendedorId}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setResumenVendedorId(v.vendedorId)}
+                    onKeyDown={(ev) => ev.key === 'Enter' && setResumenVendedorId(v.vendedorId)}
+                    style={{
+                      paddingTop: idx ? '12px' : 0,
+                      marginTop: idx ? '12px' : 0,
+                      borderTop: idx ? '1px solid var(--color-divider)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={rowBetween}>
+                      <span style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{v.nombre}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {v.descuadre && <Chip tone="error">descuadre</Chip>}
+                        <IonIcon icon={chevronForwardOutline} style={{ color: 'var(--color-text-secondary)', fontSize: '16px' }} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '6px', flexWrap: 'wrap' }}>
+                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
+                        ventas <strong style={{ color: 'var(--color-navy)' }}>{money(v.ventas)}</strong>
+                      </span>
+                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
+                        efectivo <strong style={{ color: v.efectivo < 0 ? 'var(--color-error)' : 'var(--color-navy)' }}>{money(v.efectivo)}</strong>
+                      </span>
+                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
+                        banco <strong style={{ color: v.transferencia < 0 ? 'var(--color-error)' : 'var(--color-navy)' }}>{money(v.transferencia)}</strong>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            </div>
+
+            {/* ── Cartera: adherencia + embudo + activa (continuos) ── */}
+            <div>
+              <span style={sectionLabel}>Cartera · continua</span>
+              <Card padding="16px">
+                <div style={rowBetween}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#8A94A6' }}>Adherencia</div>
+                    <div className="numeric" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-navy)', lineHeight: 1.05, marginTop: '2px' }}>
+                      {dashboard.adherencia.pct}%
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#8A94A6' }}>Cartera activa</div>
+                    <div className="numeric" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-navy)', lineHeight: 1.05, marginTop: '2px' }}>
+                      {dashboard.carteraActiva}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--color-divider)' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#8A94A6', marginBottom: '10px' }}>
+                    Embudo de prospectos
+                  </div>
+                  {dashboard.embudo.etapas.map((e) => (
+                    <div key={e.etapa} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 0' }}>
+                      <span style={{ minWidth: '64px', fontSize: '13px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                        Visita {e.etapa}{e.etapa === CICLO_OBJETIVO ? '+' : ''}
+                      </span>
+                      <div style={{ flex: 1, height: '18px', background: 'var(--color-surface-muted)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                        <div style={{ width: `${(e.count / maxEtapa) * 100}%`, height: '100%', background: 'var(--color-primary)', borderRadius: 'var(--radius-sm)', minWidth: e.count > 0 ? '4px' : 0 }} />
+                      </div>
+                      <span className="numeric" style={{ minWidth: '26px', textAlign: 'right', fontSize: '15px', fontWeight: 800, color: 'var(--color-navy)' }}>{e.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
             {/* ── La Moderna · periodo (recepciones y devoluciones, combinado) ── */}
             <div>
               <span style={sectionLabel}>La Moderna · periodo</span>
@@ -271,88 +353,6 @@ export function DashboardPage() {
                     <Chip tone={m.tipo === 'carga' ? 'primarySoft' : 'amber'}>{m.tipo === 'carga' ? 'carga' : 'devolución'}</Chip>
                   </div>
                 ))}
-              </Card>
-            </div>
-
-            {/* ── Caja por vendedor ── */}
-            <div>
-              <span style={sectionLabel}>Caja por vendedor · neta de gastos</span>
-              <Card padding="14px">
-                {dashboard.porVendedor.length === 0 && (
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#8A94A6' }}>Sin vendedores.</div>
-                )}
-                {dashboard.porVendedor.map((v, idx) => (
-                  <div
-                    key={v.vendedorId}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setResumenVendedorId(v.vendedorId)}
-                    onKeyDown={(ev) => ev.key === 'Enter' && setResumenVendedorId(v.vendedorId)}
-                    style={{
-                      paddingTop: idx ? '12px' : 0,
-                      marginTop: idx ? '12px' : 0,
-                      borderTop: idx ? '1px solid var(--color-divider)' : 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={rowBetween}>
-                      <span style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{v.nombre}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {v.descuadre && <Chip tone="error">descuadre</Chip>}
-                        <IonIcon icon={chevronForwardOutline} style={{ color: 'var(--color-text-secondary)', fontSize: '16px' }} />
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', marginTop: '6px', flexWrap: 'wrap' }}>
-                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
-                        ventas <strong style={{ color: 'var(--color-navy)' }}>{money(v.ventas)}</strong>
-                      </span>
-                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
-                        efectivo <strong style={{ color: v.efectivo < 0 ? 'var(--color-error)' : 'var(--color-navy)' }}>{money(v.efectivo)}</strong>
-                      </span>
-                      <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>
-                        banco <strong style={{ color: v.transferencia < 0 ? 'var(--color-error)' : 'var(--color-navy)' }}>{money(v.transferencia)}</strong>
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </Card>
-            </div>
-
-            {/* ── Cartera: adherencia + embudo + activa (continuos) ── */}
-            <div>
-              <span style={sectionLabel}>Cartera · continua</span>
-              <Card padding="16px">
-                <div style={rowBetween}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#8A94A6' }}>Adherencia</div>
-                    <div className="numeric" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-navy)', lineHeight: 1.05, marginTop: '2px' }}>
-                      {dashboard.adherencia.pct}%
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#8A94A6' }}>Cartera activa</div>
-                    <div className="numeric" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-navy)', lineHeight: 1.05, marginTop: '2px' }}>
-                      {dashboard.carteraActiva}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--color-divider)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#8A94A6', marginBottom: '10px' }}>
-                    Embudo de prospectos
-                  </div>
-                  {dashboard.embudo.etapas.map((e) => (
-                    <div key={e.etapa} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 0' }}>
-                      <span style={{ minWidth: '64px', fontSize: '13px', fontWeight: 700, color: 'var(--color-navy)' }}>
-                        Visita {e.etapa}{e.etapa === CICLO_OBJETIVO ? '+' : ''}
-                      </span>
-                      <div style={{ flex: 1, height: '18px', background: 'var(--color-surface-muted)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-                        <div style={{ width: `${(e.count / maxEtapa) * 100}%`, height: '100%', background: 'var(--color-primary)', borderRadius: 'var(--radius-sm)', minWidth: e.count > 0 ? '4px' : 0 }} />
-                      </div>
-                      <span className="numeric" style={{ minWidth: '26px', textAlign: 'right', fontSize: '15px', fontWeight: 800, color: 'var(--color-navy)' }}>{e.count}</span>
-                    </div>
-                  ))}
-                </div>
               </Card>
             </div>
 
