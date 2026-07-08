@@ -86,10 +86,15 @@ export function useCargaDevolucion(responsableId: string | null): UseCargaDevolu
   const crearDevolucion = useCallback(
     async (vendedorId: string, lineas: LineaCantidadInput[], fecha?: string) => {
       if (!responsableId) throw new Error('Falta el responsable.');
-      await registrarDevolucion({ vendedorId, responsableId, lineas, fecha });
+      const disponibleMap = new Map(
+        inventarioVehiculo
+          .filter((i) => i.vendedor_id === vendedorId)
+          .map((i) => [i.presentacion_id, i.cantidad])
+      );
+      await registrarDevolucion({ vendedorId, responsableId, lineas, disponibleVehiculo: disponibleMap, fecha });
       await load();
     },
-    [load, responsableId]
+    [load, responsableId, inventarioVehiculo]
   );
 
   return {

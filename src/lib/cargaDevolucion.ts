@@ -114,6 +114,8 @@ export interface RegistrarDevolucionInput {
   vendedorId: string;
   responsableId: string;
   lineas: LineaCantidadInput[];
+  /** Disponible en el vehículo del vendedor por presentación, para no devolver más de lo cargado. */
+  disponibleVehiculo: Map<string, number>;
   fecha?: string;
   nota?: string;
 }
@@ -130,6 +132,7 @@ export async function registrarDevolucion(
     vendedorId,
     responsableId,
     lineas: lineasInput,
+    disponibleVehiculo,
     fecha = new Date().toISOString().slice(0, 10),
     nota,
   } = input;
@@ -137,6 +140,15 @@ export async function registrarDevolucion(
   if (!vendedorId) throw new Error('Falta el vendedor.');
   if (!responsableId) throw new Error('Falta el responsable.');
   validarLineas(lineasInput);
+
+  for (const l of lineasInput) {
+    const disponible = disponibleVehiculo.get(l.presentacionId) ?? 0;
+    if (l.cantidad > disponible) {
+      throw new Error(
+        `No hay suficiente en el vehículo (disponible: ${disponible}, solicitado: ${l.cantidad}).`
+      );
+    }
+  }
 
   const devolucionId = generateUUID();
   const devolucion: DevolucionBodega = {
