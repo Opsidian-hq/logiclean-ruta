@@ -107,10 +107,27 @@ export function CargaDevolucionPage() {
     setLineas((prev) => (prev.length > 1 ? prev.filter((l) => l.key !== key) : prev));
 
   const lineasValidas = lineas.filter((l) => l.presentacionId && (parseFloat(l.cantidad) || 0) > 0);
-  const excedeBodega =
-    seg === 'carga' &&
-    lineasValidas.some((l) => (parseFloat(l.cantidad) || 0) > disponibleBodega(l.presentacionId));
-  const formularioValido = !!vendedorId && lineasValidas.length > 0 && !excedeBodega;
+  const excedeDisponible = lineasValidas.some((l) => {
+    const disp = seg === 'carga' ? disponibleBodega(l.presentacionId) : disponibleVehiculo(vendedorId, l.presentacionId);
+    return (parseFloat(l.cantidad) || 0) > disp;
+  });
+  const formularioValido = !!vendedorId && lineasValidas.length > 0 && !excedeDisponible;
+
+  const presentacionesDisponibles = seg === 'carga'
+    ? presentaciones.filter((p) => disponibleBodega(p.id) > 0)
+    : vendedorId
+      ? presentaciones.filter((p) => disponibleVehiculo(vendedorId, p.id) > 0)
+      : [];
+
+  // Evita que una línea ya seleccionada quede "huérfana" (select en blanco)
+  // si el producto deja de calificar al cambiar de tab o de vendedor.
+  const opcionesParaLinea = (l: LineaForm) => {
+    if (l.presentacionId && !presentacionesDisponibles.some((p) => p.id === l.presentacionId)) {
+      const actual = presentaciones.find((p) => p.id === l.presentacionId);
+      return actual ? [...presentacionesDisponibles, actual] : presentacionesDisponibles;
+    }
+    return presentacionesDisponibles;
+  };
 
   const limpiarFormulario = () => {
     setLineas([nuevaLinea()]);
@@ -191,7 +208,7 @@ export function CargaDevolucionPage() {
                 const disponible = seg === 'carga'
                   ? disponibleBodega(l.presentacionId)
                   : (vendedorId ? disponibleVehiculo(vendedorId, l.presentacionId) : 0);
-                const excede = seg === 'carga' && l.presentacionId && cantidadNum > disponible;
+                const excede = !!l.presentacionId && cantidadNum > disponible;
                 return (
                   <div key={l.key} style={{ padding: '10px 0', borderBottom: i < lineas.length - 1 ? '1px solid var(--color-divider)' : 'none' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
@@ -202,7 +219,7 @@ export function CargaDevolucionPage() {
                           placeholder="Selecciona"
                           onIonChange={(e) => actualizarLinea(l.key, { presentacionId: e.detail.value })}
                         >
-                          {presentaciones.map((p) => (
+                          {opcionesParaLinea(l).map((p) => (
                             <IonSelectOption key={p.id} value={p.id}>{p.nombre}</IonSelectOption>
                           ))}
                         </IonSelect>
@@ -221,7 +238,7 @@ export function CargaDevolucionPage() {
                       <IonText color={excede ? 'danger' : 'medium'}>
                         <p style={{ fontSize: 'var(--font-size-xs)', margin: '2px 0 0' }}>
                           {seg === 'carga' ? `Disponible en bodega: ${disponible}` : `En el vehículo: ${disponible}`}
-                          {excede ? ' — no hay suficiente en bodega' : ''}
+                          {excede ? (seg === 'carga' ? ' — no hay suficiente en bodega' : ' — no hay suficiente en el vehículo') : ''}
                         </p>
                       </IonText>
                     )}

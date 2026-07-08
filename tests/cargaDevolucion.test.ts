@@ -10,6 +10,8 @@
  * DEV-001: persiste devolución + líneas y encola en un solo lote
  * DEV-002: exige al menos una línea
  * DEV-003: exige vendedor y responsable
+ * DEV-004: impide devolver más de lo disponible en el vehículo (H-19)
+ * DEV-005: permite devolver hasta exactamente lo disponible
  */
 
 import 'fake-indexeddb/auto';
@@ -106,8 +108,10 @@ describe('registrarCarga', () => {
 
 describe('registrarDevolucion', () => {
   it('DEV-001: persiste devolución + líneas y encola en un solo lote', async () => {
+    const disponibleVehiculo = new Map([['pres-1L', 10]]);
     const { devolucion, lineas } = await registrarDevolucion({
       ...base,
+      disponibleVehiculo,
       lineas: [{ presentacionId: 'pres-1L', cantidad: 3 }],
     });
 
@@ -120,15 +124,36 @@ describe('registrarDevolucion', () => {
   });
 
   it('DEV-002: exige al menos una línea', async () => {
-    await expect(registrarDevolucion({ ...base, lineas: [] })).rejects.toThrow();
+    await expect(
+      registrarDevolucion({ ...base, disponibleVehiculo: new Map(), lineas: [] })
+    ).rejects.toThrow();
   });
 
   it('DEV-003: exige vendedor y responsable', async () => {
+    const disponibleVehiculo = new Map([['pres-1L', 10]]);
     await expect(
-      registrarDevolucion({ ...base, vendedorId: '', lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }] })
+      registrarDevolucion({ ...base, vendedorId: '', disponibleVehiculo, lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }] })
     ).rejects.toThrow();
     await expect(
-      registrarDevolucion({ ...base, responsableId: '', lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }] })
+      registrarDevolucion({ ...base, responsableId: '', disponibleVehiculo, lineas: [{ presentacionId: 'pres-1L', cantidad: 1 }] })
     ).rejects.toThrow();
+  });
+
+  it('DEV-004: impide devolver más de lo disponible en el vehículo (H-19)', async () => {
+    const disponibleVehiculo = new Map([['pres-1L', 5]]);
+    await expect(
+      registrarDevolucion({ ...base, disponibleVehiculo, lineas: [{ presentacionId: 'pres-1L', cantidad: 6 }] })
+    ).rejects.toThrow(/no hay suficiente/i);
+    expect(await db.devolucion_bodega.count()).toBe(0);
+  });
+
+  it('DEV-005: permite devolver hasta exactamente lo disponible', async () => {
+    const disponibleVehiculo = new Map([['pres-1L', 5]]);
+    const { devolucion } = await registrarDevolucion({
+      ...base,
+      disponibleVehiculo,
+      lineas: [{ presentacionId: 'pres-1L', cantidad: 5 }],
+    });
+    expect(devolucion.id).toBeDefined();
   });
 });
