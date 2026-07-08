@@ -6,8 +6,9 @@
  * embudo, la adherencia y la cartera activa (continuos). Resalta alertas.
  * Toda la lógica vive en `lib/dashboard` / `lib/corte` (puras).
  *
- * El corte semanal se abre desde aquí vía el FAB — ya no vive como tab
- * propio en la barra inferior del gerente.
+ * El corte semanal y el alta de gastos de backoffice se abren desde aquí vía
+ * el FAB (speed dial) — ya no viven como tabs propios en la barra inferior
+ * del gerente.
  */
 
 import {
@@ -23,10 +24,11 @@ import {
   IonRefresherContent,
   IonFab,
   IonFabButton,
+  IonFabList,
   IonIcon,
   IonModal,
 } from '@ionic/react';
-import { receiptOutline, chevronForwardOutline } from 'ionicons/icons';
+import { addOutline, receiptOutline, walletOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
@@ -38,6 +40,7 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { CortePage } from './CortePage';
 import { ResumenVendedorPage } from './ResumenVendedorPage';
+import { RegistrosNegocioPage } from './RegistrosNegocioPage';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -97,6 +100,7 @@ export function DashboardPage() {
   );
 
   const [corteOpen, setCorteOpen] = useState(false);
+  const [negocioOpen, setNegocioOpen] = useState(false);
   const [resumenVendedorId, setResumenVendedorId] = useState<string | null>(null);
 
   return (
@@ -356,6 +360,43 @@ export function DashboardPage() {
               </Card>
             </div>
 
+            {/* ── Backoffice · periodo ── */}
+            <div>
+              <span style={sectionLabel}>Backoffice · periodo</span>
+              <Card padding="14px">
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '16px',
+                    marginBottom: dashboard.gastosBackoffice.gastos.length ? '10px' : 0,
+                  }}
+                >
+                  <span className="numeric" style={{ fontSize: '13px', fontWeight: 700, color: '#8A94A6' }}>
+                    total <strong style={{ color: 'var(--color-navy)' }}>{money(dashboard.gastosBackoffice.total)}</strong>
+                  </span>
+                </div>
+                {dashboard.gastosBackoffice.gastos.length === 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#8A94A6' }}>
+                    Sin gastos de backoffice en este periodo.
+                  </div>
+                )}
+                {dashboard.gastosBackoffice.gastos.map((g) => (
+                  <div key={g.id} style={lineRow}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{g.categoria}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        <Chip tone={g.formaPago === 'efectivo' ? 'primarySoft' : 'neutral'}>
+                          {g.formaPago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                        </Chip>
+                        <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{g.fecha}</span>
+                      </div>
+                    </div>
+                    <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>{money(g.monto)}</span>
+                  </div>
+                ))}
+              </Card>
+            </div>
+
             <div
               role="button"
               tabIndex={0}
@@ -369,18 +410,26 @@ export function DashboardPage() {
         )}
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton
-            onClick={() => setCorteOpen(true)}
-            style={{ '--background': 'var(--color-primary)' }}
-            aria-label="Registrar corte"
-          >
-            <IonIcon icon={receiptOutline} />
+          <IonFabButton style={{ '--background': 'var(--color-primary)' }} aria-label="Acciones">
+            <IonIcon icon={addOutline} />
           </IonFabButton>
+          <IonFabList side="top">
+            <IonFabButton onClick={() => setCorteOpen(true)} aria-label="Registrar corte">
+              <IonIcon icon={receiptOutline} />
+            </IonFabButton>
+            <IonFabButton onClick={() => setNegocioOpen(true)} aria-label="Registrar gasto">
+              <IonIcon icon={walletOutline} />
+            </IonFabButton>
+          </IonFabList>
         </IonFab>
       </IonContent>
 
       <IonModal isOpen={corteOpen} onDidDismiss={() => setCorteOpen(false)}>
         <CortePage onClose={() => setCorteOpen(false)} />
+      </IonModal>
+
+      <IonModal isOpen={negocioOpen} onDidDismiss={() => { setNegocioOpen(false); refresh(); }}>
+        <RegistrosNegocioPage onClose={() => setNegocioOpen(false)} />
       </IonModal>
 
       <IonModal isOpen={!!resumenVendedorId} onDidDismiss={() => setResumenVendedorId(null)}>

@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
 import { cargarInsumosCorte, ultimoPeriodoFin } from '../lib/corteData';
-import { construirDashboard, resumenLaModerna, resumenEnvasado, resumenCargaDevolucion } from '../lib/dashboard';
+import { construirDashboard, resumenLaModerna, resumenEnvasado, resumenCargaDevolucion, resumenGastosBackoffice } from '../lib/dashboard';
 import { embudoPorEtapa, adherencia, clasificarVencimiento } from '../lib/prospectos';
 import type { DashboardModel, SnapshotVendedor } from '../lib/dashboard';
 
@@ -33,7 +33,7 @@ export function useDashboard(): UseDashboardReturn {
       const [
         vendedores, clientes, visitas, movimientosLaModerna, productosBase,
         envasados, envasadoLineas, presentaciones, cargas, cargaLineas,
-        devoluciones, devolucionLineas,
+        devoluciones, devolucionLineas, gastosBackoffice,
       ] = await Promise.all([
         db.vendedor.toArray(),
         db.cliente.where('activo').equals(1).toArray(),
@@ -47,6 +47,7 @@ export function useDashboard(): UseDashboardReturn {
         db.carga_linea.toArray(),
         db.devolucion_bodega.toArray(),
         db.devolucion_linea.toArray(),
+        db.gasto.where('tipo').equals('backoffice').toArray(),
       ]);
 
       // Snapshot de corte del periodo en curso, por vendedor.
@@ -79,6 +80,12 @@ export function useDashboard(): UseDashboardReturn {
         const f = (e.fecha ?? '').slice(0, 10);
         return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
       });
+      // Los gastos de backoffice tampoco tienen vendedor_id (salida del
+      // negocio): mismo criterio de ventana que movimientosLaModerna.
+      const gastosBackofficePeriodo = gastosBackoffice.filter((g) => {
+        const f = (g.fecha ?? '').slice(0, 10);
+        return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
+      });
 
       // Cargas/devoluciones sí tienen vendedor_id: cada una se acota a la
       // ventana propia de SU vendedor (mismo criterio que ventas/gastos en
@@ -107,6 +114,7 @@ export function useDashboard(): UseDashboardReturn {
           laModerna: resumenLaModerna(movimientosPeriodo, nombreProductoBase),
           envasados: resumenEnvasado(envasadosPeriodo, envasadoLineas, nombreProductoBase, nombrePresentacion),
           cargaDevolucion: resumenCargaDevolucion(cargasPeriodo, devolucionesPeriodo, cargaLineas, devolucionLineas, nombreVendedor, nombrePresentacion),
+          gastosBackoffice: resumenGastosBackoffice(gastosBackofficePeriodo),
         })
       );
       setError(null);
