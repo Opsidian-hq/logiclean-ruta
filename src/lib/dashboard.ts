@@ -17,6 +17,7 @@ import type {
   CargaLinea,
   DevolucionBodega,
   DevolucionLinea,
+  Gasto,
 } from '../db/schema';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -76,6 +77,19 @@ export interface ResumenCargaDevolucion {
   movimientos: CargaDevolucionVista[];
 }
 
+export interface GastoBackofficeVista {
+  id: string;
+  categoria: string;
+  formaPago: 'efectivo' | 'transferencia';
+  fecha: string;
+  monto: number;
+}
+
+export interface ResumenGastosBackoffice {
+  total: number;
+  gastos: GastoBackofficeVista[];
+}
+
 export interface DashboardModel {
   // ── Flujo (se reinicia al generar corte) ──
   ventasTotal: number;
@@ -92,6 +106,8 @@ export interface DashboardModel {
   envasados: ResumenEnvasado;
   // ── Carga y devolución de vehículo (flujo, periodo propio de cada vendedor) ──
   cargaDevolucion: ResumenCargaDevolucion;
+  // ── Gastos de backoffice (flujo, mismo periodo que ventas) ──
+  gastosBackoffice: ResumenGastosBackoffice;
   // ── Alertas ──
   vencidos: number;
   alertas: string[];
@@ -116,6 +132,8 @@ export interface ConstruirDashboardInput {
   envasados: ResumenEnvasado;
   /** Cargas/devoluciones ya acotadas al periodo propio de cada vendedor (desde useDashboard). */
   cargaDevolucion: ResumenCargaDevolucion;
+  /** Gastos de backoffice ya acotados al periodo (desde useDashboard). */
+  gastosBackoffice: ResumenGastosBackoffice;
 }
 
 /** Resumen combinado (recibido + devuelto) de movimientos ya filtrados por periodo. */
@@ -209,6 +227,23 @@ export function resumenCargaDevolucion(
   return { totalCargas: cargas.length, totalDevoluciones: devoluciones.length, movimientos };
 }
 
+/** Resumen de gastos de backoffice ya filtrados por periodo. */
+export function resumenGastosBackoffice(gastos: Gasto[]): ResumenGastosBackoffice {
+  const vista: GastoBackofficeVista[] = gastos
+    .map((g) => ({
+      id: g.id,
+      categoria: g.categoria,
+      formaPago: g.forma_pago,
+      fecha: g.fecha,
+      monto: g.monto,
+    }))
+    .sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''));
+
+  const total = round2(gastos.reduce((s, g) => s + g.monto, 0));
+
+  return { total, gastos: vista };
+}
+
 export function construirDashboard(input: ConstruirDashboardInput): DashboardModel {
   const porVendedor: CajaVendedor[] = input.porVendedor.map((v) => {
     const ef = v.snapshot.bolsas.efectivo.neto;
@@ -246,6 +281,7 @@ export function construirDashboard(input: ConstruirDashboardInput): DashboardMod
     laModerna: input.laModerna,
     envasados: input.envasados,
     cargaDevolucion: input.cargaDevolucion,
+    gastosBackoffice: input.gastosBackoffice,
     vencidos: input.vencidos,
     alertas,
   };

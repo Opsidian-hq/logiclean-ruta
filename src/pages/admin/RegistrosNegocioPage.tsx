@@ -1,12 +1,19 @@
 /**
  * Logiclean Ruta — RegistrosNegocioPage (Inc 3, recortada a Backoffice en el
- * refactor de Inventario de bodega)
+ * refactor de Inventario de bodega; reorganizada a formulario-modal en la
+ * reorg de Gasto de backoffice)
  *
  * Gastos de backoffice del negocio (no tocan las bolsas del vendedor), que
  * alimentan el corte. La recepción/devolución con La Moderna y los accesos a
  * Envasado/Carga y devolución se movieron al tab "Inventario" (bodega) y a
  * `RecepcionModernaPage`.
  * Toda la escritura usa las libs offline-first existentes.
+ *
+ * El historial de gastos de backoffice vive ahora en el Inicio del gerente,
+ * acotado al periodo (mismo criterio que La Moderna/Envasado). Esta página
+ * se usa tanto como ruta propia (`/admin/negocio`) como incrustada en el
+ * modal del FAB de Inicio (H-15) — en ese caso recibe `onClose` para mostrar
+ * el botón de cerrar en vez de depender de la navegación por tabs.
  */
 
 import {
@@ -16,6 +23,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
+  IonButton,
   IonSegment,
   IonSegmentButton,
   IonLabel,
@@ -23,7 +31,6 @@ import {
   IonInput,
   IonSelect,
   IonSelectOption,
-  IonText,
   IonToast,
   IonRefresher,
   IonRefresherContent,
@@ -36,10 +43,8 @@ import { CATEGORIAS_BACKOFFICE } from '../../lib/gastos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
-import { Chip } from '../../components/ui/Chip';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 
-const money = (n: number) => `$${n.toFixed(2)}`;
 const OTRO = '__otro__';
 const hoy = () => new Date().toISOString().slice(0, 10);
 
@@ -53,16 +58,13 @@ const sectionLabel: CSSProperties = {
   marginBottom: '8px',
 };
 
-const lineRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '11px',
-  padding: '11px 0',
-  borderBottom: '1px solid var(--color-divider)',
-};
+interface RegistrosNegocioPageProps {
+  /** Presente cuando la página vive dentro del modal del FAB de Inicio. */
+  onClose?: () => void;
+}
 
-export function RegistrosNegocioPage() {
-  const { gastosBackoffice, crearGastoBackoffice, refresh } = useRegistrosNegocio();
+export function RegistrosNegocioPage({ onClose }: RegistrosNegocioPageProps = {}) {
+  const { crearGastoBackoffice, refresh } = useRegistrosNegocio();
 
   const { handleRefresh } = usePullToRefresh(
     useCallback(async () => { await refresh(); }, [refresh])
@@ -104,6 +106,13 @@ export function RegistrosNegocioPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
+          {onClose && (
+            <IonButtons slot="start">
+              <IonButton onClick={onClose} style={{ '--color': 'var(--color-on-dark)' }}>
+                Cerrar
+              </IonButton>
+            </IonButtons>
+          )}
           <IonTitle>Registros del negocio</IonTitle>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
@@ -160,27 +169,6 @@ export function RegistrosNegocioPage() {
                 </PrimaryCTA>
               </div>
             </Card>
-          </div>
-
-          <div>
-            <span style={sectionLabel}>Backoffice reciente</span>
-            {gastosBackoffice.length === 0 && (
-              <IonText color="medium"><p style={{ fontSize: 'var(--font-size-sm)' }}>Aún no hay gastos de backoffice.</p></IonText>
-            )}
-            {gastosBackoffice.map((g) => (
-              <div key={g.id} style={lineRow}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{g.categoria}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '4px', flexWrap: 'wrap' }}>
-                    <Chip tone={g.forma_pago === 'efectivo' ? 'primarySoft' : 'neutral'}>
-                      {g.forma_pago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
-                    </Chip>
-                    <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 600, color: '#8A94A6' }}>{g.fecha}</span>
-                  </div>
-                </div>
-                <span className="numeric" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-navy)' }}>{money(g.monto)}</span>
-              </div>
-            ))}
           </div>
         </div>
       </IonContent>
