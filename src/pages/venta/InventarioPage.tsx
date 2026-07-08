@@ -1,8 +1,9 @@
 /**
  * Logiclean Ruta — InventarioPage (vendedor)
  *
- * Resumen del inventario cargado en el vehículo. Los productos se agregan o
- * ajustan en bulk desde el sheet (FAB) o individualmente tocando una fila.
+ * Resumen del inventario cargado en el vehículo. El FAB lleva a Carga y
+ * devolución de bodega (única entrada real, valida contra bodega/vehículo);
+ * el ajuste manual individual por fila queda para correcciones puntuales.
  * Ruta: /inventario
  */
 
@@ -23,8 +24,6 @@ import {
   IonButton,
   IonIcon,
   IonToast,
-  IonItem,
-  IonLabel,
 } from '@ionic/react';
 import { addOutline, chevronForwardOutline } from 'ionicons/icons';
 import { useState, useCallback } from 'react';
@@ -38,7 +37,6 @@ import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { Card } from '../../components/ui/Card';
-import { CargarInventarioSheet } from './components/CargarInventarioSheet';
 import { redondear } from '../../lib/precios';
 import { money } from '../../lib/money';
 
@@ -60,7 +58,6 @@ export function InventarioPage() {
     useCallback(async () => { await refresh(); }, [refresh])
   );
 
-  const [cargarOpen, setCargarOpen] = useState(false);
   const [ajusteRow, setAjusteRow] = useState<InventarioRow | null>(null);
   const [ajusteVal, setAjusteVal] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
@@ -169,24 +166,6 @@ export function InventarioPage() {
                   </span>
                 </div>
               </Card>
-              <div style={{ marginTop: '10px' }}>
-                <Card padding="4px 14px">
-                  <IonItem
-                    button
-                    detail
-                    lines="none"
-                    style={{ '--background': 'transparent', '--padding-start': '0' }}
-                    onClick={() => history.push('/inventario/carga-devolucion')}
-                  >
-                    <IonLabel>
-                      <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>Carga y devolución de bodega</div>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                        Registrar lo que subes o regresas a bodega (H-18/H-19)
-                      </div>
-                    </IonLabel>
-                  </IonItem>
-                </Card>
-              </div>
             </div>
           </>
         )}
@@ -271,18 +250,11 @@ export function InventarioPage() {
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
         <IonFabButton
           style={{ '--background': 'var(--color-primary)' }}
-          onClick={() => setCargarOpen(true)}
+          onClick={() => history.push('/inventario/carga-devolucion')}
         >
           <IonIcon icon={addOutline} />
         </IonFabButton>
       </IonFab>
-
-      <CargarInventarioSheet
-        isOpen={cargarOpen}
-        rows={rows}
-        setCantidad={setCantidad}
-        onClose={() => setCargarOpen(false)}
-      />
 
       {/* Ajuste individual */}
       <IonModal
