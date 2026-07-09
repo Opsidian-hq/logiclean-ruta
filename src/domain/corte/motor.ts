@@ -1,0 +1,181 @@
+/**
+ * Logiclean Ruta — Corte por reparto (H-20, Inc 7.1)
+ *
+ * Motor de dominio puro: dados los insumos de un periodo, calcula el
+ * resultado del corte de negocio según las reglas 1-6 de
+ * modelo-datos-v1_4-corte-reparto.md (ADR-0011). Sin UI, sin Supabase —
+ * aislado de React/Ionic a propósito, para que sea testeable de forma
+ * independiente (PRD delta v1.4 §6).
+ */
+
+import type {
+  CorteEntrada,
+  CorteSalida,
+  Alerta,
+  LiquidacionMovimiento,
+  VendedorSalida,
+} from './types';
+
+interface PosicionInterna {
+  vendedor_id: string;
+  bolsa: number;
+  efectivo: number;
+  transferencia: number;
+  posicion_objetivo: number;
+  cobro_cxc_vieja: number;
+  saldo_vendedor_apertura: number;
+}
+
+export function calcularCorte(entrada: CorteEntrada): CorteSalida {
+  const { vendedores, negocio } = entrada;
+  const n = vendedores.length;
+
+  const ventas_periodo = vendedores.reduce(
+    (acc, v) => acc + v.efectivo_cobrado_neto + v.transfer_cobrado_neto + v.cxc_nueva,
+    0
+  );
+  const pool_liquido = vendedores.reduce(
+    (acc, v) => acc + v.efectivo_cobrado_neto + v.transfer_cobrado_neto,
+    0
+  );
+
+  const obligaciones_total = negocio.adeudo_la_moderna + negocio.backoffice_pendiente;
+  const v_remanente = ventas_periodo - obligaciones_total;
+  // Regla 3, PRD §6: T = V / N sin ramas que asuman un N fijo (N=1 ⇒ T = V).
+  const t_por_vendedor = v_remanente / n;
+
+  const posiciones: PosicionInterna[] = vendedores.map((v) => ({
+    vendedor_id: v.vendedor_id,
+    bolsa: v.efectivo_cobrado_neto + v.transfer_cobrado_neto,
+    efectivo: v.efectivo_cobrado_neto,
+    transferencia: v.transfer_cobrado_neto,
+    posicion_objetivo: t_por_vendedor - v.cxc_nueva,
+    cobro_cxc_vieja: v.cobro_cxc_vieja,
+    saldo_vendedor_apertura: v.saldo_vendedor_apertura,
+  }));
+
+  // Regla 4: los vendedores en positivo reservan su parte ANTES de pagar
+  // obligaciones — no se compara el líquido total contra las obligaciones.
+  const reservado_positivos = posiciones.reduce(
+    (acc, p) => acc + Math.max(p.posicion_objetivo, 0),
+    0
+  );
+  const disponible_obligaciones = pool_liquido - reservado_positivos;
+
+  const faltante = Math.max(obligaciones_total - disponible_obligaciones, 0);
+  const saldo_moderna_cierre = negocio.saldo_moderna_apertura + faltante;
+
+  // Backoffice se paga completo primero; La Moderna absorbe el tope (regla 4:
+  // "el pago a La Moderna se topa a la caja disponible").
+  const pagado_backoffice = Math.min(negocio.backoffice_pendiente, Math.max(disponible_obligaciones, 0));
+  const pagado_la_moderna = Math.max(disponible_obligaciones - pagado_backoffice, 0);
+
+  const por_vendedor: VendedorSalida[] = posiciones.map((p) => ({
+    vendedor_id: p.vendedor_id,
+    posicion_objetivo: p.posicion_objetivo,
+    efectivo_entregado: Math.max(p.posicion_objetivo, 0),
+    // Regla 5: apertura + cobro de CxC vieja (salda arrastre, R9) + lo que
+    // este corte no pudo liquidar (min(posicion_objetivo, 0)).
+    saldo_vendedor_cierre:
+      p.saldo_vendedor_apertura + p.cobro_cxc_vieja + Math.min(p.posicion_objetivo, 0),
+  }));
+
+  const liquidacion = generarLiquidacion(posiciones, pagado_la_moderna, pagado_backoffice);
+
+  const alertas: Alerta[] = [];
+  if (faltante > 0) {
+    alertas.push({ tipo: 'la_moderna_topada', faltante });
+  }
+  if (negocio.saldo_moderna_apertura !== 0) {
+    alertas.push({ tipo: 'arrastre_entrante' });
+  }
+  for (const p of posiciones) {
+    if (p.posicion_objetivo < 0) {
+      alertas.push({ tipo: 'vendedor_negativo', vendedor_id: p.vendedor_id, monto: p.posicion_objetivo });
+    }
+    if (p.saldo_vendedor_apertura !== 0) {
+      alertas.push({ tipo: 'arrastre_entrante', vendedor_id: p.vendedor_id });
+    }
+  }
+
+  return {
+    ventas_periodo,
+    obligaciones_total,
+    pool_liquido,
+    v_remanente,
+    t_por_vendedor,
+    disponible_obligaciones,
+    por_vendedor,
+    saldo_moderna_cierre,
+    liquidacion,
+    alertas,
+  };
+}
+
+/**
+ * Pasada de liquidación (Paso 5, ADR-0011): movimientos mínimos que llevan a
+ * cada actor de lo que tiene en mano a su posición objetivo.
+ *
+ * Deudores = vendedores cuya bolsa excede lo que se les entrega (incluye a
+ * quien tiene posición negativa: se le entrega 0, así que debe su bolsa
+ * completa). Acreedores = La Moderna, backoffice y vendedores cuya bolsa no
+ * alcanza su objetivo, en ese orden de prioridad. Cada deudor drena primero
+ * su efectivo y luego su transferencia (preferencia efectivo→transferencia,
+ * ADR-0011) contra el acreedor vigente, con un puntero que solo avanza
+ * cuando el acreedor actual queda saldado — así ningún origen-destino-forma
+ * se fragmenta en más de una fila.
+ */
+function generarLiquidacion(
+  posiciones: PosicionInterna[],
+  pagado_la_moderna: number,
+  pagado_backoffice: number
+): LiquidacionMovimiento[] {
+  const movimientos: LiquidacionMovimiento[] = [];
+
+  const acreedores: { tipo: 'la_moderna' | 'backoffice' | 'vendedor'; vendedor_id?: string; restante: number }[] = [];
+  if (pagado_la_moderna > 0) acreedores.push({ tipo: 'la_moderna', restante: pagado_la_moderna });
+  if (pagado_backoffice > 0) acreedores.push({ tipo: 'backoffice', restante: pagado_backoffice });
+  for (const p of posiciones) {
+    const necesita = p.posicion_objetivo - p.bolsa;
+    if (necesita > 0) acreedores.push({ tipo: 'vendedor', vendedor_id: p.vendedor_id, restante: necesita });
+  }
+
+  const deudores = posiciones
+    .map((p) => ({
+      vendedor_id: p.vendedor_id,
+      efectivo_disponible: p.efectivo,
+      transferencia_disponible: p.transferencia,
+      debe: p.bolsa - Math.max(p.posicion_objetivo, 0),
+    }))
+    .filter((d) => d.debe > 0);
+
+  let acreedorIdx = 0;
+
+  for (const deudor of deudores) {
+    for (const forma_pago of ['efectivo', 'transferencia'] as const) {
+      let disponible = Math.min(
+        forma_pago === 'efectivo' ? deudor.efectivo_disponible : deudor.transferencia_disponible,
+        deudor.debe
+      );
+
+      while (disponible > 0 && acreedorIdx < acreedores.length) {
+        const acreedor = acreedores[acreedorIdx];
+        const monto = Math.min(disponible, acreedor.restante);
+        movimientos.push({
+          origen_tipo: 'vendedor',
+          origen_vendedor_id: deudor.vendedor_id,
+          destino_tipo: acreedor.tipo,
+          destino_vendedor_id: acreedor.tipo === 'vendedor' ? (acreedor.vendedor_id ?? null) : null,
+          monto,
+          forma_pago,
+        });
+        acreedor.restante -= monto;
+        disponible -= monto;
+        deudor.debe -= monto;
+        if (acreedor.restante === 0) acreedorIdx += 1;
+      }
+    }
+  }
+
+  return movimientos;
+}
