@@ -133,15 +133,56 @@ export interface Gasto {
   descripcion?: string;
 }
 
+// ── Corte por reparto (H-20, Inc 7.2) — corte de negocio, no por vendedor.
+// Ver docs/modelo-datos-v1_4-corte-reparto.md y ADR-0011. Reemplaza el CORTE
+// por-vendedor de H-10; append-only (sin UPDATE/DELETE), igual que el resto
+// del historial de cierre.
+
 export interface Corte {
   id: string;
-  vendedor_id: string;
   periodo_inicio: string;   // ISO date
   periodo_fin: string;      // ISO date
   fecha_generado: string;   // ISO timestamptz
-  efectivo_entregado: number;
-  transferencias_entregadas: number;
+  estado: 'borrador' | 'confirmado';
+  n_vendedores: number;
+  ventas_periodo: number;
+  adeudo_la_moderna: number;
+  backoffice_pendiente: number;
+  obligaciones_total: number;
+  pool_liquido: number;
+  v_remanente: number;
+  t_por_vendedor: number;
+  saldo_moderna_apertura: number;
+  saldo_moderna_cierre: number;
   snapshot: Record<string, unknown>;
+}
+
+/** Línea por vendedor de un corte de negocio (UNIQUE corte_id, vendedor_id). */
+export interface CorteVendedor {
+  id: string;
+  corte_id: string;
+  vendedor_id: string;
+  efectivo_cobrado_neto: number;
+  transfer_cobrado_neto: number;
+  cxc_nueva: number;
+  cobro_cxc_vieja: number;
+  posicion_objetivo: number;
+  efectivo_entregado: number;
+  saldo_vendedor_apertura: number;
+  saldo_vendedor_cierre: number;
+}
+
+/** Instrucción concreta de movimiento de dinero (Paso 5, ADR-0011). */
+export interface LiquidacionMovimiento {
+  id: string;
+  corte_id: string;
+  origen_tipo: 'vendedor' | 'negocio';
+  origen_vendedor_id: string | null;
+  destino_tipo: 'la_moderna' | 'backoffice' | 'vendedor' | 'negocio';
+  destino_vendedor_id: string | null;
+  monto: number;
+  forma_pago: 'efectivo' | 'transferencia';
+  nota?: string;
 }
 
 // ── Inc 6.1 — Inventario de bodega (contadores + eventos) ─────
@@ -236,6 +277,8 @@ export type EntityTable =
   | 'suministro_la_moderna'
   | 'gasto'
   | 'corte'
+  | 'corte_vendedor'
+  | 'liquidacion_movimiento'
   | 'inventario_bodega_base'
   | 'inventario_bodega_presentacion'
   | 'movimiento_la_moderna'
@@ -283,4 +326,14 @@ export const DEXIE_SCHEMA_V2 = {
   carga_linea:                    '&id, carga_id, presentacion_id',
   devolucion_bodega:              '&id, vendedor_id, fecha',
   devolucion_linea:               '&id, devolucion_id, presentacion_id',
+} as const;
+
+// Versión 3 (Inc 7.2/7.4): corte por reparto (H-20) — CORTE pasa de
+// por-vendedor a de-negocio (ya no se indexa por vendedor_id, la columna se
+// retiró: migración 011), y se agregan CORTE_VENDEDOR y LIQUIDACION_MOVIMIENTO.
+export const DEXIE_SCHEMA_V3 = {
+  ...DEXIE_SCHEMA_V2,
+  corte:                 '&id',
+  corte_vendedor:         '&id, corte_id, vendedor_id',
+  liquidacion_movimiento: '&id, corte_id',
 } as const;

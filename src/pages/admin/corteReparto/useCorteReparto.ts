@@ -1,0 +1,247 @@
+/**
+ * Logiclean Ruta — useCorteReparto (H-20, Inc 7.4)
+ *
+ * Orquesta el stepper de 6 pasos: carga insumos (Dexie), deriva las entradas
+ * del motor de dominio (`derivarVendedorEntrada` / `cargarNegocioEntrada`,
+ * Inc 7.4) e invoca `calcularCorte` (motor puro, Inc 7.1) **una sola vez**
+ * por cada insumo — el resultado (`salida`) es la única fuente de verdad
+ * para los pasos 3-6. Este hook no recalcula V, T, posiciones, tope ni
+ * arrastre: solo los lee.
+ */
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { db } from '../../../db/index';
+import { calcularCorte } from '../../../domain/corte';
+import type { VendedorEntrada, CorteSalida } from '../../../domain/corte';
+import { ultimoPeriodoFin } from '../../../lib/corteData';
+import {
+  cargarVendedoresActivos,
+  cargarApertura,
+  derivarVendedorEntrada,
+  cargarNegocioEntrada,
+  cargarSelladosDisponibles,
+  confirmarCorte,
+  type NegocioInsumos,
+  type SelladoDisponible,
+} from '../../../lib/corteReparto';
+import { registrarDevolucionLaModerna } from '../../../lib/movimientoLaModerna';
+import type { Vendedor, ProductoBase, Corte } from '../../../db/schema';
+
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+
+export const PASOS = [
+  'Validar',
+  'La Moderna',
+  'Obligaciones',
+  'Reparto',
+  'Liquidación',
+  'Cierre',
+] as const;
+
+export interface UseCorteRepartoReturn {
+  loading: boolean;
+  error: string | null;
+  paso: number;
+  setPaso: (p: number) => void;
+  periodoInicio: string;
+  periodoFin: string;
+  vendedores: Vendedor[];
+  vendedoresEntrada: VendedorEntrada[];
+  aperturaCorte: Corte | null;
+  negocioInsumos: NegocioInsumos | null;
+  productos: ProductoBase[];
+  salida: CorteSalida | null;
+  // Paso 1 — confirmación por vendedor
+  confirmaciones: Record<string, boolean>;
+  toggleConfirmacion: (vendedorId: string) => void;
+  todosConfirmados: boolean;
+  // Paso 2 — descuadre + acopio
+  reconoceDescuadre: boolean;
+  setReconoceDescuadre: (v: boolean) => void;
+  selladosDisponibles: SelladoDisponible[];
+  acopioSeleccion: Record<string, number>;
+  setAcopioCantidad: (productoBaseId: string, cantidad: number) => void;
+  totalAcopioSeleccionado: number;
+  confirmarAcopio: () => Promise<void>;
+  acopioAplicado: number;
+  acopioPendiente: boolean;
+  // Paso 6 — confirmación de cierre
+  cerrando: boolean;
+  cerrarCorte: () => Promise<Corte>;
+  refrescar: () => Promise<void>;
+}
+
+export function useCorteReparto(responsableId: string | null): UseCorteRepartoReturn {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [paso, setPaso] = useState(0);
+
+  const [periodoInicio, setPeriodoInicio] = useState('');
+  const periodoFin = hoyISO();
+
+  const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [vendedoresEntrada, setVendedoresEntrada] = useState<VendedorEntrada[]>([]);
+  const [aperturaCorte, setAperturaCorte] = useState<Corte | null>(null);
+  const [negocioInsumos, setNegocioInsumos] = useState<NegocioInsumos | null>(null);
+  const [productos, setProductos] = useState<ProductoBase[]>([]);
+  const [selladosDisponibles, setSelladosDisponibles] = useState<SelladoDisponible[]>([]);
+
+  const [confirmaciones, setConfirmaciones] = useState<Record<string, boolean>>({});
+  const [reconoceDescuadre, setReconoceDescuadre] = useState(false);
+  const [acopioSeleccion, setAcopioSeleccion] = useState<Record<string, number>>({});
+  const [acopioAplicado, setAcopioAplicado] = useState(0);
+  const [acopioPendiente, setAcopioPendiente] = useState(false);
+  const [cerrando, setCerrando] = useState(false);
+
+  const cargar = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [vends, inicio, apertura, todosProductos, sellados] = await Promise.all([
+        cargarVendedoresActivos(),
+        ultimoPeriodoFin(),
+        cargarApertura(),
+        db.producto_base.toArray(),
+        cargarSelladosDisponibles(),
+      ]);
+
+      setVendedores(vends);
+      setPeriodoInicio(inicio);
+      setAperturaCorte(apertura.corte);
+      setProductos(todosProductos);
+      setSelladosDisponibles(sellados);
+
+      const entradas = await Promise.all(
+        vends.map((v) =>
+          derivarVendedorEntrada(v.id, inicio, periodoFin, apertura.porVendedor.get(v.id) ?? 0)
+        )
+      );
+      setVendedoresEntrada(entradas);
+      setConfirmaciones(Object.fromEntries(vends.map((v) => [v.id, false])));
+
+      const negocio = await cargarNegocioEntrada(inicio, periodoFin, apertura.moderna);
+      setNegocioInsumos(negocio);
+
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+    // periodoFin es la fecha de hoy: estable dentro de la vida de la sesión del stepper.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargar();
+  }, [cargar]);
+
+  // El motor de dominio se invoca una sola vez por cada versión de insumos —
+  // los pasos 3-6 solo LEEN `salida`, nunca recalculan V/T/posiciones/tope/arrastre.
+  const salida = useMemo(() => {
+    if (!negocioInsumos || vendedoresEntrada.length === 0) return null;
+    return calcularCorte({ vendedores: vendedoresEntrada, negocio: negocioInsumos.negocio });
+  }, [vendedoresEntrada, negocioInsumos]);
+
+  const toggleConfirmacion = useCallback((vendedorId: string) => {
+    setConfirmaciones((prev) => ({ ...prev, [vendedorId]: !prev[vendedorId] }));
+  }, []);
+
+  const todosConfirmados = vendedores.length > 0 && vendedores.every((v) => confirmaciones[v.id]);
+
+  const totalAcopioSeleccionado = useMemo(() => {
+    const precioPorId = new Map(productos.map((p) => [p.id, p.precio_preferencial ?? 0]));
+    return Object.entries(acopioSeleccion).reduce(
+      (sum, [productoBaseId, cantidad]) => sum + cantidad * (precioPorId.get(productoBaseId) ?? 0),
+      0
+    );
+  }, [acopioSeleccion, productos]);
+
+  const setAcopioCantidad = useCallback((productoBaseId: string, cantidad: number) => {
+    setAcopioSeleccion((prev) => ({ ...prev, [productoBaseId]: Math.max(0, cantidad) }));
+  }, []);
+
+  const confirmarAcopio = useCallback(async () => {
+    if (!responsableId) throw new Error('Falta el responsable.');
+    const lineas = Object.entries(acopioSeleccion).filter(([, cantidad]) => cantidad > 0);
+    if (lineas.length === 0) return;
+
+    setAcopioPendiente(true);
+    try {
+      for (const [productoBaseId, cantidad] of lineas) {
+        await registrarDevolucionLaModerna({ productoBaseId, cantidad, responsableId });
+      }
+      // El rollup `suministro_la_moderna` se materializa del lado servidor
+      // (ADR-0006, trigger): mientras la mutación sincroniza, reflejamos el
+      // impacto localmente con la misma fórmula ya establecida (ADR-0009),
+      // no una regla nueva — el motor de dominio se vuelve a invocar tal cual.
+      const totalMonto = lineas.reduce((sum, [id, cantidad]) => {
+        const precio = productos.find((p) => p.id === id)?.precio_preferencial ?? 0;
+        return sum + cantidad * precio;
+      }, 0);
+      setNegocioInsumos((prev) =>
+        prev
+          ? {
+              ...prev,
+              negocio: {
+                ...prev.negocio,
+                adeudo_la_moderna: Math.max(0, prev.negocio.adeudo_la_moderna - totalMonto),
+              },
+            }
+          : prev
+      );
+      setAcopioAplicado((prev) => prev + totalMonto);
+      setAcopioSeleccion({});
+    } finally {
+      setAcopioPendiente(false);
+    }
+  }, [acopioSeleccion, productos, responsableId]);
+
+  const cerrarCorte = useCallback(async () => {
+    if (!salida || !negocioInsumos) throw new Error('El corte aún no terminó de calcularse.');
+    setCerrando(true);
+    try {
+      const { corte } = await confirmarCorte({
+        periodoInicio,
+        periodoFin,
+        nVendedores: vendedores.length,
+        vendedoresEntrada,
+        negocio: negocioInsumos.negocio,
+        salida,
+      });
+      return corte;
+    } finally {
+      setCerrando(false);
+    }
+  }, [salida, negocioInsumos, periodoInicio, periodoFin, vendedores.length, vendedoresEntrada]);
+
+  return {
+    loading,
+    error,
+    paso,
+    setPaso,
+    periodoInicio,
+    periodoFin,
+    vendedores,
+    vendedoresEntrada,
+    aperturaCorte,
+    negocioInsumos,
+    productos,
+    salida,
+    confirmaciones,
+    toggleConfirmacion,
+    todosConfirmados,
+    reconoceDescuadre,
+    setReconoceDescuadre,
+    selladosDisponibles,
+    acopioSeleccion,
+    setAcopioCantidad,
+    totalAcopioSeleccionado,
+    confirmarAcopio,
+    acopioAplicado,
+    acopioPendiente,
+    cerrando,
+    cerrarCorte,
+    refrescar: cargar,
+  };
+}

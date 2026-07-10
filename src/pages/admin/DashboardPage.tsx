@@ -38,7 +38,7 @@ import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
-import { CortePage } from './CortePage';
+import { CorteRepartoPage } from './corteReparto/CorteRepartoPage';
 import { ResumenVendedorPage } from './ResumenVendedorPage';
 import { RegistrosNegocioPage } from './RegistrosNegocioPage';
 
@@ -424,8 +424,8 @@ export function DashboardPage() {
         </IonFab>
       </IonContent>
 
-      <IonModal isOpen={corteOpen} onDidDismiss={() => setCorteOpen(false)}>
-        <CortePage onClose={() => setCorteOpen(false)} />
+      <IonModal isOpen={corteOpen} onDidDismiss={() => { setCorteOpen(false); refresh(); }}>
+        <CorteRepartoPage onClose={() => setCorteOpen(false)} />
       </IonModal>
 
       <IonModal isOpen={negocioOpen} onDidDismiss={() => { setNegocioOpen(false); refresh(); }}>

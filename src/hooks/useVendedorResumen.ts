@@ -4,7 +4,7 @@
  * Carga de solo lectura del snapshot del periodo en curso de un vendedor
  * específico, para el resumen que se abre al tocarlo en "Caja por vendedor"
  * (Inicio). Reusa el mismo trío `ultimoPeriodoFin` → `cargarInsumosCorte` →
- * `calcularCorte` que `useCorte` y `useDashboard` — ningún cálculo nuevo.
+ * `calcularCorte` que `useDashboard` — ningún cálculo nuevo.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -34,7 +34,7 @@ export function useVendedorResumen(vendedorId: string): UseVendedorResumenReturn
     try {
       const [v, inicio] = await Promise.all([
         db.vendedor.get(vendedorId),
-        ultimoPeriodoFin(vendedorId),
+        ultimoPeriodoFin(),
       ]);
       setVendedor(v ?? null);
       const insumos = await cargarInsumosCorte(vendedorId, inicio, hoyISO());

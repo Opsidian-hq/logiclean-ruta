@@ -81,7 +81,7 @@ const GastosPage = lazyPage(() => import('./pages/gastos/GastosPage'), 'GastosPa
 const CatalogoPage = lazyPage(() => import('./pages/admin/CatalogoPage'), 'CatalogoPage');
 const ClientesPage = lazyPage(() => import('./pages/admin/ClientesPage'), 'ClientesPage');
 const DashboardPage = lazyPage(() => import('./pages/admin/DashboardPage'), 'DashboardPage');
-const CortePage = lazyPage(() => import('./pages/admin/CortePage'), 'CortePage');
+const CorteRepartoPage = lazyPage(() => import('./pages/admin/corteReparto/CorteRepartoPage'), 'CorteRepartoPage');
 const RegistrosNegocioPage = lazyPage(() => import('./pages/admin/RegistrosNegocioPage'), 'RegistrosNegocioPage');
 const InventarioBodegaPage = lazyPage(() => import('./pages/admin/InventarioBodegaPage'), 'InventarioBodegaPage');
 const RecepcionModernaPage = lazyPage(() => import('./pages/admin/RecepcionModernaPage'), 'RecepcionModernaPage');
@@ -261,7 +261,7 @@ function AdminTabs() {
           <Route exact path="/admin/catalogo" component={CatalogoPage} />
           <Route exact path="/admin/clientes" component={ClientesPage} />
           <Route exact path="/admin/clientes/:clienteId" component={ClienteDetallePage} />
-          <Route exact path="/admin/corte" component={CortePage} />
+          <Route exact path="/admin/corte" component={CorteRepartoPage} />
           <Route exact path="/admin/negocio" component={RegistrosNegocioPage} />
           <Route exact path="/admin/inventario" component={InventarioBodegaPage} />
           <Route exact path="/admin/recepcion-moderna" component={RecepcionModernaPage} />
