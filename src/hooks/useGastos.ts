@@ -46,7 +46,7 @@ export function useGastos(): UseGastosReturn {
       return;
     }
     try {
-      const inicio = await ultimoPeriodoFin(vendedorId);
+      const inicio = await ultimoPeriodoFin();
       setPeriodoInicio(inicio);
       const todos = await db.gasto
         .where('vendedor_id')

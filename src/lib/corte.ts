@@ -28,10 +28,6 @@
  * de cierre `CORTE` que delimita el periodo.
  */
 
-import { db } from '../db/index';
-import { generateUUID } from '../lib/uuid';
-import { enqueueOperation } from '../sync/queue';
-import { syncEngine } from '../sync/SyncEngine';
 import { adeudoLaModerna } from './suministro';
 import type { ReconciliacionModerna } from './suministro';
 import type {
@@ -44,7 +40,6 @@ import type {
   ProductoBase,
   InventarioBodegaBase,
   InventarioBodegaPresentacion,
-  Corte,
 } from '../db/schema';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -312,64 +307,3 @@ export function calcularCorte(input: CalcularCorteInput): CorteSnapshot {
   };
 }
 
-// ── Registro del cierre ───────────────────────────────────────
-
-export interface GenerarCorteInput extends CalcularCorteInput {
-  vendedorId: string;
-  /** Inicio del periodo (fin del corte anterior). ISO date. */
-  periodoInicio: string;
-  /** Fin del periodo. ISO date; por defecto hoy. */
-  periodoFin?: string;
-  /**
-   * Lo realmente entregado por el vendedor. Si se omite, se asume el neto
-   * calculado de cada bolsa (entrega exacta, sin descuadre).
-   */
-  efectivoEntregado?: number;
-  transferenciasEntregadas?: number;
-}
-
-export interface GenerarCorteResult {
-  corte: Corte;
-  snapshot: CorteSnapshot;
-}
-
-/**
- * Calcula y **registra** el corte como evento de cierre (`CORTE`), con su
- * snapshot completo. Escritura local + cola de sync (gerente, RLS).
- */
-export async function generarCorte(input: GenerarCorteInput): Promise<GenerarCorteResult> {
-  const {
-    vendedorId,
-    periodoInicio,
-    periodoFin = new Date().toISOString().slice(0, 10),
-    efectivoEntregado,
-    transferenciasEntregadas,
-  } = input;
-
-  if (!vendedorId) throw new Error('Falta el vendedor del corte.');
-  if (!periodoInicio) throw new Error('Falta el inicio del periodo.');
-
-  const snapshot = calcularCorte(input);
-
-  const corte: Corte = {
-    id: generateUUID(),
-    vendedor_id: vendedorId,
-    periodo_inicio: periodoInicio,
-    periodo_fin: periodoFin,
-    fecha_generado: new Date().toISOString(),
-    efectivo_entregado: efectivoEntregado ?? snapshot.bolsas.efectivo.neto,
-    transferencias_entregadas:
-      transferenciasEntregadas ?? snapshot.bolsas.transferencia.neto,
-    snapshot: snapshot as unknown as Record<string, unknown>,
-  };
-
-  await db.corte.put(corte);
-  const item = await enqueueOperation(
-    'corte',
-    'upsert',
-    corte as unknown as Record<string, unknown>
-  );
-  await syncEngine.enqueueAndSync(item);
-
-  return { corte, snapshot };
-}

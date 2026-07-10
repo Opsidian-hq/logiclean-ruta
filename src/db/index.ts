@@ -6,7 +6,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
-import { DEXIE_SCHEMA, DEXIE_SCHEMA_V2 } from './schema';
+import { DEXIE_SCHEMA, DEXIE_SCHEMA_V2, DEXIE_SCHEMA_V3 } from './schema';
 import type {
   Vendedor,
   Cliente,
@@ -21,6 +21,8 @@ import type {
   SuministroLaModerna,
   Gasto,
   Corte,
+  CorteVendedor,
+  LiquidacionMovimiento,
   InventarioBodegaBase,
   InventarioBodegaPresentacion,
   MovimientoLaModerna,
@@ -48,6 +50,9 @@ class LogicleanDB extends Dexie {
   suministro_la_moderna!: Table<SuministroLaModerna>;
   gasto!:                 Table<Gasto>;
   corte!:                 Table<Corte>;
+  // ── Inc 7.2 — Corte por reparto (corte de negocio) ─────────
+  corte_vendedor!:         Table<CorteVendedor>;
+  liquidacion_movimiento!: Table<LiquidacionMovimiento>;
   // ── Inc 6.1 — Inventario de bodega ─────────────────────────
   inventario_bodega_base!:         Table<InventarioBodegaBase>;
   inventario_bodega_presentacion!: Table<InventarioBodegaPresentacion>;
@@ -71,6 +76,11 @@ class LogicleanDB extends Dexie {
     // Versión 2 (Inc 6.1): inventario de bodega (contadores + eventos).
     // Solo agrega stores nuevos; no toca índices existentes.
     this.version(2).stores(DEXIE_SCHEMA_V2);
+
+    // Versión 3 (Inc 7.2/7.4): corte por reparto (H-20). CORTE pasa de
+    // por-vendedor a de-negocio (se retira el índice vendedor_id) y se
+    // agregan CORTE_VENDEDOR + LIQUIDACION_MOVIMIENTO.
+    this.version(3).stores(DEXIE_SCHEMA_V3);
   }
 }
 

@@ -50,23 +50,17 @@ export function useDashboard(): UseDashboardReturn {
         db.gasto.where('tipo').equals('backoffice').toArray(),
       ]);
 
-      // Snapshot de corte del periodo en curso, por vendedor.
+      // Desde Inc 7.2 (H-20) el corte es de negocio: un solo periodo vigente
+      // para todos los vendedores activos (ya no por-vendedor).
+      const inicioGlobal = await ultimoPeriodoFin();
+      const inicioPorVendedor = new Map<string, string>(vendedores.map((v) => [v.id, inicioGlobal]));
+
       const porVendedor: SnapshotVendedor[] = [];
-      const iniciosPorVendedor: string[] = [];
-      const inicioPorVendedor = new Map<string, string>();
       for (const v of vendedores) {
-        const inicio = await ultimoPeriodoFin(v.id);
-        iniciosPorVendedor.push(inicio);
-        inicioPorVendedor.set(v.id, inicio);
-        const insumos = await cargarInsumosCorte(v.id, inicio, hoy);
+        const insumos = await cargarInsumosCorte(v.id, inicioGlobal, hoy);
         porVendedor.push({ vendedorId: v.id, nombre: v.nombre, snapshot: calcularCorte(insumos) });
       }
 
-      // La Moderna es bodega (sin vendedor_id): se acota al superset de las
-      // ventanas "desde el último corte" de todos los vendedores — el
-      // inicio más antiguo (o '' si alguno nunca ha cortado), misma
-      // semántica que el fallback de `enRango` en corteData.ts.
-      const inicioGlobal = iniciosPorVendedor.length ? iniciosPorVendedor.slice().sort()[0] : '';
       const nombreProductoBase = (id: string) => productosBase.find((p) => p.id === id)?.nombre ?? id;
       const nombrePresentacion = (id: string) => presentaciones.find((p) => p.id === id)?.nombre ?? id;
       const nombreVendedor = (id: string) => vendedores.find((v) => v.id === id)?.nombre ?? id;

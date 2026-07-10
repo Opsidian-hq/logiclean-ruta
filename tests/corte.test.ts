@@ -6,7 +6,11 @@
  * CORTE-003: cartera = ventas − cobros (crédito vivo)
  * CORTE-004: adeudo La Moderna por consumo real (recibido − devuelto) × precio
  * CORTE-005: resalta descuadres (bolsa negativa, crédito pendiente)
- * CORTE-006: generarCorte registra el CORTE y lo encola; entrega = neto por defecto
+ *
+ * `generarCorte` (registro del cierre por-vendedor) se retiró en Inc 7.4
+ * (H-20): el corte de negocio reemplaza ese registro — ver
+ * `src/lib/corteReparto.ts` y `tests/corte-reparto-ui.test.ts`. `calcularCorte`
+ * sigue vigente como pieza pura reutilizada por el nuevo stepper.
  *
  * Inc 6.5 (ADR-0008/0009/0010):
  * CORTE-007: el factor_conversion NO participa del cuadre — no hay
@@ -26,17 +30,10 @@
  * alcance de esta verificación).
  */
 
-import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
-vi.mock('../src/lib/supabase', () => ({ supabase: {} }));
-vi.mock('../src/sync/SyncEngine', () => ({
-  syncEngine: { enqueueAndSync: vi.fn(async () => {}) },
-}));
-
-import { calcularCorte, generarCorte } from '../src/lib/corte';
+import { calcularCorte } from '../src/lib/corte';
 import type { CalcularCorteInput } from '../src/lib/corte';
-import { db } from '../src/db/index';
 
 const base: CalcularCorteInput = {
   ventas: [{ total: 500 }, { total: 300 }], // 800
@@ -94,30 +91,6 @@ describe('calcularCorte', () => {
     });
     expect(negativa.bolsas.efectivo.neto).toBe(-70);
     expect(negativa.alertas.some((a) => a.includes('efectivo'))).toBe(true);
-  });
-});
-
-describe('generarCorte', () => {
-  beforeEach(async () => {
-    await Promise.all(db.tables.map((t) => t.clear()));
-  });
-
-  it('CORTE-006: registra el CORTE y encola; entrega = neto por defecto', async () => {
-    const { corte, snapshot } = await generarCorte({
-      ...base,
-      vendedorId: 'vend-1',
-      periodoInicio: '2026-06-08',
-      periodoFin: '2026-06-14',
-    });
-    expect(corte.efectivo_entregado).toBe(snapshot.bolsas.efectivo.neto);
-    expect(corte.transferencias_entregadas).toBe(snapshot.bolsas.transferencia.neto);
-    expect(corte.periodo_inicio).toBe('2026-06-08');
-
-    const enDb = await db.corte.get(corte.id);
-    expect(enDb).toBeTruthy();
-    const cola = await db.sync_queue.toArray();
-    expect(cola[0].table_name).toBe('corte');
-    expect(cola[0].status).toBe('pending');
   });
 });
 

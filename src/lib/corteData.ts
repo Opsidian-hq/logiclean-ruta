@@ -3,7 +3,7 @@
  *
  * Acota desde Dexie los datos de un vendedor para un periodo [inicio, fin] y
  * los devuelve en la forma que consume `calcularCorte`. Lo comparten la
- * pantalla de corte (`useCorte`) y el dashboard (`useDashboard`) para que el
+ * el dashboard (`useDashboard`) y el stepper de corte por reparto (Inc 7.4) para que el
  * criterio de "qué entra en el periodo" sea uno solo y no se desincronice.
  *
  *  - inicio vacío ('') = periodo abierto hacia atrás (sin corte previo).
@@ -21,10 +21,20 @@ import type { CalcularCorteInput } from './corte';
 
 const soloFecha = (iso?: string | null) => (iso ?? '').slice(0, 10);
 
-/** Fecha de fin del último corte del vendedor ('' si no tiene cortes). */
-export async function ultimoPeriodoFin(vendedorId: string): Promise<string> {
-  const previos = await db.corte.where('vendedor_id').equals(vendedorId).toArray();
-  return previos.map((c) => c.periodo_fin).sort().at(-1) ?? '';
+/**
+ * Fecha de fin del último corte confirmado ('' si no hay ninguno).
+ *
+ * Desde Inc 7.2 (H-20) el CORTE es de negocio, no por vendedor (migración
+ * 011): hay un solo periodo vigente para todos los vendedores activos, así
+ * que esta función ya no distingue por vendedor.
+ */
+export async function ultimoPeriodoFin(): Promise<string> {
+  const todos = await db.corte.toArray();
+  return todos
+    .filter((c) => c.estado === 'confirmado')
+    .map((c) => c.periodo_fin)
+    .sort()
+    .at(-1) ?? '';
 }
 
 /** Carga y acota los insumos del corte de un vendedor para [inicio, fin]. */
