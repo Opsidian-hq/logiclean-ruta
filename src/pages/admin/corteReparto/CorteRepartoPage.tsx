@@ -72,7 +72,6 @@ export function CorteRepartoPage({ onClose }: CorteRepartoPageProps = {}) {
     setAcopioCantidad,
     totalAcopioSeleccionado,
     confirmarAcopio,
-    acopioAplicado,
     acopioPendiente,
     cerrando,
     cerrarCorte,
@@ -192,7 +191,6 @@ export function CorteRepartoPage({ onClose }: CorteRepartoPageProps = {}) {
                   setAcopioCantidad={setAcopioCantidad}
                   totalAcopioSeleccionado={totalAcopioSeleccionado}
                   confirmarAcopio={confirmarAcopio}
-                  acopioAplicado={acopioAplicado}
                   acopioPendiente={acopioPendiente}
                 />
               )}

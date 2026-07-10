@@ -63,7 +63,6 @@ export interface UseCorteRepartoReturn {
   setAcopioCantidad: (productoBaseId: string, cantidad: number) => void;
   totalAcopioSeleccionado: number;
   confirmarAcopio: () => Promise<void>;
-  acopioAplicado: number;
   acopioPendiente: boolean;
   // Paso 6 — confirmación de cierre
   cerrando: boolean;
@@ -89,7 +88,6 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
   const [confirmaciones, setConfirmaciones] = useState<Record<string, boolean>>({});
   const [reconoceDescuadre, setReconoceDescuadre] = useState(false);
   const [acopioSeleccion, setAcopioSeleccion] = useState<Record<string, number>>({});
-  const [acopioAplicado, setAcopioAplicado] = useState(0);
   const [acopioPendiente, setAcopioPendiente] = useState(false);
   const [cerrando, setCerrando] = useState(false);
 
@@ -190,7 +188,6 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
             }
           : prev
       );
-      setAcopioAplicado((prev) => prev + totalMonto);
       setAcopioSeleccion({});
     } finally {
       setAcopioPendiente(false);
@@ -238,7 +235,6 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
     setAcopioCantidad,
     totalAcopioSeleccionado,
     confirmarAcopio,
-    acopioAplicado,
     acopioPendiente,
     cerrando,
     cerrarCorte,

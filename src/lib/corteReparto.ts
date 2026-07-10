@@ -21,6 +21,7 @@ import { calcularCorte as calcularSnapshotVendedor } from './corte';
 import type { IdentidadControlProducto } from './corte';
 import { adeudoLaModerna } from './suministro';
 import type { ReconciliacionModerna } from './suministro';
+import { presentacionesAUnidadCompra } from './conversion';
 import type {
   Corte,
   CorteVendedor,
@@ -198,7 +199,11 @@ export async function cargarNegocioEntrada(
   };
 }
 
-// ── Inventario sellado de químicos (Paso 2, acopio hacia La Moderna) ──
+// ── Mercancía sellada en bodega (Paso 2, acopio hacia La Moderna) ─────
+// Cubre tanto químicos en bidón (inventario_bodega_base) como
+// escobas/trapeadores/recogedores en docena (inventario_bodega_presentacion,
+// vía su presentación 'pieza' — mismo patrón de conversión que usa el
+// trigger aplicar_movimiento_la_moderna del lado servidor, migración 007).
 
 export interface SelladoDisponible {
   productoBaseId: string;
@@ -206,23 +211,37 @@ export interface SelladoDisponible {
   disponibles: number;
 }
 
-/** Bidones sellados en bodega por producto químico (consignación La Moderna). */
+/** Mercancía disponible en bodega para devolver a La Moderna, por producto base. */
 export async function cargarSelladosDisponibles(): Promise<SelladoDisponible[]> {
-  const [base, productos] = await Promise.all([
-    db.inventario_bodega_base.toArray(),
+  const [productos, base, presentaciones, bodegaPresentacion] = await Promise.all([
     db.producto_base.toArray(),
+    db.inventario_bodega_base.toArray(),
+    db.presentacion.toArray(),
+    db.inventario_bodega_presentacion.toArray(),
   ]);
-  const prodPorId = new Map(productos.map((p) => [p.id, p]));
 
-  return base
-    .filter((b) => prodPorId.get(b.producto_base_id)?.unidad_compra === 'bidon')
-    .map((b) => ({
-      productoBaseId: b.producto_base_id,
-      nombre: prodPorId.get(b.producto_base_id)?.nombre ?? b.producto_base_id,
-      disponibles: b.bidones_disponibles,
-    }))
-    .filter((s) => s.disponibles > 0)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const bidonesPorProducto = new Map(base.map((b) => [b.producto_base_id, b.bidones_disponibles]));
+  const piezaPorProducto = new Map(
+    presentaciones.filter((p) => p.unidad_venta === 'pieza').map((p) => [p.producto_base_id, p])
+  );
+  const cantidadPorPresentacion = new Map(bodegaPresentacion.map((b) => [b.presentacion_id, b.cantidad]));
+
+  const out: SelladoDisponible[] = [];
+  for (const prod of productos) {
+    let disponibles: number;
+    if (prod.unidad_compra === 'bidon') {
+      disponibles = bidonesPorProducto.get(prod.id) ?? 0;
+    } else {
+      const pieza = piezaPorProducto.get(prod.id);
+      if (!pieza) continue; // sin presentación 'pieza' (p. ej. papel_institucional): fuera de la cadena de bodega
+      disponibles = presentacionesAUnidadCompra(cantidadPorPresentacion.get(pieza.id) ?? 0, pieza.factor_conversion);
+    }
+    if (disponibles > 0) {
+      out.push({ productoBaseId: prod.id, nombre: prod.nombre, disponibles: round2(disponibles) });
+    }
+  }
+
+  return out.sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
 // ── Confirmación del corte (Paso 6) ────────────────────────────

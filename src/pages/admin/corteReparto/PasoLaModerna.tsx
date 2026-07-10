@@ -9,7 +9,7 @@
  */
 
 import { IonIcon, IonCheckbox, IonSpinner, IonBadge } from '@ionic/react';
-import { checkmarkCircle, alertOutline, cubeOutline, timeOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { alertOutline, cubeOutline, timeOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useMemo, useState, useEffect } from 'react';
 import { calcularCorte } from '../../../domain/corte';
 import type { VendedorEntrada, NegocioEntrada } from '../../../domain/corte';
@@ -35,7 +35,6 @@ interface PasoLaModernaProps {
   setAcopioCantidad: (productoBaseId: string, cantidad: number) => void;
   totalAcopioSeleccionado: number;
   confirmarAcopio: () => Promise<void>;
-  acopioAplicado: number;
   acopioPendiente: boolean;
 }
 
@@ -51,7 +50,6 @@ export function PasoLaModerna({
   setAcopioCantidad,
   totalAcopioSeleccionado,
   confirmarAcopio,
-  acopioAplicado,
   acopioPendiente,
 }: PasoLaModernaProps) {
   const { isOnline, syncStatus, pendingCount, syncNow } = useSyncContext();
@@ -150,50 +148,23 @@ export function PasoLaModerna({
 
       <span style={sectionLabel}>Cálculo del adeudo</span>
       <Card padding="13px 15px" style={{ background: 'var(--color-navy)' }}>
-        <div style={rowBetween}>
-          <div>
-            <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.4px', textTransform: 'uppercase', color: '#9FC9FF' }}>
-              Adeudo a La Moderna
-            </span>
-            <span className="numeric" style={{ display: 'block', fontSize: '22px', fontWeight: 800, color: '#fff', marginTop: '3px' }}>
-              {money(negocio.adeudo_la_moderna)}
-            </span>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            {acopioAplicado > 0 ? (
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#8FA3CC' }}>Ya con la devolución aplicada</span>
-            ) : (
-              moderna.porProducto.map((p) => (
-                <span key={p.producto_base_id} style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8FA3CC' }}>
-                  {p.nombre}: {p.recibido} recib. − {p.devuelto} devuel.
-                </span>
-              ))
-            )}
-          </div>
-        </div>
+        <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.4px', textTransform: 'uppercase', color: '#9FC9FF' }}>
+          Adeudo a La Moderna
+        </span>
+        <span className="numeric" style={{ display: 'block', fontSize: '22px', fontWeight: 800, color: '#fff', marginTop: '3px' }}>
+          {money(negocio.adeudo_la_moderna)}
+        </span>
       </Card>
 
-      {identidadControl.map((ic) => (
-        <div
-          key={ic.producto_base_id}
-          style={{
-            border: `1px solid ${ic.cuadra ? '#B7EE92' : '#F4B3AC'}`,
-            borderRadius: '11px',
-            background: ic.cuadra ? '#ECFCE0' : '#FDECEA',
-            padding: '9px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <IonIcon icon={checkmarkCircle} style={{ fontSize: '16px', color: ic.cuadra ? '#3E6B22' : 'var(--color-error)' }} />
-            <span style={{ fontSize: '12px', fontWeight: 800, color: ic.cuadra ? '#1C4310' : '#911A11' }}>{ic.nombre} — identidad de control</span>
+      <span style={sectionLabel}>Productos recibidos de La Moderna</span>
+      {moderna.porProducto.map((p) => (
+        <Card key={p.producto_base_id} padding="9px 12px">
+          <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--color-navy)' }}>{p.nombre}</span>
+          <div style={{ ...rowBetween, marginTop: '5px' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>{p.recibido} recib. − {p.devuelto} devuel.</span>
+            <span className="numeric" style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--color-primary)' }}>Saldo {p.neto}</span>
           </div>
-          <span className="numeric" style={{ fontSize: '11.5px', fontWeight: 800, color: ic.cuadra ? '#3E6B22' : '#911A11' }}>
-            {ic.recibido - ic.devuelto} = {ic.bidonesAbiertos} bidones
-          </span>
-        </div>
+        </Card>
       ))}
 
       {hayDescuadre && (
@@ -246,16 +217,16 @@ export function PasoLaModerna({
       {selladosDisponibles.length === 0 ? (
         <Card padding="26px 20px" style={{ border: '1px dashed #DDE2EA', textAlign: 'center' }}>
           <IonIcon icon={cubeOutline} style={{ fontSize: '34px', color: '#8A94A6' }} />
-          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '10px' }}>Bodega sin sellados para devolver</div>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '10px' }}>Bodega sin mercancía para devolver</div>
           <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--color-text-secondary)', marginTop: '6px', lineHeight: 1.4 }}>
-            No hay bidones sellados disponibles en esta bodega. El acopio queda en 0 piezas — el cierre continúa sin devolución.
+            No hay mercancía disponible para devolver en esta bodega. El acopio queda en 0 piezas — el cierre continúa sin devolución.
           </div>
         </Card>
       ) : (
         <>
           <Card padding="12px 13px">
             <div style={{ ...rowBetween, marginBottom: '6px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--color-navy)' }}>Inventario sellado en bodega</span>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--color-navy)' }}>Mercancía disponible en bodega</span>
               <IonBadge style={{ '--background': 'var(--color-primary-soft)', color: 'var(--color-primary)', fontSize: '12px', fontWeight: 800 }}>
                 {selladosDisponibles.reduce((s, p) => s + p.disponibles, 0)} pzas
               </IonBadge>
