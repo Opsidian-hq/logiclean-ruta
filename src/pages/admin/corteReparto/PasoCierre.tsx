@@ -146,7 +146,7 @@ export function PasoCierre({
       <span style={sectionLabel}>Saldos de cierre → apertura del próximo</span>
       <Card padding="0" style={salida.alertas.length === 0 ? { border: '1.5px solid #B7EE92', background: '#ECFCE0' } : undefined}>
         {salida.por_vendedor.map((p, i) => (
-          <div key={p.vendedor_id} style={{ ...rowBetween, minHeight: '34px', padding: '0 13px', borderBottom: i < salida.por_vendedor.length ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+          <div key={p.vendedor_id} style={{ ...rowBetween, minHeight: '34px', padding: '0 13px', borderBottom: i < salida.por_vendedor.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
             <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--color-body)' }}>{nombrePorId.get(p.vendedor_id) ?? p.vendedor_id} ↔ negocio</span>
             <span className="numeric" style={{ fontSize: '13px', fontWeight: 800, color: saldoColor(p.saldo_vendedor_cierre) }}>{money(p.saldo_vendedor_cierre)}</span>
           </div>

@@ -17,12 +17,15 @@ import {
   IonContent,
   IonFooter,
   IonToast,
+  IonIcon,
 } from '@ionic/react';
+import { timeOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useCargaDevolucion } from '../../../hooks/useCargaDevolucion';
 import { StepperCantidad } from '../../../components/StepperCantidad';
 import { Card } from '../../../components/ui/Card';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
+import { useSyncContext } from '../../../context/SyncContext';
 
 interface DevolucionBodegaModalProps {
   isOpen: boolean;
@@ -40,9 +43,11 @@ export function DevolucionBodegaModal({
   responsableId,
 }: DevolucionBodegaModalProps) {
   const { presentaciones, disponibleVehiculo, crearDevolucion } = useCargaDevolucion(responsableId);
+  const { isOnline, syncStatus, pendingCount, syncNow } = useSyncContext();
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [mostrarEstadoSync, setMostrarEstadoSync] = useState(false);
 
   const presentacionesConStock = presentaciones.filter(
     (p) => disponibleVehiculo(vendedorId, p.id) > 0
@@ -60,7 +65,7 @@ export function DevolucionBodegaModal({
     try {
       await crearDevolucion(vendedorId, lineas);
       setCantidades({});
-      onClose();
+      setMostrarEstadoSync(true);
     } catch (e) {
       setToast(e instanceof Error ? e.message : 'No se pudo registrar la devolución.');
     } finally {
@@ -68,12 +73,17 @@ export function DevolucionBodegaModal({
     }
   };
 
+  const cerrar = () => {
+    setMostrarEstadoSync(false);
+    onClose();
+  };
+
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+    <IonModal isOpen={isOpen} onDidDismiss={cerrar}>
       <IonHeader>
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} style={{ '--color': 'var(--color-on-dark)' }}>
+            <IonButton onClick={cerrar} style={{ '--color': 'var(--color-on-dark)' }}>
               Cerrar
             </IonButton>
           </IonButtons>
@@ -82,6 +92,53 @@ export function DevolucionBodegaModal({
       </IonHeader>
       <IonContent>
         <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {mostrarEstadoSync && (pendingCount > 0 || syncStatus === 'error' || !isOnline) && (
+            <Card
+              padding="15px"
+              style={{
+                border: syncStatus === 'error' ? '1.5px solid #F4B3AC' : '1.5px solid #F6C97C',
+                background: syncStatus === 'error' ? '#FDECEA' : '#FEF3E2',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <IonIcon
+                  icon={syncStatus === 'error' ? cloudOfflineOutline : timeOutline}
+                  style={{ fontSize: '19px', color: syncStatus === 'error' ? '#D92D20' : '#F79009' }}
+                />
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: syncStatus === 'error' ? '#911A11' : '#7A3E06' }}>
+                    {syncStatus === 'error' ? 'No se pudo sincronizar' : 'Devolución registrada'}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: syncStatus === 'error' ? '#B42318' : '#B54708' }}>
+                    {syncStatus === 'error' ? 'Guardado en el equipo ✓ · Sin subir ✕' : 'Guardado ✓ · pendiente de sincronizar'}
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', marginTop: '8px' }}>
+                {syncStatus === 'error'
+                  ? 'Sigue en el equipo; nada se pierde.'
+                  : 'Se sincroniza sola al recuperar señal, o reintenta a mano.'}
+              </div>
+              {syncStatus === 'error' && (
+                <button
+                  onClick={() => syncNow()}
+                  style={{
+                    marginTop: '10px',
+                    width: '100%',
+                    height: '42px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #D92D20',
+                    background: 'transparent',
+                    color: '#D92D20',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                  }}
+                >
+                  Reintentar ahora
+                </button>
+              )}
+            </Card>
+          )}
           <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
             Solo movimiento de inventario — no afecta venta ni efectivo.
           </div>
