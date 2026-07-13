@@ -71,8 +71,8 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
 
   // Estado del producto base
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');
-  const [unidadCompra, setUnidadCompra] = useState<'bidon' | 'docena' | ''>(
-    (inicial?.unidad_compra as 'bidon' | 'docena') ?? ''
+  const [unidadCompra, setUnidadCompra] = useState<'bidon' | 'pieza' | ''>(
+    (inicial?.unidad_compra as 'bidon' | 'pieza') ?? ''
   );
   const [categoria, setCategoria] = useState<CategoriaProducto | ''>(
     inicial?.categoria ?? ''
@@ -141,7 +141,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
         {
           id: productoId,
           nombre: nombre.trim(),
-          unidad_compra: unidadCompra as 'bidon' | 'docena',
+          unidad_compra: unidadCompra as 'bidon' | 'pieza',
           categoria: categoria as CategoriaProducto,
           precio_preferencial: precioPreferencial
             ? parseFloat(precioPreferencial)
@@ -214,7 +214,7 @@ export function ProductoForm({ inicial, onSave, onCancel }: ProductoFormProps) {
                 style={{ minHeight: 'var(--touch-min, 48px)' }}
               >
                 <IonSelectOption value="bidon">Bidón</IonSelectOption>
-                <IonSelectOption value="docena">Docena</IonSelectOption>
+                <IonSelectOption value="pieza">Pieza</IonSelectOption>
               </IonSelect>
             </IonItem>
             {errores.unidad_compra && (

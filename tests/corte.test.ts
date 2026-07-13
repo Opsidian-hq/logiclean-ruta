@@ -18,7 +18,7 @@
  * CORTE-008: muestra el inventario de bodega (granel + presentaciones/piezas)
  * CORTE-009: identidad de control cuadra cuando recibido−devuelto=bidones abiertos
  * CORTE-010: identidad de control alerta cuando NO cuadra
- * CORTE-011: identidad de control ignora productos que no son químicos (docena)
+ * CORTE-011: identidad de control ignora productos que no son químicos (pieza)
  * CORTE-012: alerta si el inventario de bodega queda negativo (sobreventa)
  *
  * REGRESIÓN-6.5: el refactor de la reconciliación (retiro del factor,
@@ -160,14 +160,14 @@ describe('Inc 6.5 — identidad de control (ADR-0009)', () => {
     expect(s.alertas.some((a) => a.includes('Cloro') && a.includes('identidad de control'))).toBe(true);
   });
 
-  it('CORTE-011: ignora productos que no son químicos (unidad_compra=docena)', () => {
+  it('CORTE-011: ignora productos que no son químicos (unidad_compra=pieza)', () => {
     const s = calcularCorte({
       ...base,
       suministros: [{ producto_base_id: 'pb-escoba', cantidad_recibida: 2, cantidad_devuelta: 0 }],
       envasados: [],
       productos: [
         ...base.productos,
-        { id: 'pb-escoba', nombre: 'Escoba', precio_preferencial: 90, unidad_compra: 'docena' },
+        { id: 'pb-escoba', nombre: 'Escoba', precio_preferencial: 90, unidad_compra: 'pieza' },
       ],
     });
     expect(s.identidadControl.find((ic) => ic.producto_base_id === 'pb-escoba')).toBeUndefined();
@@ -218,7 +218,7 @@ describe('REGRESIÓN-6.5: el cuadre de dinero no cambia', () => {
     productos: [
       { id: 'pb-cloro', nombre: 'Cloro', precio_preferencial: 120, unidad_compra: 'bidon' },
       { id: 'pb-jabon', nombre: 'Jabón', precio_preferencial: 90, unidad_compra: 'bidon' },
-      { id: 'pb-escoba', nombre: 'Escoba', precio_preferencial: 300, unidad_compra: 'docena' },
+      { id: 'pb-escoba', nombre: 'Escoba', precio_preferencial: 300, unidad_compra: 'pieza' },
     ],
   };
 
@@ -245,7 +245,7 @@ describe('REGRESIÓN-6.5: el cuadre de dinero no cambia', () => {
     // Identidad de control: cloro cuadra (13 recibido-devuelto == 2 bidones
     // abiertos... espera, el fixture usa 2 bidones abiertos para 13 de
     // recibido-devuelto -> NO cuadra a propósito; jabón tampoco cuadra
-    // (6 esperado vs 4 registrado); escoba (docena) ni se evalúa.
+    // (6 esperado vs 4 registrado); escoba (pieza) ni se evalúa.
     const icCloro = s.identidadControl.find((ic) => ic.producto_base_id === 'pb-cloro')!;
     const icJabon = s.identidadControl.find((ic) => ic.producto_base_id === 'pb-jabon')!;
     expect(icCloro.cuadra).toBe(false);

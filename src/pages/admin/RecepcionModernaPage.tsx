@@ -45,7 +45,6 @@ import { useRecepcionModerna } from '../../hooks/useRecepcionModerna';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useAuthContext } from '../../context/AuthContext';
 import { generateUUID } from '../../lib/uuid';
-import { presentacionesAUnidadCompra } from '../../lib/conversion';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { StepperCantidad } from '../../components/StepperCantidad';
@@ -53,12 +52,6 @@ import { Card } from '../../components/ui/Card';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
-
-/** "0.5 docena" / "1 docena" / "6 docenas" — sin ceros decimales de sobra. */
-const docenasTexto = (docenas: number) => {
-  const redondeado = Math.round(docenas * 100) / 100;
-  return `${redondeado} docena${redondeado === 1 ? '' : 's'}`;
-};
 
 const sectionLabel: CSSProperties = {
   display: 'block',
@@ -80,7 +73,6 @@ export function RecepcionModernaPage() {
   const { user } = useAuthContext();
   const {
     productos,
-    factorPiezaPorProducto,
     nombreProducto,
     crearRecepcion,
     crearDevolucionLaModerna,
@@ -109,13 +101,8 @@ export function RecepcionModernaPage() {
     [productos, prodBuscador]
   );
 
-  // Productos unidad_compra='docena' (escobas/trapeadores/recogedores) se
-  // capturan en piezas — lo que el gerente cuenta físicamente — y se
-  // convierten a docenas (unidad de compra con La Moderna) antes de guardar.
   const draftProducto = productos.find((p) => p.id === draftProd);
-  const draftFactorPieza =
-    draftProducto?.unidad_compra === 'docena' ? factorPiezaPorProducto.get(draftProd) : undefined;
-  const draftDocenas = draftFactorPieza ? presentacionesAUnidadCompra(draftCant, draftFactorPieza) : undefined;
+  const draftEsPieza = draftProducto?.unidad_compra === 'pieza';
 
   const draftCompleto = !!draftProd && draftCant > 0;
 
@@ -142,11 +129,7 @@ export function RecepcionModernaPage() {
       let huboBidon = false;
       for (const item of carrito) {
         const producto = productos.find((p) => p.id === item.productoBaseId);
-        const factorPieza = producto?.unidad_compra === 'docena' ? factorPiezaPorProducto.get(item.productoBaseId) : undefined;
-        // item.cantidad viene en piezas para productos por docena; La Moderna
-        // se factura en docenas, así que se convierte antes de guardar.
-        const cantidad = factorPieza ? presentacionesAUnidadCompra(item.cantidad, factorPieza) : item.cantidad;
-        const input = { productoBaseId: item.productoBaseId, cantidad, fecha };
+        const input = { productoBaseId: item.productoBaseId, cantidad: item.cantidad, fecha };
         if (tipoMovimiento === 'recibido') {
           await crearRecepcion(input);
           if (producto?.unidad_compra === 'bidon') huboBidon = true;
@@ -235,9 +218,8 @@ export function RecepcionModernaPage() {
           {carrito.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {carrito.map((it) => {
-                const esDocenaItem =
-                  productos.find((p) => p.id === it.productoBaseId)?.unidad_compra === 'docena' &&
-                  factorPiezaPorProducto.has(it.productoBaseId);
+                const esPiezaItem =
+                  productos.find((p) => p.id === it.productoBaseId)?.unidad_compra === 'pieza';
                 return (
                   <div
                     key={it.id}
@@ -252,7 +234,7 @@ export function RecepcionModernaPage() {
                     }}
                   >
                     <span className="numeric" style={{ minWidth: '46px', fontSize: '15px', fontWeight: 800, color: 'var(--color-primary)' }}>
-                      {it.cantidad}{esDocenaItem ? ' pza' : '×'}
+                      {it.cantidad}{esPiezaItem ? ' pza' : '×'}
                     </span>
                     <div style={{ flex: 1, minWidth: 0, fontSize: '15px', fontWeight: 700, color: 'var(--color-body)' }}>
                       {nombreProducto(it.productoBaseId)}
@@ -303,17 +285,10 @@ export function RecepcionModernaPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-body)' }}>
                     Cantidad {tipoMovimiento === 'recibido' ? 'recibida' : 'devuelta'}
-                    {draftFactorPieza ? ' (piezas)' : ''}
+                    {draftEsPieza ? ' (piezas)' : ''}
                   </span>
                   <StepperCantidad value={draftCant} min={1} onChange={setDraftCant} />
                 </div>
-                {draftDocenas !== undefined && (
-                  <IonText color="medium">
-                    <p style={{ fontSize: 'var(--font-size-xs)', margin: '6px 0 0', textAlign: 'right' }}>
-                      = {docenasTexto(draftDocenas)} con La Moderna
-                    </p>
-                  </IonText>
-                )}
               </div>
             </Card>
 
