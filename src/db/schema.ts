@@ -52,7 +52,7 @@ export type CategoriaProducto =
 export interface ProductoBase {
   id: string;
   nombre: string;
-  unidad_compra: 'bidon' | 'docena';
+  unidad_compra: 'bidon' | 'pieza';
   categoria: CategoriaProducto;
   precio_preferencial?: number;
   /** Litros que trae un bidón sellado completo (solo unidad_compra='bidon'). */
@@ -208,7 +208,7 @@ export interface MovimientoLaModerna {
   producto_base_id: string;
   tipo: 'recibido' | 'devuelto';
   fecha: string; // ISO date
-  cantidad: number; // en unidad_compra: bidones o docenas
+  cantidad: number; // en unidad_compra: bidones o piezas
   responsable_id: string;
   nota?: string;
 }

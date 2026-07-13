@@ -201,7 +201,7 @@ export async function cargarNegocioEntrada(
 
 // ── Mercancía sellada en bodega (Paso 2, acopio hacia La Moderna) ─────
 // Cubre tanto químicos en bidón (inventario_bodega_base) como
-// escobas/trapeadores/recogedores en docena (inventario_bodega_presentacion,
+// escobas/trapeadores/recogedores en pieza (inventario_bodega_presentacion,
 // vía su presentación 'pieza' — mismo patrón de conversión que usa el
 // trigger aplicar_movimiento_la_moderna del lado servidor, migración 007).
 

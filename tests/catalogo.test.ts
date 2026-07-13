@@ -110,7 +110,7 @@ describe('[H-13] gestión del catálogo', () => {
     // para que la lista del catálogo (where activo=1) lo muestre sin recargar.
     const prod = await guardarProducto({
       nombre: 'Trapeador Microseda 1pz',
-      unidad_compra: 'docena',
+      unidad_compra: 'pieza',
       categoria: 'trapeadores',
       activo: true,
     });

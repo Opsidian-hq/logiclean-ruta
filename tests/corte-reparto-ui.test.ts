@@ -203,15 +203,15 @@ describe('cargarSelladosDisponibles', () => {
     expect(sellados).toEqual([{ productoBaseId: 'pb-cloro', nombre: 'Cloro', disponibles: 30 }]);
   });
 
-  it('CR-007: productos en docena (escobas/trapeadores) vía su presentación "pieza"', async () => {
+  it('CR-007: productos en pieza (escobas/trapeadores) vía su presentación "pieza"', async () => {
     await db.producto_base.bulkAdd([
-      { id: 'pb-escoba', nombre: 'Escoba', unidad_compra: 'docena', categoria: 'escobas', activo: true },
-      { id: 'pb-trapeador', nombre: 'Trapeador', unidad_compra: 'docena', categoria: 'trapeadores', activo: true },
-      { id: 'pb-papel', nombre: 'Papel institucional', unidad_compra: 'docena', categoria: 'papel_institucional', activo: true },
+      { id: 'pb-escoba', nombre: 'Escoba', unidad_compra: 'pieza', categoria: 'escobas', activo: true },
+      { id: 'pb-trapeador', nombre: 'Trapeador', unidad_compra: 'pieza', categoria: 'trapeadores', activo: true },
+      { id: 'pb-papel', nombre: 'Papel institucional', unidad_compra: 'pieza', categoria: 'papel_institucional', activo: true },
     ]);
     await db.presentacion.bulkAdd([
-      { id: 'pres-escoba-pieza', producto_base_id: 'pb-escoba', nombre: 'Pieza', unidad_venta: 'pieza', factor_conversion: 12, precio_mayoreo: 0, precio_menudeo: 0, activo: true },
-      { id: 'pres-trapeador-pieza', producto_base_id: 'pb-trapeador', nombre: 'Pieza', unidad_venta: 'pieza', factor_conversion: 12, precio_mayoreo: 0, precio_menudeo: 0, activo: true },
+      { id: 'pres-escoba-pieza', producto_base_id: 'pb-escoba', nombre: 'Pieza', unidad_venta: 'pieza', factor_conversion: 1, precio_mayoreo: 0, precio_menudeo: 0, activo: true },
+      { id: 'pres-trapeador-pieza', producto_base_id: 'pb-trapeador', nombre: 'Pieza', unidad_venta: 'pieza', factor_conversion: 1, precio_mayoreo: 0, precio_menudeo: 0, activo: true },
       // papel_institucional no tiene presentación 'pieza' (usa 'paquete'): fuera de la cadena de bodega.
       { id: 'pres-papel-paquete', producto_base_id: 'pb-papel', nombre: 'Paquete', unidad_venta: 'paquete', factor_conversion: 1, precio_mayoreo: 0, precio_menudeo: 0, activo: true },
     ]);
@@ -222,8 +222,8 @@ describe('cargarSelladosDisponibles', () => {
     ]);
 
     const sellados = await cargarSelladosDisponibles();
-    // 30 piezas / 12 (factor_conversion) = 2.5 docenas disponibles.
-    expect(sellados).toEqual([{ productoBaseId: 'pb-escoba', nombre: 'Escoba', disponibles: 2.5 }]);
+    // 30 piezas / 1 (factor_conversion) = 30 piezas disponibles (sin fracciones).
+    expect(sellados).toEqual([{ productoBaseId: 'pb-escoba', nombre: 'Escoba', disponibles: 30 }]);
   });
 });
 

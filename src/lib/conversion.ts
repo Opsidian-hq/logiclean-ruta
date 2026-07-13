@@ -2,8 +2,8 @@
  * Logiclean Ruta — Conversión presentación ↔ unidad de compra (H-11, Inc 3)
  *
  * La cuenta con La Moderna se lleva en la **unidad de compra** (bidón para
- * químicos, docena para escobas/trapeadores), mientras que la venta y el
- * inventario se llevan en **presentaciones** (1 L, 3.7 L, pza…).
+ * químicos, pieza para escobas/trapeadores/papel institucional), mientras que
+ * la venta y el inventario se llevan en **presentaciones** (1 L, 3.7 L, pza…).
  *
  * `factor_conversion` = cuántas presentaciones salen de **una** unidad de
  * compra (p. ej. 10 botellas de 1 L por bidón). Por eso:
@@ -17,7 +17,7 @@ import type { Presentacion, InventarioVehiculo } from '../db/schema';
 
 /**
  * Traduce una cantidad en presentaciones a su equivalente en unidades de
- * compra (bidones/docenas). Si el factor no es válido (≤ 0), devuelve 0 para
+ * compra (bidones/piezas). Si el factor no es válido (≤ 0), devuelve 0 para
  * no contaminar el corte con divisiones indefinidas.
  */
 export function presentacionesAUnidadCompra(
@@ -31,7 +31,7 @@ export function presentacionesAUnidadCompra(
 /** Cantidad en unidad de compra para un producto base. */
 export interface UnidadCompraPorProducto {
   producto_base_id: string;
-  /** Unidades de compra (bidones/docenas) acumuladas. */
+  /** Unidades de compra (bidones/piezas) acumuladas. */
   unidades: number;
 }
 
