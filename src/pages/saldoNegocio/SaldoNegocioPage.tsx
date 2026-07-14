@@ -1,13 +1,16 @@
 /**
  * Logiclean Ruta — SaldoNegocioPage (Inc 7.5)
  *
- * Dos saldos distintos del vendedor en sesión, ambos derivados del corte:
+ * Dos saldos distintos del vendedor en sesión:
  *
- *  - Cartera pendiente de su reparto (`saldoCartera`, ADR-0009/H-15): crédito
- *    vivo de sus clientes que aún no ha cobrado. El honorario del vendedor se
- *    calcula neto de esta cartera (cxc_nueva) — collectarla completa su pago
- *    del corte. Se cobra en `/cobros`, ya existente; aquí solo se muestra el
- *    total con acceso directo.
+ *  - Cartera pendiente de su reparto: crédito vivo de SUS clientes aún sin
+ *    cobrar, sin acotar por periodo (misma fuente que `/cobros` —
+ *    `useCobrosPendientes`/`lib/cobros.ts`, derivado de venta − cobros). El
+ *    honorario del vendedor se calcula neto de esta cartera (`cxc_nueva` del
+ *    corte) — cobrarla completa su pago. OJO: `useVendedorResumen`
+ *    (`saldoCartera`) NO sirve aquí — está acotado a "ventas desde el último
+ *    corte confirmado", así que una venta ya facturada ANTES de ese corte
+ *    (pero aún sin cobrar) desaparece de ese cálculo aunque siga pendiente.
  *  - Saldo con el negocio (`saldo_vendedor_cierre`, neto de abonos — ver
  *    `useSaldoVendedor`): liquidación de efectivo entregado vs. lo que le
  *    tocaba entregar en el corte. El vendedor registra el abono aquí mismo
@@ -32,7 +35,7 @@ import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { useAuthContext } from '../../context/AuthContext';
 import { useSaldoVendedor } from '../../hooks/useSaldoVendedor';
-import { useVendedorResumen } from '../../hooks/useVendedorResumen';
+import { useCobrosPendientes } from '../../hooks/useCobros';
 import { money } from '../../lib/money';
 import type { FormaPagoAbono } from '../../lib/abonoVendedor';
 import { FormaPagoSelector } from '../cobranza/components/FormaPagoSelector';
@@ -43,14 +46,14 @@ export function SaldoNegocioPage() {
   const { user } = useAuthContext();
   const history = useHistory();
   const { saldo, loading: loadingSaldo, submitting, registrarAbono } = useSaldoVendedor(user?.id ?? null);
-  const { snapshot, loading: loadingCartera } = useVendedorResumen(user?.id ?? '');
+  const { pendientes, loading: loadingCartera } = useCobrosPendientes();
 
   const [montoStr, setMontoStr] = useState<number | null>(null);
   const [formaPago, setFormaPago] = useState<FormaPagoAbono>('efectivo');
   const [toast, setToast] = useState<string | null>(null);
 
   const loading = loadingSaldo || loadingCartera;
-  const cartera = snapshot?.saldoCartera ?? 0;
+  const cartera = pendientes.reduce((s, p) => s + p.saldoTotal, 0);
   const debe = saldo < 0;
   const pendiente = Math.abs(saldo);
   const monto = montoStr ?? pendiente;
