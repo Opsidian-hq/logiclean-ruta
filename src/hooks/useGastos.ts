@@ -13,7 +13,7 @@ import {
   totalesPorBolsa,
 } from '../lib/gastos';
 import type { RegistrarGastoInput } from '../lib/gastos';
-import { ultimoPeriodoFin } from '../lib/corteData';
+import { ultimoInstanteCorte } from '../lib/corteData';
 import { useAuthContext } from '../context/AuthContext';
 import type { Gasto } from '../db/schema';
 
@@ -21,7 +21,7 @@ export type RegistrarGastoArgs = Omit<RegistrarGastoInput, 'vendedorId'>;
 
 export interface UseGastosReturn {
   gastosPeriodo: Gasto[];
-  /** Fecha ISO del último corte ('' si no hay cortes previos). */
+  /** Instante ISO (fecha_generado) del último corte confirmado ('' si no hay cortes previos). */
   periodoInicio: string;
   totales: { efectivo: number; transferencia: number };
   loading: boolean;
@@ -46,14 +46,14 @@ export function useGastos(): UseGastosReturn {
       return;
     }
     try {
-      const inicio = await ultimoPeriodoFin();
+      const inicio = await ultimoInstanteCorte();
       setPeriodoInicio(inicio);
       const todos = await db.gasto
         .where('vendedor_id')
         .equals(vendedorId)
         .toArray();
       const delPeriodo = todos
-        .filter((g) => !inicio || g.fecha.slice(0, 10) > inicio)
+        .filter((g) => !inicio || new Date(g.fecha).getTime() > new Date(inicio).getTime())
         .sort((a, b) => b.fecha.localeCompare(a.fecha));
       setGastosPeriodo(delPeriodo);
       setError(null);
