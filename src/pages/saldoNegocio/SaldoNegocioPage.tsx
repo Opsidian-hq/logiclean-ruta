@@ -1,13 +1,17 @@
 /**
  * Logiclean Ruta — SaldoNegocioPage (Inc 7.5)
  *
- * Saldo vigente del vendedor en sesión con el negocio (saldo_vendedor_cierre
- * del último corte confirmado, neto de abonos — ver `useSaldoVendedor`). No
- * confundir con la cartera de clientes (`/cobros`): esto es la liquidación de
- * efectivo entregado vs. lo que le tocaba entregar en el corte.
+ * Dos saldos distintos del vendedor en sesión, ambos derivados del corte:
  *
- * El vendedor registra el abono aquí mismo cuando salda su cuenta — es él
- * quien está a cargo de resolverla, no el gerente.
+ *  - Cartera pendiente de su reparto (`saldoCartera`, ADR-0009/H-15): crédito
+ *    vivo de sus clientes que aún no ha cobrado. El honorario del vendedor se
+ *    calcula neto de esta cartera (cxc_nueva) — collectarla completa su pago
+ *    del corte. Se cobra en `/cobros`, ya existente; aquí solo se muestra el
+ *    total con acceso directo.
+ *  - Saldo con el negocio (`saldo_vendedor_cierre`, neto de abonos — ver
+ *    `useSaldoVendedor`): liquidación de efectivo entregado vs. lo que le
+ *    tocaba entregar en el corte. El vendedor registra el abono aquí mismo
+ *    cuando lo salda.
  *
  * Ruta: /saldo-negocio
  */
@@ -17,15 +21,18 @@ import {
   IonHeader,
   IonToolbar,
   IonButtons,
+  IonButton,
   IonContent,
   IonFooter,
   IonToast,
 } from '@ionic/react';
 import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { useAuthContext } from '../../context/AuthContext';
 import { useSaldoVendedor } from '../../hooks/useSaldoVendedor';
+import { useVendedorResumen } from '../../hooks/useVendedorResumen';
 import { money } from '../../lib/money';
 import type { FormaPagoAbono } from '../../lib/abonoVendedor';
 import { FormaPagoSelector } from '../cobranza/components/FormaPagoSelector';
@@ -34,16 +41,21 @@ import { CobroSkeleton } from '../cobranza/components/CobroSkeleton';
 
 export function SaldoNegocioPage() {
   const { user } = useAuthContext();
-  const { saldo, loading, submitting, registrarAbono } = useSaldoVendedor(user?.id ?? null);
+  const history = useHistory();
+  const { saldo, loading: loadingSaldo, submitting, registrarAbono } = useSaldoVendedor(user?.id ?? null);
+  const { snapshot, loading: loadingCartera } = useVendedorResumen(user?.id ?? '');
 
   const [montoStr, setMontoStr] = useState<number | null>(null);
   const [formaPago, setFormaPago] = useState<FormaPagoAbono>('efectivo');
   const [toast, setToast] = useState<string | null>(null);
 
+  const loading = loadingSaldo || loadingCartera;
+  const cartera = snapshot?.saldoCartera ?? 0;
   const debe = saldo < 0;
   const pendiente = Math.abs(saldo);
   const monto = montoStr ?? pendiente;
-  const alCorriente = !loading && saldo === 0;
+  const hayPendientes = saldo !== 0 || cartera > 0;
+  const alCorriente = !loading && !hayPendientes;
 
   const registrar = async () => {
     if (monto <= 0) return;
@@ -58,7 +70,7 @@ export function SaldoNegocioPage() {
         <IonToolbar style={{ '--background': 'var(--color-navy)', '--color': 'var(--color-on-dark)' }}>
           <IonButtons slot="start" />
           <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--color-on-dark)', flex: 1, textAlign: 'center' }}>
-            Mi saldo con el negocio
+            Mi saldo
           </div>
           <IonButtons slot="end" style={{ marginRight: 'var(--space-sm)' }}>
             <SyncStatusBadge />
@@ -78,28 +90,58 @@ export function SaldoNegocioPage() {
                 </div>
                 <div style={{ fontSize: '21px', fontWeight: 800, color: 'var(--color-navy)', marginTop: '8px' }}>Estás al corriente</div>
                 <div style={{ fontSize: '14.5px', fontWeight: 600, color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
-                  No tienes saldo pendiente con el negocio.
+                  No tienes saldo pendiente, ni con el negocio ni por cobrar de clientes.
                 </div>
               </div>
             ) : (
               <>
-                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-card-border)', borderRadius: '16px', padding: '15px' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase', color: '#8A94A6' }}>
-                      {debe ? 'Debes al negocio' : 'A tu favor'}
-                    </span>
-                    <span
-                      className="numeric"
-                      style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-.6px', color: debe ? 'var(--color-error)' : '#7A3E06' }}
+                {cartera > 0 && (
+                  <div style={{ background: '#FEF3E2', border: '1.5px solid #F6C97C', borderRadius: '16px', padding: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase', color: '#7A3E06' }}>
+                        Cartera pendiente de tu reparto
+                      </span>
+                      <span className="numeric" style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-.6px', color: '#7A3E06' }}>
+                        {money(cartera)}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#7A3E06', lineHeight: 1.4, marginTop: '6px' }}>
+                      Crédito de tus clientes aún sin cobrar. Tu honorario del corte se calcula neto de esta cartera —
+                      cóbrala para completar tu pago.
+                    </div>
+                    <IonButton
+                      expand="block"
+                      fill="clear"
+                      size="small"
+                      onClick={() => history.push('/cobros')}
+                      style={{ '--background': '#fff', '--color': '#7A3E06', '--border-radius': '9px', height: '38px', fontWeight: 800, fontSize: '12.5px', marginTop: '10px' }}
                     >
-                      {money(pendiente)}
-                    </span>
+                      Ir a cobrar →
+                    </IonButton>
                   </div>
-                </div>
+                )}
 
-                <MontoCobroBox label={debe ? 'Monto a abonar' : 'Monto a recibir'} monto={monto} montoSize={25} onChange={setMontoStr} />
+                {saldo !== 0 && (
+                  <>
+                    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-card-border)', borderRadius: '16px', padding: '15px' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase', color: '#8A94A6' }}>
+                          {debe ? 'Debes al negocio' : 'A tu favor'}
+                        </span>
+                        <span
+                          className="numeric"
+                          style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-.6px', color: debe ? 'var(--color-error)' : '#7A3E06' }}
+                        >
+                          {money(pendiente)}
+                        </span>
+                      </div>
+                    </div>
 
-                <FormaPagoSelector value={formaPago} onChange={setFormaPago} />
+                    <MontoCobroBox label={debe ? 'Monto a abonar' : 'Monto a recibir'} monto={monto} montoSize={25} onChange={setMontoStr} />
+
+                    <FormaPagoSelector value={formaPago} onChange={setFormaPago} />
+                  </>
+                )}
               </>
             )}
 
@@ -108,7 +150,7 @@ export function SaldoNegocioPage() {
         )}
       </IonContent>
 
-      {!loading && !alCorriente && (
+      {!loading && saldo !== 0 && (
         <IonFooter>
           <IonToolbar style={{ '--background': 'var(--color-bg)' }}>
             <div style={{ padding: 'var(--space-sm) var(--space-md) var(--space-md)' }}>
