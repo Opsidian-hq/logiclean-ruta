@@ -6,14 +6,13 @@
  * `cargarAperturaVigente`). Negativo = el vendedor debe al negocio; positivo
  * = el negocio le debe a él (a favor); 0 = al corriente.
  *
- * El propio vendedor registra el abono cuando lo salda: `registrarAbono`
- * deriva la dirección del signo del saldo, así el llamador solo da el monto
- * y la forma de pago.
+ * Solo lectura — el registro de abonos vive en el formulario libre de
+ * `SaldoNegocioPage` (el vendedor decide cuándo y cuánto retira/devuelve),
+ * que llama a `registrarAbonoSaldoVendedor` directamente.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { cargarAperturaVigente } from '../lib/corteReparto';
-import { registrarAbonoSaldoVendedor, type FormaPagoAbono } from '../lib/abonoVendedor';
 
 export interface UseSaldoVendedorReturn {
   corteId: string | null;
@@ -21,8 +20,6 @@ export interface UseSaldoVendedorReturn {
   saldo: number;
   loading: boolean;
   error: string | null;
-  submitting: boolean;
-  registrarAbono: (monto: number, formaPago: FormaPagoAbono) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -31,7 +28,6 @@ export function useSaldoVendedor(vendedorId: string | null): UseSaldoVendedorRet
   const [saldo, setSaldo] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     if (!vendedorId) {
@@ -58,28 +54,5 @@ export function useSaldoVendedor(vendedorId: string | null): UseSaldoVendedorRet
     load();
   }, [load]);
 
-  const registrarAbono = useCallback(
-    async (monto: number, formaPago: FormaPagoAbono) => {
-      if (!vendedorId) throw new Error('Falta el vendedor.');
-      if (!corteId) throw new Error('No hay ningún corte confirmado contra el cual abonar.');
-      if (saldo === 0) throw new Error('No hay saldo pendiente.');
-
-      setSubmitting(true);
-      try {
-        await registrarAbonoSaldoVendedor({
-          corteId,
-          vendedorId,
-          direccion: saldo < 0 ? 'vendedor_a_negocio' : 'negocio_a_vendedor',
-          monto,
-          forma_pago: formaPago,
-        });
-        await load();
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [vendedorId, corteId, saldo, load]
-  );
-
-  return { corteId, saldo, loading, error, submitting, registrarAbono, refresh: load };
+  return { corteId, saldo, loading, error, refresh: load };
 }

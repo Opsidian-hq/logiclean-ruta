@@ -103,6 +103,29 @@ export async function cargarAperturaVigente(): Promise<AperturaCorte> {
   return { ...base, porVendedor };
 }
 
+export interface UltimoCorteVendedor {
+  /** El corte confirmado más reciente en el que este vendedor tiene línea. */
+  corteId: string;
+  /** cxc_nueva registrada para este vendedor en ese corte — honorario retenido por cartera sin cobrar. */
+  cxcNueva: number;
+}
+
+/**
+ * Línea del vendedor en el último corte confirmado (Inc 7.5) — de aquí sale
+ * el honorario retenido (`cxc_nueva`) que "Mi saldo" sugiere reclamar al
+ * cobrar la cartera correspondiente. Solo lectura; no participa en el motor.
+ */
+export async function cargarUltimoCorteVendedor(vendedorId: string): Promise<UltimoCorteVendedor | null> {
+  const todos = await db.corte.toArray();
+  const confirmados = todos.filter((c) => c.estado === 'confirmado');
+  const ultimo = confirmados.sort((a, b) => a.fecha_generado.localeCompare(b.fecha_generado)).at(-1);
+  if (!ultimo) return null;
+
+  const lineas = await db.corte_vendedor.where('corte_id').equals(ultimo.id).toArray();
+  const linea = lineas.find((l) => l.vendedor_id === vendedorId);
+  return linea ? { corteId: ultimo.id, cxcNueva: linea.cxc_nueva } : null;
+}
+
 // ── Insumos por vendedor (reglas 1-2, modelo-datos-v1_4) ───────
 
 /**
