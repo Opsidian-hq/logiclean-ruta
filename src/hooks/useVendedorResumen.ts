@@ -12,14 +12,17 @@ import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
 import { cargarInsumosCorte, ultimoInstanteCorte } from '../lib/corteData';
 import { cargarSaldoNetoVendedor } from '../lib/corteReparto';
+import { abonosDelCorteVendedor } from '../lib/abonoVendedor';
 import type { CorteSnapshot } from '../lib/corte';
-import type { Vendedor } from '../db/schema';
+import type { Vendedor, AbonoSaldoVendedor } from '../db/schema';
 
 export interface UseVendedorResumenReturn {
   vendedor: Vendedor | null;
   snapshot: CorteSnapshot | null;
   /** Saldo vigente con el negocio (Inc 7.5): negativo = debe, positivo = a favor. */
   saldoNegocio: number;
+  /** Movimientos de caja (retiros/devoluciones) del corte vigente, más recientes primero. */
+  movimientos: AbonoSaldoVendedor[];
   loading: boolean;
   error: string | null;
 }
@@ -30,6 +33,7 @@ export function useVendedorResumen(vendedorId: string): UseVendedorResumenReturn
   const [vendedor, setVendedor] = useState<Vendedor | null>(null);
   const [snapshot, setSnapshot] = useState<CorteSnapshot | null>(null);
   const [saldoNegocio, setSaldoNegocio] = useState(0);
+  const [movimientos, setMovimientos] = useState<AbonoSaldoVendedor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +47,7 @@ export function useVendedorResumen(vendedorId: string): UseVendedorResumenReturn
       ]);
       setVendedor(v ?? null);
       setSaldoNegocio(neto.saldo);
+      setMovimientos(neto.corteId ? await abonosDelCorteVendedor(neto.corteId, vendedorId) : []);
       const insumos = await cargarInsumosCorte(vendedorId, inicio, hoyISO());
       setSnapshot(calcularCorte(insumos));
       setError(null);
@@ -58,5 +63,5 @@ export function useVendedorResumen(vendedorId: string): UseVendedorResumenReturn
     cargar();
   }, [cargar]);
 
-  return { vendedor, snapshot, saldoNegocio, loading, error };
+  return { vendedor, snapshot, saldoNegocio, movimientos, loading, error };
 }
