@@ -40,6 +40,7 @@ import {
   cargarNegocioEntrada,
   cargarSelladosDisponibles,
   confirmarCorte,
+  cargarUltimoCorteVendedor,
 } from '../src/lib/corteReparto';
 import type { CorteSalida, VendedorEntrada, NegocioEntrada } from '../src/domain/corte';
 import type { Venta, Cobro, Gasto, Corte, CorteVendedor } from '../src/db/schema';
@@ -154,6 +155,53 @@ describe('cargarApertura', () => {
     expect(apertura.corte?.id).toBe('corte-2');
     expect(apertura.porVendedor.get('v-iv')).toBe(-760);
     expect(apertura.moderna).toBe(1110);
+  });
+});
+
+// ── Inc 7.5: cargarUltimoCorteVendedor (honorario retenido) ────────────
+
+describe('cargarUltimoCorteVendedor', () => {
+  it('sin corte confirmado devuelve null', async () => {
+    expect(await cargarUltimoCorteVendedor('v1')).toBeNull();
+  });
+
+  it('lee cxc_nueva del último corte confirmado para ese vendedor', async () => {
+    const corteViejo: Corte = {
+      id: 'corte-1', periodo_inicio: '', periodo_fin: '2026-07-07', fecha_generado: '2026-07-07T20:00:00Z',
+      estado: 'confirmado', n_vendedores: 1, ventas_periodo: 0, adeudo_la_moderna: 0, backoffice_pendiente: 0,
+      obligaciones_total: 0, pool_liquido: 0, v_remanente: 0, t_por_vendedor: 0,
+      saldo_moderna_apertura: 0, saldo_moderna_cierre: 0, snapshot: {},
+    };
+    const corteReciente: Corte = { ...corteViejo, id: 'corte-2', periodo_fin: '2026-07-14', fecha_generado: '2026-07-14T03:40:12Z' };
+    await db.corte.bulkAdd([corteViejo, corteReciente]);
+
+    const lineaVieja: CorteVendedor = {
+      id: 'cv-1', corte_id: 'corte-1', vendedor_id: 'v1', efectivo_cobrado_neto: 0, transfer_cobrado_neto: 0,
+      cxc_nueva: 100, cobro_cxc_vieja: 0, posicion_objetivo: 0, efectivo_entregado: 0,
+      saldo_vendedor_apertura: 0, saldo_vendedor_cierre: 0,
+    };
+    const lineaReciente: CorteVendedor = { ...lineaVieja, id: 'cv-2', corte_id: 'corte-2', cxc_nueva: 855 };
+    await db.corte_vendedor.bulkAdd([lineaVieja, lineaReciente]);
+
+    const resultado = await cargarUltimoCorteVendedor('v1');
+    expect(resultado).toEqual({ corteId: 'corte-2', cxcNueva: 855 });
+  });
+
+  it('vendedor sin línea en el último corte devuelve null', async () => {
+    const corte: Corte = {
+      id: 'corte-1', periodo_inicio: '', periodo_fin: '2026-07-14', fecha_generado: '2026-07-14T03:40:12Z',
+      estado: 'confirmado', n_vendedores: 1, ventas_periodo: 0, adeudo_la_moderna: 0, backoffice_pendiente: 0,
+      obligaciones_total: 0, pool_liquido: 0, v_remanente: 0, t_por_vendedor: 0,
+      saldo_moderna_apertura: 0, saldo_moderna_cierre: 0, snapshot: {},
+    };
+    await db.corte.add(corte);
+    await db.corte_vendedor.add({
+      id: 'cv-1', corte_id: 'corte-1', vendedor_id: 'otro-vendedor', efectivo_cobrado_neto: 0, transfer_cobrado_neto: 0,
+      cxc_nueva: 500, cobro_cxc_vieja: 0, posicion_objetivo: 0, efectivo_entregado: 0,
+      saldo_vendedor_apertura: 0, saldo_vendedor_cierre: 0,
+    });
+
+    expect(await cargarUltimoCorteVendedor('v1')).toBeNull();
   });
 });
 
