@@ -43,7 +43,9 @@ import {
   cargarUltimoCorteVendedor,
   cargarSaldoNetoVendedor,
 } from '../src/lib/corteReparto';
+import { calcularCorte } from '../src/domain/corte';
 import type { CorteSalida, VendedorEntrada, NegocioEntrada } from '../src/domain/corte';
+import { abonoFisicoDelCorte } from '../src/lib/abonoVendedor';
 import type { Venta, Cobro, Gasto, Corte, CorteVendedor, AbonoSaldoVendedor } from '../src/db/schema';
 
 beforeEach(async () => {
@@ -282,6 +284,120 @@ describe('cargarSaldoNetoVendedor', () => {
 
   it('sin corte confirmado, devuelve el saldo del ledger (0) sin corteId', async () => {
     expect(await cargarSaldoNetoVendedor('eduardo')).toEqual({ corteId: null, saldo: 0 });
+  });
+});
+
+// ── Inc 7.5.2: abonoFisicoDelCorte + flujo end-to-end del wizard ───────
+
+describe('abonoFisicoDelCorte', () => {
+  it('agrega por vendedor × dirección × forma_pago, acotado a un solo corte_id', async () => {
+    const abonos: AbonoSaldoVendedor[] = [
+      { id: 'a1', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 330, forma_pago: 'efectivo', fecha: '2026-07-08T00:00:00Z' },
+      { id: 'a2', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 50, forma_pago: 'transferencia', fecha: '2026-07-09T00:00:00Z' },
+      { id: 'a3', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'vendedor_a_negocio', monto: 20, forma_pago: 'efectivo', fecha: '2026-07-09T00:00:00Z' },
+      { id: 'a4', corte_id: 'corte-1', vendedor_id: 'ana', direccion: 'negocio_a_vendedor', monto: 100, forma_pago: 'efectivo', fecha: '2026-07-09T00:00:00Z' },
+      // Contra OTRO corte: no debe mezclarse con corte-1.
+      { id: 'a5', corte_id: 'corte-2', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 9999, forma_pago: 'efectivo', fecha: '2026-07-15T00:00:00Z' },
+    ];
+    await db.abono_saldo_vendedor.bulkAdd(abonos);
+
+    const porVendedor = await abonoFisicoDelCorte('corte-1');
+
+    expect(porVendedor.get('eduardo')).toEqual({
+      ya_retirado_efectivo: 330,
+      ya_retirado_transferencia: 50,
+      ya_entregado_efectivo: 20,
+      ya_entregado_transferencia: 0,
+    });
+    expect(porVendedor.get('ana')).toEqual({
+      ya_retirado_efectivo: 100,
+      ya_retirado_transferencia: 0,
+      ya_entregado_efectivo: 0,
+      ya_entregado_transferencia: 0,
+    });
+    // El abono contra corte-2 no debe aparecer en absoluto en este mapa.
+    expect(porVendedor.size).toBe(2);
+  });
+
+  it('sin abonos para ese corte, devuelve un mapa vacío', async () => {
+    expect((await abonoFisicoDelCorte('corte-inexistente')).size).toBe(0);
+  });
+});
+
+describe('flujo end-to-end: derivarVendedorEntrada + abonoFisicoDelCorte + calcularCorte', () => {
+  it('reproduce el caso Eduardo: retiro de honorario ya cobrado no pide efectivo que ya no tiene', async () => {
+    const corte: Corte = {
+      id: 'corte-1', periodo_inicio: '', periodo_fin: '2026-07-07', fecha_generado: '2026-07-07T20:00:00Z',
+      estado: 'confirmado', n_vendedores: 1, ventas_periodo: 0, adeudo_la_moderna: 0, backoffice_pendiente: 0,
+      obligaciones_total: 0, pool_liquido: 0, v_remanente: 0, t_por_vendedor: 0,
+      saldo_moderna_apertura: 0, saldo_moderna_cierre: 0, snapshot: {},
+    };
+    await db.corte.add(corte);
+    await db.corte_vendedor.add({
+      id: 'cv-1', corte_id: 'corte-1', vendedor_id: 'eduardo', efectivo_cobrado_neto: 0, transfer_cobrado_neto: 0,
+      cxc_nueva: 0, cobro_cxc_vieja: 0, posicion_objetivo: 0, efectivo_entregado: 0,
+      saldo_vendedor_apertura: 0, saldo_vendedor_cierre: 0,
+    });
+
+    // Ventas/cobros de este nuevo periodo que dejan una bolsa cruda de 780
+    // en efectivo, sin cartera nueva pendiente.
+    await db.venta.add({ id: 'venta-1', vendedor_id: 'eduardo', cliente_id: 'c1', fecha: '2026-07-10', requiere_factura: false, total: 780 });
+    await db.cobro.add({ id: 'cobro-1', venta_id: 'venta-1', fecha: '2026-07-10', monto: 780, forma_pago: 'efectivo', tipo: 'total' });
+
+    // Eduardo ya retiró $330 de honorario (vía "Mi saldo") antes de este corte.
+    await db.abono_saldo_vendedor.add({
+      id: 'abono-1', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 330,
+      forma_pago: 'efectivo', fecha: '2026-07-11T00:00:00Z',
+    });
+
+    const entradaCruda = await derivarVendedorEntrada('eduardo', corte.fecha_generado, '2026-07-14', 0);
+    const abonoFisico = await abonoFisicoDelCorte(corte.id);
+    const abono = abonoFisico.get('eduardo')!;
+    const entrada: VendedorEntrada = {
+      ...entradaCruda,
+      abono_ya_retirado_efectivo: abono.ya_retirado_efectivo,
+      abono_ya_retirado_transferencia: abono.ya_retirado_transferencia,
+      abono_ya_entregado_efectivo: abono.ya_entregado_efectivo,
+      abono_ya_entregado_transferencia: abono.ya_entregado_transferencia,
+    };
+
+    const salida = calcularCorte({
+      vendedores: [entrada],
+      negocio: { adeudo_la_moderna: 400, backoffice_pendiente: 0, saldo_moderna_apertura: 0 },
+    });
+
+    // Mismos números que el caso a mano del motor puro (tests/corte-reparto.test.ts).
+    expect(salida.pool_liquido).toBe(450);
+    expect(salida.saldo_moderna_cierre).toBe(0);
+    expect(salida.liquidacion).toEqual([
+      { origen_tipo: 'vendedor', origen_vendedor_id: 'eduardo', destino_tipo: 'la_moderna', destino_vendedor_id: null, monto: 400, forma_pago: 'efectivo' },
+    ]);
+  });
+
+  it('regresión: sin abonos, derivarVendedorEntrada + calcularCorte se comportan igual que hoy', async () => {
+    const corte: Corte = {
+      id: 'corte-1', periodo_inicio: '', periodo_fin: '2026-07-07', fecha_generado: '2026-07-07T20:00:00Z',
+      estado: 'confirmado', n_vendedores: 1, ventas_periodo: 0, adeudo_la_moderna: 0, backoffice_pendiente: 0,
+      obligaciones_total: 0, pool_liquido: 0, v_remanente: 0, t_por_vendedor: 0,
+      saldo_moderna_apertura: 0, saldo_moderna_cierre: 0, snapshot: {},
+    };
+    await db.corte.add(corte);
+    await db.venta.add({ id: 'venta-1', vendedor_id: 'eduardo', cliente_id: 'c1', fecha: '2026-07-10', requiere_factura: false, total: 780 });
+    await db.cobro.add({ id: 'cobro-1', venta_id: 'venta-1', fecha: '2026-07-10', monto: 780, forma_pago: 'efectivo', tipo: 'total' });
+
+    const entrada = await derivarVendedorEntrada('eduardo', corte.fecha_generado, '2026-07-14', 0);
+    const abonoFisico = await abonoFisicoDelCorte(corte.id);
+    expect(abonoFisico.size).toBe(0);
+
+    const salida = calcularCorte({
+      vendedores: [entrada],
+      negocio: { adeudo_la_moderna: 400, backoffice_pendiente: 0, saldo_moderna_apertura: 0 },
+    });
+
+    expect(salida.pool_liquido).toBe(780);
+    expect(salida.liquidacion).toEqual([
+      { origen_tipo: 'vendedor', origen_vendedor_id: 'eduardo', destino_tipo: 'la_moderna', destino_vendedor_id: null, monto: 400, forma_pago: 'efectivo' },
+    ]);
   });
 });
 

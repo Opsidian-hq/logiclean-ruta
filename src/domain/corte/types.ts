@@ -20,6 +20,21 @@ export interface VendedorEntrada {
   cobro_cxc_vieja: number;
   /** Saldo vendedor↔negocio entrante (cierre del corte anterior; 0 en el primer corte). */
   saldo_vendedor_apertura: number;
+  /**
+   * Efectivo/transferencia que el vendedor ya se quedó (abono
+   * `direccion='negocio_a_vendedor'`, Inc 7.5.2) desde el corte anterior —
+   * salió de su bolsa física antes de este corte. Opcionales: `undefined`
+   * equivale a 0, para no romper construcciones existentes de `VendedorEntrada`.
+   */
+  abono_ya_retirado_efectivo?: number;
+  abono_ya_retirado_transferencia?: number;
+  /**
+   * Efectivo/transferencia que el vendedor ya entregó al negocio (abono
+   * `direccion='vendedor_a_negocio'`) desde el corte anterior — también salió
+   * de su bolsa física, aunque nunca dejó el pool colectivo.
+   */
+  abono_ya_entregado_efectivo?: number;
+  abono_ya_entregado_transferencia?: number;
 }
 
 /** Insumos a nivel negocio para el periodo (Inc 6 + gastos de backoffice). */
@@ -58,7 +73,8 @@ export interface LiquidacionMovimiento {
 export type Alerta =
   | { tipo: 'la_moderna_topada'; faltante: number }
   | { tipo: 'vendedor_negativo'; vendedor_id: string; monto: number }
-  | { tipo: 'arrastre_entrante'; vendedor_id?: string };
+  | { tipo: 'arrastre_entrante'; vendedor_id?: string }
+  | { tipo: 'abono_excede_bolsa'; vendedor_id: string; monto: number };
 
 export interface VendedorSalida {
   vendedor_id: string;

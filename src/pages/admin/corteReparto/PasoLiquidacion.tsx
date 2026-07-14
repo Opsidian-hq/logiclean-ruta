@@ -52,6 +52,7 @@ export function PasoLiquidacion({ salida, vendedores }: PasoLiquidacionProps) {
 
   const faltanteModerna = salida.alertas.find((a) => a.tipo === 'la_moderna_topada');
   const vendedoresNegativos = salida.alertas.filter((a) => a.tipo === 'vendedor_negativo');
+  const abonosExcedidos = salida.alertas.filter((a) => a.tipo === 'abono_excede_bolsa');
 
   const etiquetaFormaPago = (formas: Set<string>) => {
     if (formas.has('efectivo') && formas.has('transferencia')) return 'Efvo. + transf.';
@@ -60,6 +61,27 @@ export function PasoLiquidacion({ salida, vendedores }: PasoLiquidacionProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+      {abonosExcedidos.length > 0 && (
+        <div style={{ border: '1.5px solid #F4B3AC', background: '#FDECEA', borderRadius: '14px', padding: '13px 14px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 800, color: '#911A11' }}>
+            ● No se puede cerrar el corte
+          </span>
+          {abonosExcedidos.map((a) => (
+            <div key={a.vendedor_id} style={{ ...rowBetween, marginTop: '8px' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#7A1610' }}>
+                {nombrePorId.get(a.vendedor_id) ?? a.vendedor_id} ya retiró/entregó más de lo que trae de bolsa esta semana
+              </span>
+              <span className="numeric" style={{ fontSize: '13.5px', fontWeight: 800, color: '#911A11' }}>
+                +{money(a.monto)}
+              </span>
+            </div>
+          ))}
+          <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#7A1610', marginTop: '6px' }}>
+            Revisa el abono registrado en "Mi saldo" de ese vendedor antes de continuar — probable error de captura.
+          </span>
+        </div>
+      )}
+
       <span style={sectionLabel}>Movimientos a realizar</span>
 
       {[...grupos.values()].map((g) => {
