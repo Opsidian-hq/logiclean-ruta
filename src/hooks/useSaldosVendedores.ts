@@ -1,14 +1,15 @@
 /**
  * Logiclean Ruta — useSaldosVendedores (Inc 7.5, gerente)
  *
- * Saldo vigente de TODOS los vendedores con el negocio (una sola carga de
- * `cargarAperturaVigente`), para el Dashboard y el resumen por vendedor.
- * Solo lectura — el gerente no registra abonos (decisión ya tomada).
+ * Saldo neto vigente de TODOS los vendedores con el negocio
+ * (`cargarSaldoNetoVendedor` por vendedor), para el Dashboard y el resumen
+ * por vendedor. Solo lectura — el gerente no registra abonos (decisión ya
+ * tomada).
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '../db/index';
-import { cargarAperturaVigente } from '../lib/corteReparto';
+import { cargarSaldoNetoVendedor } from '../lib/corteReparto';
 
 export interface SaldoVendedor {
   vendedorId: string;
@@ -32,12 +33,13 @@ export function useSaldosVendedores(): UseSaldosVendedoresReturn {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [vendedores, apertura] = await Promise.all([db.vendedor.toArray(), cargarAperturaVigente()]);
+      const vendedores = await db.vendedor.toArray();
+      const netos = await Promise.all(vendedores.map((v) => cargarSaldoNetoVendedor(v.id)));
       setSaldos(
-        vendedores.map((v) => ({
+        vendedores.map((v, i) => ({
           vendedorId: v.id,
           nombre: v.nombre,
-          saldo: apertura.porVendedor.get(v.id) ?? 0,
+          saldo: netos[i].saldo,
         }))
       );
       setError(null);

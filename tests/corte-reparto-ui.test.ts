@@ -41,9 +41,10 @@ import {
   cargarSelladosDisponibles,
   confirmarCorte,
   cargarUltimoCorteVendedor,
+  cargarSaldoNetoVendedor,
 } from '../src/lib/corteReparto';
 import type { CorteSalida, VendedorEntrada, NegocioEntrada } from '../src/domain/corte';
-import type { Venta, Cobro, Gasto, Corte, CorteVendedor } from '../src/db/schema';
+import type { Venta, Cobro, Gasto, Corte, CorteVendedor, AbonoSaldoVendedor } from '../src/db/schema';
 
 beforeEach(async () => {
   await Promise.all(db.tables.map((t) => t.clear()));
@@ -202,6 +203,85 @@ describe('cargarUltimoCorteVendedor', () => {
     });
 
     expect(await cargarUltimoCorteVendedor('v1')).toBeNull();
+  });
+});
+
+// ── Inc 7.5.1: cargarSaldoNetoVendedor (no mostrar deuda transitoria al
+// retirar honorario ya cobrado) ─────────────────────────────────────────
+
+describe('cargarSaldoNetoVendedor', () => {
+  async function seedCorteConHonorarioRetenido() {
+    const corte: Corte = {
+      id: 'corte-1', periodo_inicio: '', periodo_fin: '2026-07-07', fecha_generado: '2026-07-07T20:00:00Z',
+      estado: 'confirmado', n_vendedores: 1, ventas_periodo: 0, adeudo_la_moderna: 0, backoffice_pendiente: 0,
+      obligaciones_total: 0, pool_liquido: 0, v_remanente: 0, t_por_vendedor: 0,
+      saldo_moderna_apertura: 0, saldo_moderna_cierre: 0, snapshot: {},
+    };
+    await db.corte.add(corte);
+    await db.corte_vendedor.add({
+      id: 'cv-1', corte_id: 'corte-1', vendedor_id: 'eduardo', efectivo_cobrado_neto: 0, transfer_cobrado_neto: 0,
+      cxc_nueva: 330, cobro_cxc_vieja: 0, posicion_objetivo: 0, efectivo_entregado: 0,
+      saldo_vendedor_apertura: 0, saldo_vendedor_cierre: 0,
+    });
+    // Venta anterior al corte, sin cobrar todavía al cerrarlo (de ahí cxc_nueva=330).
+    await db.venta.add({
+      id: 'venta-vieja', vendedor_id: 'eduardo', cliente_id: 'c1', fecha: '2026-07-05', requiere_factura: false, total: 330,
+    });
+  }
+
+  it('sin cobro ni abono posteriores, el saldo neto es el del ledger (0)', async () => {
+    await seedCorteConHonorarioRetenido();
+    expect(await cargarSaldoNetoVendedor('eduardo')).toEqual({ corteId: 'corte-1', saldo: 0 });
+  });
+
+  it('retirar el honorario ya cobrado no debe dejar deuda: el crédito de cobro_cxc_vieja compensa el abono', async () => {
+    await seedCorteConHonorarioRetenido();
+    // Eduardo cobra la venta vieja después del corte.
+    await db.cobro.add({ id: 'cobro-1', venta_id: 'venta-vieja', fecha: '2026-07-10', monto: 330, forma_pago: 'efectivo', tipo: 'total' });
+    // Y retira su honorario retenido vía el FAB ("Tomo dinero de la caja").
+    const abono: AbonoSaldoVendedor = {
+      id: 'abono-1', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 330,
+      forma_pago: 'efectivo', fecha: '2026-07-11T00:00:00Z',
+    };
+    await db.abono_saldo_vendedor.add(abono);
+
+    // El ledger crudo (cargarAperturaVigente) sí quedaría en -330 — es lo que se ve hoy en producción.
+    const apertura = await cargarApertura();
+    expect(apertura.porVendedor.get('eduardo')).toBe(0); // saldo_vendedor_cierre del corte, sin netear abonos
+
+    // El saldo NETO mostrado no debe verse como deuda: ya cobró exactamente lo que retiró.
+    expect(await cargarSaldoNetoVendedor('eduardo')).toEqual({ corteId: 'corte-1', saldo: 0 });
+  });
+
+  it('retiro parcial del honorario: el crédito se topa a lo ya cobrado, no a todo cxc_nueva', async () => {
+    await seedCorteConHonorarioRetenido();
+    await db.cobro.add({ id: 'cobro-1', venta_id: 'venta-vieja', fecha: '2026-07-10', monto: 330, forma_pago: 'efectivo', tipo: 'total' });
+    const abono: AbonoSaldoVendedor = {
+      id: 'abono-1', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 165,
+      forma_pago: 'efectivo', fecha: '2026-07-11T00:00:00Z',
+    };
+    await db.abono_saldo_vendedor.add(abono);
+
+    expect(await cargarSaldoNetoVendedor('eduardo')).toEqual({ corteId: 'corte-1', saldo: 0 });
+  });
+
+  it('no borra una deuda real ajena al honorario retenido', async () => {
+    await seedCorteConHonorarioRetenido();
+    // saldo_vendedor_cierre real de -500 por otra razón (p. ej. posición negativa de un corte previo).
+    await db.corte_vendedor.where('id').equals('cv-1').modify({ saldo_vendedor_cierre: -500 });
+    await db.cobro.add({ id: 'cobro-1', venta_id: 'venta-vieja', fecha: '2026-07-10', monto: 330, forma_pago: 'efectivo', tipo: 'total' });
+    const abono: AbonoSaldoVendedor = {
+      id: 'abono-1', corte_id: 'corte-1', vendedor_id: 'eduardo', direccion: 'negocio_a_vendedor', monto: 330,
+      forma_pago: 'efectivo', fecha: '2026-07-11T00:00:00Z',
+    };
+    await db.abono_saldo_vendedor.add(abono);
+
+    // -500 (real) - 330 (abono del honorario) + 330 (crédito por lo ya cobrado) = -500.
+    expect(await cargarSaldoNetoVendedor('eduardo')).toEqual({ corteId: 'corte-1', saldo: -500 });
+  });
+
+  it('sin corte confirmado, devuelve el saldo del ledger (0) sin corteId', async () => {
+    expect(await cargarSaldoNetoVendedor('eduardo')).toEqual({ corteId: null, saldo: 0 });
   });
 });
 

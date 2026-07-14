@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
 import { cargarInsumosCorte, ultimoInstanteCorte } from '../lib/corteData';
-import { cargarAperturaVigente } from '../lib/corteReparto';
+import { cargarSaldoNetoVendedor } from '../lib/corteReparto';
 import type { CorteSnapshot } from '../lib/corte';
 import type { Vendedor } from '../db/schema';
 
@@ -36,13 +36,13 @@ export function useVendedorResumen(vendedorId: string): UseVendedorResumenReturn
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const [v, inicio, apertura] = await Promise.all([
+      const [v, inicio, neto] = await Promise.all([
         db.vendedor.get(vendedorId),
         ultimoInstanteCorte(),
-        cargarAperturaVigente(),
+        cargarSaldoNetoVendedor(vendedorId),
       ]);
       setVendedor(v ?? null);
-      setSaldoNegocio(apertura.porVendedor.get(vendedorId) ?? 0);
+      setSaldoNegocio(neto.saldo);
       const insumos = await cargarInsumosCorte(vendedorId, inicio, hoyISO());
       setSnapshot(calcularCorte(insumos));
       setError(null);
