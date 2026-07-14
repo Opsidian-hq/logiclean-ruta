@@ -37,6 +37,7 @@ import type {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const soloFecha = (iso?: string | null) => (iso ?? '').slice(0, 10);
+const hoyISO = () => new Date().toISOString().slice(0, 10);
 // El límite inferior se acota por el INSTANTE exacto (`fecha_generado`) del
 // corte anterior, no por su fecha calendario: si dos cortes se confirman el
 // mismo día, comparar solo por día con `>` estricto dejaría fuera para
@@ -101,6 +102,42 @@ export async function cargarAperturaVigente(): Promise<AperturaCorte> {
   }
 
   return { ...base, porVendedor };
+}
+
+export interface SaldoNetoVendedor {
+  corteId: string | null;
+  /** Negativo = debe al negocio; positivo = a favor del vendedor; 0 = al corriente. */
+  saldo: number;
+}
+
+/**
+ * Saldo neto vigente de un vendedor (Inc 7.5.1): `cargarAperturaVigente` más
+ * el cobro de cartera vieja ya realizado pero aún no formalizado por un
+ * corte, topado a lo que el vendedor ya reclamó como honorario retenido de
+ * esa cartera (ver `useHonorarioRetenido`). Sin esto, retirar honorario ya
+ * cobrado resta del saldo vigente sin un crédito que lo compense — porque
+ * `cxc_nueva` nunca se banca como crédito en `saldo_vendedor_cierre`, solo
+ * reduce lo pagado en su propio corte — y muestra una deuda que de todos
+ * modos se saldaría sola en el siguiente corte vía `cobro_cxc_vieja`. Esta
+ * función solo adelanta esa parte para no confundir al vendedor/gerente; no
+ * toca `cargarAperturaVigente`, que sigue siendo la apertura real que
+ * consume el motor del siguiente corte (H-20).
+ */
+export async function cargarSaldoNetoVendedor(vendedorId: string): Promise<SaldoNetoVendedor> {
+  const apertura = await cargarAperturaVigente();
+  const saldo = apertura.porVendedor.get(vendedorId) ?? 0;
+  const corteId = apertura.corte?.id ?? null;
+  if (!apertura.corte) return { corteId, saldo };
+
+  const [abonos, entrada] = await Promise.all([
+    abonosDelCorte(apertura.corte.id),
+    derivarVendedorEntrada(vendedorId, apertura.corte.fecha_generado, hoyISO(), 0),
+  ]);
+  const yaReclamado = abonos
+    .filter((a) => a.vendedor_id === vendedorId && a.direccion === 'negocio_a_vendedor')
+    .reduce((s, a) => s + a.monto, 0);
+
+  return { corteId, saldo: round2(saldo + Math.min(entrada.cobro_cxc_vieja, yaReclamado)) };
 }
 
 export interface UltimoCorteVendedor {

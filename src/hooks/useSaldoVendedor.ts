@@ -1,10 +1,11 @@
 /**
  * Logiclean Ruta — useSaldoVendedor (Inc 7.5)
  *
- * Saldo vigente de UN vendedor con el negocio (saldo_vendedor_cierre del
- * último corte confirmado, neto de abonos ya registrados — ver
- * `cargarAperturaVigente`). Negativo = el vendedor debe al negocio; positivo
- * = el negocio le debe a él (a favor); 0 = al corriente.
+ * Saldo neto vigente de UN vendedor con el negocio (`cargarSaldoNetoVendedor`
+ * — saldo_vendedor_cierre del último corte confirmado, neto de abonos ya
+ * registrados, más el cobro de cartera vieja aún no formalizado por un
+ * corte). Negativo = el vendedor debe al negocio; positivo = el negocio le
+ * debe a él (a favor); 0 = al corriente.
  *
  * Solo lectura — el registro de abonos vive en el formulario libre de
  * `SaldoNegocioPage` (el vendedor decide cuándo y cuánto retira/devuelve),
@@ -12,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { cargarAperturaVigente } from '../lib/corteReparto';
+import { cargarSaldoNetoVendedor } from '../lib/corteReparto';
 
 export interface UseSaldoVendedorReturn {
   corteId: string | null;
@@ -38,9 +39,9 @@ export function useSaldoVendedor(vendedorId: string | null): UseSaldoVendedorRet
     }
     setLoading(true);
     try {
-      const apertura = await cargarAperturaVigente();
-      setCorteId(apertura.corte?.id ?? null);
-      setSaldo(apertura.porVendedor.get(vendedorId) ?? 0);
+      const neto = await cargarSaldoNetoVendedor(vendedorId);
+      setCorteId(neto.corteId);
+      setSaldo(neto.saldo);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
