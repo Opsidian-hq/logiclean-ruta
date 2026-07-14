@@ -18,6 +18,10 @@
  * personal (o cuánto devuelve): el FAB abre un formulario libre de registro
  * de abono — la app sugiere montos, no los impone.
  *
+ * "Estás al corriente" exige además `sugerido === 0`: si ya cobró cartera
+ * vieja pero no la ha reclamado con un abono, el saldo sigue pendiente y no
+ * debe ocultarse.
+ *
  * Ruta: /saldo-negocio
  */
 
@@ -77,7 +81,7 @@ export function SaldoNegocioPage() {
   const loading = loadingSaldo || loadingHonorario || loadingCartera;
   const cartera = pendientes.reduce((s, p) => s + p.saldoTotal, 0);
   const debe = saldo < 0;
-  const alCorriente = !loading && saldo === 0 && cartera === 0;
+  const alCorriente = !loading && saldo === 0 && cartera === 0 && sugerido === 0;
 
   const abrirModal = () => {
     if (sugerido > 0) {
