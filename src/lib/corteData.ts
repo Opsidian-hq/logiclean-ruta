@@ -37,15 +37,35 @@ export async function ultimoPeriodoFin(): Promise<string> {
     .at(-1) ?? '';
 }
 
-/** Carga y acota los insumos del corte de un vendedor para [inicio, fin]. */
+/**
+ * Instante exacto (`fecha_generado`) del último corte confirmado ('' si no
+ * hay ninguno). A diferencia de `ultimoPeriodoFin` (solo fecha calendario),
+ * este valor delimita el periodo en curso al segundo exacto en que se
+ * confirmó el corte: una operación registrada el mismo día calendario,
+ * después de confirmado el corte, sí entra al periodo en curso. Comparar
+ * solo por fecha calendario (con `>` estricto) dejaba esas operaciones
+ * fuera para siempre, porque su fecha nunca llegaba a ser "mayor" que la
+ * fecha calendario del corte que ya las excluía.
+ */
+export async function ultimoInstanteCorte(): Promise<string> {
+  const todos = await db.corte.toArray();
+  return todos
+    .filter((c) => c.estado === 'confirmado')
+    .map((c) => c.fecha_generado)
+    .sort()
+    .at(-1) ?? '';
+}
+
+/** Carga y acota los insumos del corte de un vendedor para [inicioInstante, fin]. */
 export async function cargarInsumosCorte(
   vendedorId: string,
-  periodoInicio: string,
+  inicioInstante: string,
   periodoFin: string
 ): Promise<CalcularCorteInput> {
+  const inicioMs = inicioInstante ? new Date(inicioInstante).getTime() : null;
   const enRango = (iso?: string | null) => {
-    const d = soloFecha(iso);
-    return (!periodoInicio || d > periodoInicio) && d <= periodoFin;
+    const t = iso ? new Date(iso).getTime() : NaN;
+    return (inicioMs === null || t > inicioMs) && soloFecha(iso) <= periodoFin;
   };
 
   const [

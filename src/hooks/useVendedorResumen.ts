@@ -3,14 +3,14 @@
  *
  * Carga de solo lectura del snapshot del periodo en curso de un vendedor
  * específico, para el resumen que se abre al tocarlo en "Caja por vendedor"
- * (Inicio). Reusa el mismo trío `ultimoPeriodoFin` → `cargarInsumosCorte` →
+ * (Inicio). Reusa el mismo trío `ultimoInstanteCorte` → `cargarInsumosCorte` →
  * `calcularCorte` que `useDashboard` — ningún cálculo nuevo.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
-import { cargarInsumosCorte, ultimoPeriodoFin } from '../lib/corteData';
+import { cargarInsumosCorte, ultimoInstanteCorte } from '../lib/corteData';
 import type { CorteSnapshot } from '../lib/corte';
 import type { Vendedor } from '../db/schema';
 
@@ -34,7 +34,7 @@ export function useVendedorResumen(vendedorId: string): UseVendedorResumenReturn
     try {
       const [v, inicio] = await Promise.all([
         db.vendedor.get(vendedorId),
-        ultimoPeriodoFin(),
+        ultimoInstanteCorte(),
       ]);
       setVendedor(v ?? null);
       const insumos = await cargarInsumosCorte(vendedorId, inicio, hoyISO());

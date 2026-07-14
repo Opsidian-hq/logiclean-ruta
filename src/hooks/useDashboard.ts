@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/index';
 import { calcularCorte } from '../lib/corte';
-import { cargarInsumosCorte, ultimoPeriodoFin } from '../lib/corteData';
+import { cargarInsumosCorte, ultimoInstanteCorte } from '../lib/corteData';
 import { construirDashboard, resumenLaModerna, resumenEnvasado, resumenCargaDevolucion, resumenGastosBackoffice } from '../lib/dashboard';
 import { embudoPorEtapa, adherencia, clasificarVencimiento } from '../lib/prospectos';
 import type { DashboardModel, SnapshotVendedor } from '../lib/dashboard';
@@ -52,48 +52,41 @@ export function useDashboard(): UseDashboardReturn {
 
       // Desde Inc 7.2 (H-20) el corte es de negocio: un solo periodo vigente
       // para todos los vendedores activos (ya no por-vendedor).
-      const inicioGlobal = await ultimoPeriodoFin();
-      const inicioPorVendedor = new Map<string, string>(vendedores.map((v) => [v.id, inicioGlobal]));
+      //
+      // El corte de negocio se acota por el INSTANTE exacto de confirmación
+      // (`fecha_generado`), no por la fecha calendario (`periodo_fin`): comparar
+      // solo por día con `>` estricto dejaba fuera para siempre cualquier venta
+      // (u otro insumo) registrado el mismo día en que se confirmó el corte,
+      // aunque fuera después de esa confirmación.
+      const inicioInstante = await ultimoInstanteCorte();
+      const inicioInstantePorVendedor = new Map<string, string>(vendedores.map((v) => [v.id, inicioInstante]));
 
       const porVendedor: SnapshotVendedor[] = [];
       for (const v of vendedores) {
-        const insumos = await cargarInsumosCorte(v.id, inicioGlobal, hoy);
+        const insumos = await cargarInsumosCorte(v.id, inicioInstante, hoy);
         porVendedor.push({ vendedorId: v.id, nombre: v.nombre, snapshot: calcularCorte(insumos) });
       }
 
       const nombreProductoBase = (id: string) => productosBase.find((p) => p.id === id)?.nombre ?? id;
       const nombrePresentacion = (id: string) => presentaciones.find((p) => p.id === id)?.nombre ?? id;
       const nombreVendedor = (id: string) => vendedores.find((v) => v.id === id)?.nombre ?? id;
-      const movimientosPeriodo = movimientosLaModerna.filter((m) => {
-        const f = (m.fecha ?? '').slice(0, 10);
-        return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
-      });
+      const enPeriodo = (fecha: string | null | undefined, inicio: string) => {
+        const t = fecha ? new Date(fecha).getTime() : NaN;
+        return (!inicio || t > new Date(inicio).getTime()) && (fecha ?? '').slice(0, 10) <= hoy;
+      };
+      const movimientosPeriodo = movimientosLaModerna.filter((m) => enPeriodo(m.fecha, inicioInstante));
       // Envasado tampoco tiene vendedor_id (evento de bodega): mismo criterio
       // de ventana que movimientosLaModerna.
-      const envasadosPeriodo = envasados.filter((e) => {
-        const f = (e.fecha ?? '').slice(0, 10);
-        return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
-      });
+      const envasadosPeriodo = envasados.filter((e) => enPeriodo(e.fecha, inicioInstante));
       // Los gastos de backoffice tampoco tienen vendedor_id (salida del
       // negocio): mismo criterio de ventana que movimientosLaModerna.
-      const gastosBackofficePeriodo = gastosBackoffice.filter((g) => {
-        const f = (g.fecha ?? '').slice(0, 10);
-        return (!inicioGlobal || f > inicioGlobal) && f <= hoy;
-      });
+      const gastosBackofficePeriodo = gastosBackoffice.filter((g) => enPeriodo(g.fecha, inicioInstante));
 
       // Cargas/devoluciones sí tienen vendedor_id: cada una se acota a la
       // ventana propia de SU vendedor (mismo criterio que ventas/gastos en
       // `cargarInsumosCorte`), no al superset global.
-      const cargasPeriodo = cargas.filter((c) => {
-        const inicio = inicioPorVendedor.get(c.vendedor_id) ?? '';
-        const f = (c.fecha ?? '').slice(0, 10);
-        return (!inicio || f > inicio) && f <= hoy;
-      });
-      const devolucionesPeriodo = devoluciones.filter((d) => {
-        const inicio = inicioPorVendedor.get(d.vendedor_id) ?? '';
-        const f = (d.fecha ?? '').slice(0, 10);
-        return (!inicio || f > inicio) && f <= hoy;
-      });
+      const cargasPeriodo = cargas.filter((c) => enPeriodo(c.fecha, inicioInstantePorVendedor.get(c.vendedor_id) ?? ''));
+      const devolucionesPeriodo = devoluciones.filter((d) => enPeriodo(d.fecha, inicioInstantePorVendedor.get(d.vendedor_id) ?? ''));
 
       const vencidos = clientes.filter(
         (c) => c.estado === 'prospecto' && clasificarVencimiento(c) === 'vencido'

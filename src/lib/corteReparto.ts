@@ -36,9 +36,14 @@ import type {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const soloFecha = (iso?: string | null) => (iso ?? '').slice(0, 10);
-const enRango = (fecha: string | undefined, inicio: string, fin: string) => {
-  const d = soloFecha(fecha);
-  return (!inicio || d > inicio) && d <= fin;
+// El límite inferior se acota por el INSTANTE exacto (`fecha_generado`) del
+// corte anterior, no por su fecha calendario: si dos cortes se confirman el
+// mismo día, comparar solo por día con `>` estricto dejaría fuera para
+// siempre cualquier operación registrada ese día después del corte anterior
+// (nunca sería "mayor" a una fecha calendario igual a la suya).
+const enRango = (fecha: string | undefined, inicioInstante: string, fin: string) => {
+  const t = fecha ? new Date(fecha).getTime() : NaN;
+  return (!inicioInstante || t > new Date(inicioInstante).getTime()) && soloFecha(fecha) <= fin;
 };
 
 // ── Vendedores activos ─────────────────────────────────────────
@@ -62,7 +67,10 @@ export interface AperturaCorte {
 export async function cargarApertura(): Promise<AperturaCorte> {
   const todos = await db.corte.toArray();
   const confirmados = todos.filter((c) => c.estado === 'confirmado');
-  const ultimo = confirmados.sort((a, b) => a.periodo_fin.localeCompare(b.periodo_fin)).at(-1) ?? null;
+  // Se ordena por `fecha_generado` (instante único), no por `periodo_fin`
+  // (fecha calendario): dos cortes confirmados el mismo día compartirían
+  // `periodo_fin` y darían un orden ambiguo.
+  const ultimo = confirmados.sort((a, b) => a.fecha_generado.localeCompare(b.fecha_generado)).at(-1) ?? null;
 
   if (!ultimo) {
     return { corte: null, porVendedor: new Map(), moderna: 0 };
@@ -84,7 +92,7 @@ export async function cargarApertura(): Promise<AperturaCorte> {
  */
 export async function derivarVendedorEntrada(
   vendedorId: string,
-  periodoInicio: string,
+  inicioInstante: string,
   periodoFin: string,
   saldoVendedorApertura: number
 ): Promise<VendedorEntrada> {
@@ -97,12 +105,12 @@ export async function derivarVendedorEntrada(
   const idsVentasVendedor = new Set(todasVentasVendedor.map((v) => v.id));
   const fechaPorVenta = new Map(todasVentasVendedor.map((v) => [v.id, soloFecha(v.fecha)]));
 
-  const ventasPeriodo = todasVentasVendedor.filter((v) => enRango(v.fecha, periodoInicio, periodoFin));
+  const ventasPeriodo = todasVentasVendedor.filter((v) => enRango(v.fecha, inicioInstante, periodoFin));
   const ventasPeriodoTotal = round2(ventasPeriodo.reduce((s, v) => s + v.total, 0));
   const idsVentasPeriodo = new Set(ventasPeriodo.map((v) => v.id));
 
   const cobrosDelVendedorEnRango = todosCobros.filter(
-    (c) => idsVentasVendedor.has(c.venta_id) && enRango(c.fecha, periodoInicio, periodoFin)
+    (c) => idsVentasVendedor.has(c.venta_id) && enRango(c.fecha, inicioInstante, periodoFin)
   );
 
   let efectivoCobrado = 0;
@@ -122,7 +130,7 @@ export async function derivarVendedorEntrada(
     }
   }
 
-  const gastosRutaEnRango = gastos.filter((g) => g.tipo === 'ruta' && enRango(g.fecha, periodoInicio, periodoFin));
+  const gastosRutaEnRango = gastos.filter((g) => g.tipo === 'ruta' && enRango(g.fecha, inicioInstante, periodoFin));
   let gastoRutaEfectivo = 0;
   let gastoRutaTransfer = 0;
   for (const g of gastosRutaEnRango) {
@@ -153,7 +161,7 @@ export interface NegocioInsumos {
 
 /** Deriva adeudo a La Moderna, identidad de control y backoffice del periodo. */
 export async function cargarNegocioEntrada(
-  periodoInicio: string,
+  inicioInstante: string,
   periodoFin: string,
   saldoModernaApertura: number
 ): Promise<NegocioInsumos> {
@@ -164,9 +172,9 @@ export async function cargarNegocioEntrada(
     db.gasto.where('tipo').equals('backoffice').toArray(),
   ]);
 
-  const suministrosPeriodo = suministros.filter((s) => enRango(s.fecha, periodoInicio, periodoFin));
-  const envasadosPeriodo = envasados.filter((e) => enRango(e.fecha, periodoInicio, periodoFin));
-  const gastosBackofficePeriodo = gastos.filter((g) => enRango(g.fecha, periodoInicio, periodoFin));
+  const suministrosPeriodo = suministros.filter((s) => enRango(s.fecha, inicioInstante, periodoFin));
+  const envasadosPeriodo = envasados.filter((e) => enRango(e.fecha, inicioInstante, periodoFin));
+  const gastosBackofficePeriodo = gastos.filter((g) => enRango(g.fecha, inicioInstante, periodoFin));
 
   const moderna = adeudoLaModerna(suministrosPeriodo, productos);
 

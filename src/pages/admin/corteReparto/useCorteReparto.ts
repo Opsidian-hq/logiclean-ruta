@@ -113,15 +113,20 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
       setProductos(todosProductos);
       setSelladosDisponibles(sellados);
 
+      // El corte anterior acota el nuevo periodo por su INSTANTE exacto de
+      // confirmación (`fecha_generado`), no por su fecha calendario: si se
+      // confirman dos cortes el mismo día, comparar solo por día dejaría
+      // fuera del nuevo corte cualquier operación de ese mismo día.
+      const inicioInstante = apertura.corte?.fecha_generado ?? '';
       const entradas = await Promise.all(
         vends.map((v) =>
-          derivarVendedorEntrada(v.id, inicio, periodoFin, apertura.porVendedor.get(v.id) ?? 0)
+          derivarVendedorEntrada(v.id, inicioInstante, periodoFin, apertura.porVendedor.get(v.id) ?? 0)
         )
       );
       setVendedoresEntrada(entradas);
       setConfirmaciones(Object.fromEntries(vends.map((v) => [v.id, false])));
 
-      const negocio = await cargarNegocioEntrada(inicio, periodoFin, apertura.moderna);
+      const negocio = await cargarNegocioEntrada(inicioInstante, periodoFin, apertura.moderna);
       setNegocioInsumos(negocio);
 
       setError(null);
