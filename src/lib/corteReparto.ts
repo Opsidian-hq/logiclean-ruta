@@ -20,6 +20,7 @@ import { syncEngine } from '../sync/SyncEngine';
 import { calcularCorte as calcularSnapshotVendedor } from './corte';
 import type { IdentidadControlProducto } from './corte';
 import { adeudoLaModerna } from './suministro';
+import { abonosDelCorte } from './abonoVendedor';
 import type { ReconciliacionModerna } from './suministro';
 import { presentacionesAUnidadCompra } from './conversion';
 import type {
@@ -80,6 +81,26 @@ export async function cargarApertura(): Promise<AperturaCorte> {
   const porVendedor = new Map(lineas.map((l) => [l.vendedor_id, l.saldo_vendedor_cierre]));
 
   return { corte: ultimo, porVendedor, moderna: ultimo.saldo_moderna_cierre };
+}
+
+/**
+ * Arrastre vigente = cierre del corte anterior ± abonos ya registrados contra
+ * ese corte (migración 015, Inc 7.5). Único punto de verdad para "cuánto
+ * debe/le deben a un vendedor hoy" — lo usa tanto el stepper (apertura del
+ * próximo corte) como el dashboard del gerente y la pantalla del vendedor.
+ */
+export async function cargarAperturaVigente(): Promise<AperturaCorte> {
+  const base = await cargarApertura();
+  if (!base.corte) return base;
+
+  const abonos = await abonosDelCorte(base.corte.id);
+  const porVendedor = new Map(base.porVendedor);
+  for (const a of abonos) {
+    const delta = a.direccion === 'vendedor_a_negocio' ? a.monto : -a.monto;
+    porVendedor.set(a.vendedor_id, round2((porVendedor.get(a.vendedor_id) ?? 0) + delta));
+  }
+
+  return { ...base, porVendedor };
 }
 
 // ── Insumos por vendedor (reglas 1-2, modelo-datos-v1_4) ───────

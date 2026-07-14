@@ -40,6 +40,10 @@ import type { EntityTable } from '../db/schema';
  *   para todos (RLS de lectura abierta a autenticados); los eventos de
  *   carga/devolución llegan acotados por vendedor_id (o completos al
  *   gerente), igual que `venta`.
+ * - Inc 7.5: `corte_vendedor` / `liquidacion_movimiento` / `abono_saldo_vendedor`
+ *   faltaban aquí — solo `corte` se hidrataba. Sin esto, cualquier dispositivo
+ *   que no fuera el que confirmó el corte arrancaba con `corte_vendedor` vacía
+ *   y ningún vendedor (ni el gerente en otro dispositivo) podía ver su saldo.
  */
 export const PULL_TABLES: EntityTable[] = [
   'vendedor',
@@ -56,6 +60,10 @@ export const PULL_TABLES: EntityTable[] = [
   // Inc 3 — corte semanal y reconciliación con La Moderna.
   'suministro_la_moderna',
   'corte',
+  // Inc 7.2/7.4/7.5 — corte por reparto: línea por vendedor, liquidación y abonos.
+  'corte_vendedor',
+  'liquidacion_movimiento',
+  'abono_saldo_vendedor',
   // Inc 6.1 — inventario de bodega (contadores + eventos).
   'inventario_bodega_base',
   'inventario_bodega_presentacion',

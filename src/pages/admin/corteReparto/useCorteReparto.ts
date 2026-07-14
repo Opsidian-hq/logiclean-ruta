@@ -16,7 +16,7 @@ import type { VendedorEntrada, CorteSalida } from '../../../domain/corte';
 import { ultimoPeriodoFin } from '../../../lib/corteData';
 import {
   cargarVendedoresActivos,
-  cargarApertura,
+  cargarAperturaVigente,
   derivarVendedorEntrada,
   cargarNegocioEntrada,
   cargarSelladosDisponibles,
@@ -102,7 +102,7 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
       const [vends, inicio, apertura, todosProductos, sellados] = await Promise.all([
         cargarVendedoresActivos(),
         ultimoPeriodoFin(),
-        cargarApertura(),
+        cargarAperturaVigente(),
         db.producto_base.toArray(),
         cargarSelladosDisponibles(),
       ]);

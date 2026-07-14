@@ -89,6 +89,7 @@ const EnvasadoPage = lazyPage(() => import('./pages/admin/EnvasadoPage'), 'Envas
 const CargaDevolucionPage = lazyPage(() => import('./pages/CargaDevolucionPage'), 'CargaDevolucionPage');
 const MisClientesPage = lazyPage(() => import('./pages/clientes/MisClientesPage'), 'MisClientesPage');
 const ClienteDetallePage = lazyPage(() => import('./pages/clientes/ClienteDetallePage'), 'ClienteDetallePage');
+const SaldoNegocioPage = lazyPage(() => import('./pages/saldoNegocio/SaldoNegocioPage'), 'SaldoNegocioPage');
 
 /* Guards */
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -111,7 +112,7 @@ function App() {
               <Route exact path="/login" component={LoginPage} />
 
               {/* Rutas vendedor: shell con tabs */}
-              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobro', '/cobros', '/entrega', '/seguimiento', '/mis-clientes', '/clientes']}>
+              <Route path={['/visitas', '/catalogo', '/inventario', '/venta', '/gastos', '/cobranza', '/cobro', '/cobros', '/entrega', '/seguimiento', '/mis-clientes', '/clientes', '/saldo-negocio']}>
                 <ProtectedRoute requiredRol="vendedor">
                   <VendedorTabs />
                 </ProtectedRoute>
@@ -144,9 +145,10 @@ function App() {
 // ── Tabs del vendedor ─────────────────────────────────────────
 
 const MENU_ITEMS = [
-  { path: '/cobros',       icon: cashOutline,   label: 'Cobros'   },
-  { path: '/mis-clientes', icon: personOutline, label: 'Clientes' },
-  { path: '/catalogo',     icon: gridOutline,   label: 'Catálogo' },
+  { path: '/cobros',        icon: cashOutline,   label: 'Cobros'    },
+  { path: '/saldo-negocio', icon: walletOutline, label: 'Mi saldo'  },
+  { path: '/mis-clientes',  icon: personOutline, label: 'Clientes'  },
+  { path: '/catalogo',      icon: gridOutline,   label: 'Catálogo'  },
 ] as const;
 
 function VendedorTabs() {
@@ -191,6 +193,7 @@ function VendedorTabs() {
           <Route exact path="/gastos" component={GastosPage} />
           <Route exact path="/mis-clientes" component={MisClientesPage} />
           <Route exact path="/clientes/:clienteId" component={ClienteDetallePage} />
+          <Route exact path="/saldo-negocio" component={SaldoNegocioPage} />
         </IonRouterOutlet>
 
         <IonTabBar slot="bottom" style={{ '--background': 'var(--color-navy)' }}>
