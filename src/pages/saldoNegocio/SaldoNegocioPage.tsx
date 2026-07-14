@@ -28,14 +28,17 @@ import {
   IonContent,
   IonFooter,
   IonToast,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { PrimaryCTA } from '../../components/ui/PrimaryCTA';
 import { useAuthContext } from '../../context/AuthContext';
 import { useSaldoVendedor } from '../../hooks/useSaldoVendedor';
 import { useCobrosPendientes } from '../../hooks/useCobros';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { money } from '../../lib/money';
 import type { FormaPagoAbono } from '../../lib/abonoVendedor';
 import { FormaPagoSelector } from '../cobranza/components/FormaPagoSelector';
@@ -45,8 +48,12 @@ import { CobroSkeleton } from '../cobranza/components/CobroSkeleton';
 export function SaldoNegocioPage() {
   const { user } = useAuthContext();
   const history = useHistory();
-  const { saldo, loading: loadingSaldo, submitting, registrarAbono } = useSaldoVendedor(user?.id ?? null);
-  const { pendientes, loading: loadingCartera } = useCobrosPendientes();
+  const { saldo, loading: loadingSaldo, submitting, registrarAbono, refresh: refreshSaldo } = useSaldoVendedor(user?.id ?? null);
+  const { pendientes, loading: loadingCartera, refresh: refreshCartera } = useCobrosPendientes();
+
+  const { handleRefresh } = usePullToRefresh(
+    useCallback(async () => { await Promise.all([refreshSaldo(), refreshCartera()]); }, [refreshSaldo, refreshCartera])
+  );
 
   const [montoStr, setMontoStr] = useState<number | null>(null);
   const [formaPago, setFormaPago] = useState<FormaPagoAbono>('efectivo');
@@ -82,6 +89,10 @@ export function SaldoNegocioPage() {
       </IonHeader>
 
       <IonContent>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {loading && <CobroSkeleton />}
 
         {!loading && (
