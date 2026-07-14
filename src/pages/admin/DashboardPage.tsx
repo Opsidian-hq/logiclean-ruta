@@ -32,12 +32,14 @@ import { addOutline, receiptOutline, walletOutline, chevronForwardOutline } from
 import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
+import { useSaldosVendedores } from '../../hooks/useSaldosVendedores';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { CICLO_OBJETIVO } from '../../lib/prospectos';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
+import { SaldoVendedorBadge } from '../../components/ui/SaldoVendedorBadge';
 import { CorteRepartoPage } from './corteReparto/CorteRepartoPage';
 import { ResumenVendedorPage } from './ResumenVendedorPage';
 import { RegistrosNegocioPage } from './RegistrosNegocioPage';
@@ -93,10 +95,12 @@ function Kpi({ label, valor, tono }: { label: string; valor: string; tono?: 'err
 
 export function DashboardPage() {
   const { dashboard, loading, error, refresh } = useDashboard();
+  const { saldos: saldosVendedores, refresh: refreshSaldos } = useSaldosVendedores();
+  const saldoPorVendedorId = new Map(saldosVendedores.map((s) => [s.vendedorId, s.saldo]));
   const maxEtapa = Math.max(1, ...(dashboard?.embudo.etapas.map((e) => e.count) ?? [1]));
 
   const { handleRefresh } = usePullToRefresh(
-    useCallback(async () => { await refresh(); }, [refresh])
+    useCallback(async () => { await Promise.all([refresh(), refreshSaldos()]); }, [refresh, refreshSaldos])
   );
 
   const [corteOpen, setCorteOpen] = useState(false);
@@ -144,7 +148,7 @@ export function DashboardPage() {
             </div>
 
             {/* ── Alertas ── */}
-            {dashboard.alertas.length > 0 && (
+            {(dashboard.alertas.length > 0 || saldosVendedores.some((s) => s.saldo !== 0)) && (
               <div style={{ background: '#FEF3E2', border: '1.5px solid #F6C97C', borderRadius: '16px', padding: '13px 15px' }}>
                 <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--color-pending-text)', marginBottom: '6px' }}>
                   ⚠ Atención
@@ -152,6 +156,13 @@ export function DashboardPage() {
                 {dashboard.alertas.map((a, i) => (
                   <div key={i} style={{ fontSize: '13px', fontWeight: 600, color: '#7A3E06', lineHeight: 1.4 }}>· {a}</div>
                 ))}
+                {saldosVendedores
+                  .filter((s) => s.saldo !== 0)
+                  .map((s) => (
+                    <div key={s.vendedorId} style={{ fontSize: '13px', fontWeight: 600, color: '#7A3E06', lineHeight: 1.4 }}>
+                      · {s.nombre} {s.saldo < 0 ? `debe ${money(Math.abs(s.saldo))} al negocio` : `tiene ${money(s.saldo)} a favor`}.
+                    </div>
+                  ))}
               </div>
             )}
 
@@ -190,6 +201,7 @@ export function DashboardPage() {
                       <span style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--color-navy)' }}>{v.nombre}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {v.descuadre && <Chip tone="error">descuadre</Chip>}
+                        <SaldoVendedorBadge saldo={saldoPorVendedorId.get(v.vendedorId) ?? 0} />
                         <IonIcon icon={chevronForwardOutline} style={{ color: 'var(--color-text-secondary)', fontSize: '16px' }} />
                       </div>
                     </div>
@@ -400,8 +412,8 @@ export function DashboardPage() {
             <div
               role="button"
               tabIndex={0}
-              onClick={() => refresh()}
-              onKeyDown={(ev) => ev.key === 'Enter' && refresh()}
+              onClick={() => { refresh(); refreshSaldos(); }}
+              onKeyDown={(ev) => ev.key === 'Enter' && (refresh(), refreshSaldos())}
               style={{ textAlign: 'center', fontSize: '13px', fontWeight: 700, color: 'var(--color-primary)', padding: '6px', cursor: 'pointer' }}
             >
               ↻ Actualizar
@@ -424,7 +436,7 @@ export function DashboardPage() {
         </IonFab>
       </IonContent>
 
-      <IonModal isOpen={corteOpen} onDidDismiss={() => { setCorteOpen(false); refresh(); }}>
+      <IonModal isOpen={corteOpen} onDidDismiss={() => { setCorteOpen(false); refresh(); refreshSaldos(); }}>
         <CorteRepartoPage onClose={() => setCorteOpen(false)} />
       </IonModal>
 

@@ -185,6 +185,23 @@ export interface LiquidacionMovimiento {
   nota?: string;
 }
 
+/**
+ * Abono contra el saldo_vendedor_cierre del último corte confirmado (migración
+ * 015). Ledger append-only: nunca modifica corte_vendedor, solo neta el saldo
+ * vigente (ver `cargarAperturaVigente` en lib/corteReparto.ts). El vendedor es
+ * quien registra el abono, ya que es quien salda su cuenta con el negocio.
+ */
+export interface AbonoSaldoVendedor {
+  id: string;
+  corte_id: string;
+  vendedor_id: string;
+  direccion: 'vendedor_a_negocio' | 'negocio_a_vendedor';
+  monto: number;
+  forma_pago: 'efectivo' | 'transferencia';
+  fecha: string;  // ISO timestamptz
+  nota?: string;
+}
+
 // ── Inc 6.1 — Inventario de bodega (contadores + eventos) ─────
 // Ver docs/modelo-datos-inc6-bodega-envasado.md. Los contadores se
 // materializan del lado servidor por trigger (ADR-0007); el cliente nunca
@@ -279,6 +296,7 @@ export type EntityTable =
   | 'corte'
   | 'corte_vendedor'
   | 'liquidacion_movimiento'
+  | 'abono_saldo_vendedor'
   | 'inventario_bodega_base'
   | 'inventario_bodega_presentacion'
   | 'movimiento_la_moderna'
@@ -336,4 +354,11 @@ export const DEXIE_SCHEMA_V3 = {
   corte:                 '&id',
   corte_vendedor:         '&id, corte_id, vendedor_id',
   liquidacion_movimiento: '&id, corte_id',
+} as const;
+
+// Versión 4 (Inc 7.5): abono de saldo vendedor↔negocio — salda el
+// saldo_vendedor_cierre del último corte confirmado fuera del wizard.
+export const DEXIE_SCHEMA_V4 = {
+  ...DEXIE_SCHEMA_V3,
+  abono_saldo_vendedor: '&id, corte_id, vendedor_id, [corte_id+vendedor_id]',
 } as const;

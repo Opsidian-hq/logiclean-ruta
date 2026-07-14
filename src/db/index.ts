@@ -6,7 +6,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
-import { DEXIE_SCHEMA, DEXIE_SCHEMA_V2, DEXIE_SCHEMA_V3 } from './schema';
+import { DEXIE_SCHEMA, DEXIE_SCHEMA_V2, DEXIE_SCHEMA_V3, DEXIE_SCHEMA_V4 } from './schema';
 import type {
   Vendedor,
   Cliente,
@@ -23,6 +23,7 @@ import type {
   Corte,
   CorteVendedor,
   LiquidacionMovimiento,
+  AbonoSaldoVendedor,
   InventarioBodegaBase,
   InventarioBodegaPresentacion,
   MovimientoLaModerna,
@@ -53,6 +54,8 @@ class LogicleanDB extends Dexie {
   // ── Inc 7.2 — Corte por reparto (corte de negocio) ─────────
   corte_vendedor!:         Table<CorteVendedor>;
   liquidacion_movimiento!: Table<LiquidacionMovimiento>;
+  // ── Inc 7.5 — Abono de saldo vendedor↔negocio ──────────────
+  abono_saldo_vendedor!:   Table<AbonoSaldoVendedor>;
   // ── Inc 6.1 — Inventario de bodega ─────────────────────────
   inventario_bodega_base!:         Table<InventarioBodegaBase>;
   inventario_bodega_presentacion!: Table<InventarioBodegaPresentacion>;
@@ -81,6 +84,9 @@ class LogicleanDB extends Dexie {
     // por-vendedor a de-negocio (se retira el índice vendedor_id) y se
     // agregan CORTE_VENDEDOR + LIQUIDACION_MOVIMIENTO.
     this.version(3).stores(DEXIE_SCHEMA_V3);
+
+    // Versión 4 (Inc 7.5): abono de saldo vendedor↔negocio.
+    this.version(4).stores(DEXIE_SCHEMA_V4);
   }
 }
 

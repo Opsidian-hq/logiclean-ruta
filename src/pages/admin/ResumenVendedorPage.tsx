@@ -50,7 +50,7 @@ const rowBetween: CSSProperties = {
 };
 
 export function ResumenVendedorPage({ vendedorId, onClose }: ResumenVendedorPageProps) {
-  const { vendedor, snapshot, loading, error } = useVendedorResumen(vendedorId);
+  const { vendedor, snapshot, saldoNegocio, loading, error } = useVendedorResumen(vendedorId);
 
   return (
     <IonPage>
@@ -85,6 +85,23 @@ export function ResumenVendedorPage({ vendedorId, onClose }: ResumenVendedorPage
 
           {!loading && !error && snapshot && (
             <>
+              {/* ── Saldo con el negocio (Inc 7.5) ── */}
+              {saldoNegocio !== 0 && (
+                <div>
+                  <span style={sectionLabel}>Saldo con el negocio</span>
+                  <Card padding="14px">
+                    <div style={rowBetween}>
+                      <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                        {saldoNegocio < 0 ? 'Debe al negocio' : 'A favor del vendedor'}
+                      </span>
+                      <Chip tone={saldoNegocio < 0 ? 'error' : 'amber'} style={saldoNegocio < 0 ? undefined : { background: '#FEF3E2', color: '#7A3E06' }}>
+                        {money(Math.abs(saldoNegocio))}
+                      </Chip>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
               {/* ── Ventas y cartera ── */}
               <div>
                 <span style={sectionLabel}>Ventas y cartera</span>
