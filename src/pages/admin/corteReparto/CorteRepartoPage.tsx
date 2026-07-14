@@ -27,6 +27,7 @@ import {
   IonFooter,
   IonToast,
   IonText,
+  IonAlert,
 } from '@ionic/react';
 import { useState } from 'react';
 import { useAuthContext } from '../../../context/AuthContext';
@@ -50,6 +51,7 @@ export function CorteRepartoPage({ onClose }: CorteRepartoPageProps = {}) {
   const { user } = useAuthContext();
   const [toast, setToast] = useState<string | null>(null);
   const [cerrado, setCerrado] = useState(false);
+  const [confirmarCierre, setConfirmarCierre] = useState(false);
 
   const {
     loading,
@@ -83,11 +85,18 @@ export function CorteRepartoPage({ onClose }: CorteRepartoPageProps = {}) {
   const puedeAvanzar =
     paso === 0 ? todosConfirmados : paso === 1 ? puedeAvanzarPaso2 : true;
 
-  const avanzar = async () => {
+  const avanzar = () => {
     if (paso < PASOS.length - 1) {
       setPaso(paso + 1);
       return;
     }
+    // El cierre es append-only e irreversible (ADR-0011): exige una
+    // confirmación explícita en vez de ejecutarlo directo desde este tap.
+    setConfirmarCierre(true);
+  };
+
+  const confirmarYCerrar = async () => {
+    if (cerrando) return;
     try {
       await cerrarCorte();
       setCerrado(true);
@@ -221,11 +230,26 @@ export function CorteRepartoPage({ onClose }: CorteRepartoPageProps = {}) {
               Atrás
             </IonButton>
           )}
-          <PrimaryCTA onClick={avanzar} disabled={!puedeAvanzar || loading || !!error || cerrado} loading={cerrando}>
+          <PrimaryCTA onClick={avanzar} disabled={!puedeAvanzar || loading || !!error || cerrado || cerrando} loading={cerrando}>
             {cerrado ? 'Corte cerrado' : paso === PASOS.length - 1 ? 'Cerrar corte' : `Continuar a Paso ${paso + 2}`}
           </PrimaryCTA>
         </IonToolbar>
       </IonFooter>
+
+      <IonAlert
+        isOpen={confirmarCierre}
+        onDidDismiss={() => setConfirmarCierre(false)}
+        header="¿Cerrar el corte?"
+        message="Esta acción no se puede deshacer: el adeudo con La Moderna, el reparto y los saldos de arrastre quedan registrados como definitivos del periodo."
+        buttons={[
+          { text: 'Cancelar', role: 'cancel' },
+          {
+            text: 'Cerrar corte',
+            role: 'destructive',
+            handler: confirmarYCerrar,
+          },
+        ]}
+      />
 
       <IonToast
         isOpen={!!toast}

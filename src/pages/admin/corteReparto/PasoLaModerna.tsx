@@ -9,7 +9,7 @@
  */
 
 import { IonIcon, IonCheckbox, IonSpinner, IonBadge } from '@ionic/react';
-import { alertOutline, cubeOutline, timeOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { alertOutline, cubeOutline, checkmarkCircle } from 'ionicons/icons';
 import { useMemo, useState, useEffect } from 'react';
 import { calcularCorte } from '../../../domain/corte';
 import type { VendedorEntrada, NegocioEntrada } from '../../../domain/corte';
@@ -20,7 +20,6 @@ import { Card } from '../../../components/ui/Card';
 import { PrimaryCTA } from '../../../components/ui/PrimaryCTA';
 import { StepperCantidad } from '../../../components/StepperCantidad';
 import { money } from '../../../lib/money';
-import { useSyncContext } from '../../../context/SyncContext';
 import { sectionLabel, rowBetween } from './styles';
 
 interface PasoLaModernaProps {
@@ -52,8 +51,7 @@ export function PasoLaModerna({
   confirmarAcopio,
   acopioPendiente,
 }: PasoLaModernaProps) {
-  const { isOnline, syncStatus, pendingCount, syncNow } = useSyncContext();
-  const [mostrarEstadoSync, setMostrarEstadoSync] = useState(false);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [calculando, setCalculando] = useState(false);
 
   const descuadres = identidadControl.filter((ic) => !ic.cuadra);
@@ -93,56 +91,22 @@ export function PasoLaModerna({
 
   const onConfirmarAcopio = async () => {
     await confirmarAcopio();
-    setMostrarEstadoSync(true);
+    setMostrarConfirmacion(true);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {mostrarEstadoSync && (pendingCount > 0 || syncStatus === 'error' || !isOnline) && (
-        <Card
-          padding="15px"
-          style={{
-            border: syncStatus === 'error' ? '1.5px solid #F4B3AC' : '1.5px solid #F6C97C',
-            background: syncStatus === 'error' ? '#FDECEA' : '#FEF3E2',
-          }}
-        >
+      {mostrarConfirmacion && (
+        <Card padding="15px" style={{ border: '1.5px solid #B7EE92', background: '#ECFCE0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <IonIcon
-              icon={syncStatus === 'error' ? cloudOfflineOutline : timeOutline}
-              style={{ fontSize: '19px', color: syncStatus === 'error' ? '#D92D20' : '#F79009' }}
-            />
+            <IonIcon icon={checkmarkCircle} style={{ fontSize: '20px', color: '#3E6B22' }} />
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: syncStatus === 'error' ? '#911A11' : '#7A3E06' }}>
-                {syncStatus === 'error' ? 'No se pudo sincronizar' : 'Acopio registrado'}
-              </div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: syncStatus === 'error' ? '#B42318' : '#B54708' }}>
-                {syncStatus === 'error' ? 'Guardado en el equipo ✓ · Sin subir ✕' : 'Guardado ✓ · pendiente de sincronizar'}
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#1C4310' }}>Acopio agregado al corte</div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#3E6B22' }}>
+                Se registra y sincroniza al confirmar el cierre en el Paso 6 — todavía no es definitivo.
               </div>
             </div>
           </div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', marginTop: '8px' }}>
-            {syncStatus === 'error'
-              ? 'Sigue en el equipo; nada se pierde.'
-              : 'Se sincroniza sola al recuperar señal, o reintenta a mano.'}
-          </div>
-          {syncStatus === 'error' && (
-            <button
-              onClick={() => syncNow()}
-              style={{
-                marginTop: '10px',
-                width: '100%',
-                height: '42px',
-                borderRadius: '12px',
-                border: '1.5px solid #D92D20',
-                background: 'transparent',
-                color: '#D92D20',
-                fontWeight: 800,
-                fontSize: '13px',
-              }}
-            >
-              Reintentar ahora
-            </button>
-          )}
         </Card>
       )}
 

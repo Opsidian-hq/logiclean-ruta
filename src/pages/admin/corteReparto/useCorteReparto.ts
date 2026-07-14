@@ -88,6 +88,11 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
   const [confirmaciones, setConfirmaciones] = useState<Record<string, boolean>>({});
   const [reconoceDescuadre, setReconoceDescuadre] = useState(false);
   const [acopioSeleccion, setAcopioSeleccion] = useState<Record<string, number>>({});
+  // Acopio ya confirmado en el Paso 2 pero aún no escrito: se acumula aquí
+  // (cantidad por producto) y solo se convierte en escritura real dentro de
+  // `cerrarCorte`, junto con el corte — nada de este flujo toca Dexie/la cola
+  // de sync antes de que el usuario confirme el cierre en el Paso 6.
+  const [acopioConfirmado, setAcopioConfirmado] = useState<Record<string, number>>({});
   const [acopioPendiente, setAcopioPendiente] = useState(false);
   const [cerrando, setCerrando] = useState(false);
 
@@ -159,6 +164,18 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
     setAcopioSeleccion((prev) => ({ ...prev, [productoBaseId]: Math.max(0, cantidad) }));
   }, []);
 
+  // Disponible real de bodega para el Paso 2, descontando lo ya confirmado
+  // en esta misma sesión (aún sin escribir): sin esto, confirmar el acopio
+  // más de una vez seguiría mostrando el disponible original y dejaría
+  // seleccionar más de lo que la bodega tiene.
+  const selladosDisponiblesEfectivos = useMemo(() => {
+    if (Object.keys(acopioConfirmado).length === 0) return selladosDisponibles;
+    return selladosDisponibles.map((s) => ({
+      ...s,
+      disponibles: Math.max(0, s.disponibles - (acopioConfirmado[s.productoBaseId] ?? 0)),
+    }));
+  }, [selladosDisponibles, acopioConfirmado]);
+
   const confirmarAcopio = useCallback(async () => {
     if (!responsableId) throw new Error('Falta el responsable.');
     const lineas = Object.entries(acopioSeleccion).filter(([, cantidad]) => cantidad > 0);
@@ -166,13 +183,20 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
 
     setAcopioPendiente(true);
     try {
-      for (const [productoBaseId, cantidad] of lineas) {
-        await registrarDevolucionLaModerna({ productoBaseId, cantidad, responsableId });
-      }
-      // El rollup `suministro_la_moderna` se materializa del lado servidor
-      // (ADR-0006, trigger): mientras la mutación sincroniza, reflejamos el
-      // impacto localmente con la misma fórmula ya establecida (ADR-0009),
-      // no una regla nueva — el motor de dominio se vuelve a invocar tal cual.
+      // No se escribe nada todavía (Dexie/cola de sync): se acumula en
+      // memoria y se registra de verdad recién en `cerrarCorte`, para que
+      // el acopio nunca quede sincronizado sin que el corte se haya
+      // confirmado.
+      setAcopioConfirmado((prev) => {
+        const next = { ...prev };
+        for (const [productoBaseId, cantidad] of lineas) {
+          next[productoBaseId] = (next[productoBaseId] ?? 0) + cantidad;
+        }
+        return next;
+      });
+
+      // Proyección del impacto en el adeudo (cálculo puro, misma fórmula ya
+      // establecida — ADR-0009): no depende de que la escritura ya ocurrió.
       const totalMonto = lineas.reduce((sum, [id, cantidad]) => {
         const precio = productos.find((p) => p.id === id)?.precio_preferencial ?? 0;
         return sum + cantidad * precio;
@@ -196,8 +220,18 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
 
   const cerrarCorte = useCallback(async () => {
     if (!salida || !negocioInsumos) throw new Error('El corte aún no terminó de calcularse.');
+    if (!responsableId) throw new Error('Falta el responsable.');
     setCerrando(true);
     try {
+      // Única escritura real del acopio: ocurre aquí, junto con el corte,
+      // para que ambos se encolen y sincronicen como una sola unidad al
+      // confirmar el cierre (Paso 6) — nunca antes.
+      for (const [productoBaseId, cantidad] of Object.entries(acopioConfirmado)) {
+        if (cantidad > 0) {
+          await registrarDevolucionLaModerna({ productoBaseId, cantidad, responsableId });
+        }
+      }
+
       const { corte } = await confirmarCorte({
         periodoInicio,
         periodoFin,
@@ -206,11 +240,21 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
         negocio: negocioInsumos.negocio,
         salida,
       });
+      setAcopioConfirmado({});
       return corte;
     } finally {
       setCerrando(false);
     }
-  }, [salida, negocioInsumos, periodoInicio, periodoFin, vendedores.length, vendedoresEntrada]);
+  }, [
+    salida,
+    negocioInsumos,
+    periodoInicio,
+    periodoFin,
+    vendedores.length,
+    vendedoresEntrada,
+    acopioConfirmado,
+    responsableId,
+  ]);
 
   return {
     loading,
@@ -230,7 +274,7 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
     todosConfirmados,
     reconoceDescuadre,
     setReconoceDescuadre,
-    selladosDisponibles,
+    selladosDisponibles: selladosDisponiblesEfectivos,
     acopioSeleccion,
     setAcopioCantidad,
     totalAcopioSeleccionado,
