@@ -21,6 +21,17 @@ export async function abonosDelCorte(corteId: string): Promise<AbonoSaldoVendedo
   return db.abono_saldo_vendedor.where('corte_id').equals(corteId).toArray();
 }
 
+/**
+ * Abonos de un vendedor contra un corte concreto, más recientes primero.
+ * Para auditoría (H-15): el saldo neto puede dar $0 aunque haya movimientos
+ * (p.ej. un retiro de honorario compensado por un cobro de cartera vieja) —
+ * esta es la fuente para mostrárselos al gerente en vez de ocultarlos.
+ */
+export async function abonosDelCorteVendedor(corteId: string, vendedorId: string): Promise<AbonoSaldoVendedor[]> {
+  const abonos = await abonosDelCorte(corteId);
+  return abonos.filter((a) => a.vendedor_id === vendedorId).sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
+
 export interface AbonoFisicoPorVendedor {
   ya_retirado_efectivo: number;
   ya_retirado_transferencia: number;

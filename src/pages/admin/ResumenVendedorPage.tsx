@@ -20,6 +20,7 @@ import {
 } from '@ionic/react';
 import type { CSSProperties } from 'react';
 import { useVendedorResumen } from '../../hooks/useVendedorResumen';
+import type { AbonoSaldoVendedor } from '../../db/schema';
 import { SyncStatusBadge } from '../../components/SyncStatusBadge';
 import { CuentaButton } from '../../components/CuentaButton';
 import { Card } from '../../components/ui/Card';
@@ -31,6 +32,12 @@ interface ResumenVendedorPageProps {
 }
 
 const money = (n: number) => `$${n.toFixed(2)}`;
+
+const fechaHora = (iso: string) =>
+  new Date(iso).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+const etiquetaMovimiento = (m: AbonoSaldoVendedor) =>
+  m.direccion === 'negocio_a_vendedor' ? 'Retiro de caja' : 'Devolución a caja';
 
 const sectionLabel: CSSProperties = {
   display: 'block',
@@ -50,7 +57,7 @@ const rowBetween: CSSProperties = {
 };
 
 export function ResumenVendedorPage({ vendedorId, onClose }: ResumenVendedorPageProps) {
-  const { vendedor, snapshot, saldoNegocio, loading, error } = useVendedorResumen(vendedorId);
+  const { vendedor, snapshot, saldoNegocio, movimientos, loading, error } = useVendedorResumen(vendedorId);
 
   return (
     <IonPage>
@@ -86,18 +93,62 @@ export function ResumenVendedorPage({ vendedorId, onClose }: ResumenVendedorPage
           {!loading && !error && snapshot && (
             <>
               {/* ── Saldo con el negocio (Inc 7.5) ── */}
-              {saldoNegocio !== 0 && (
+              <div>
+                <span style={sectionLabel}>Saldo con el negocio</span>
+                <Card padding="14px">
+                  <div style={rowBetween}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--color-navy)' }}>
+                      {saldoNegocio === 0 ? 'Al corriente' : saldoNegocio < 0 ? 'Debe al negocio' : 'A favor del vendedor'}
+                    </span>
+                    <Chip
+                      tone={saldoNegocio === 0 ? 'neutral' : saldoNegocio < 0 ? 'error' : 'amber'}
+                      style={saldoNegocio > 0 ? { background: '#FEF3E2', color: '#7A3E06' } : undefined}
+                    >
+                      {money(Math.abs(saldoNegocio))}
+                    </Chip>
+                  </div>
+                </Card>
+              </div>
+
+              {/* ── Movimientos de caja (H-15): retiros/devoluciones del corte vigente. ──
+                  El saldo de arriba puede dar $0 aunque haya movimientos (p.ej. un retiro
+                  de honorario compensado por un cobro de cartera vieja) — se listan para
+                  que el gerente pueda auditar qué pasó, no solo el neto. */}
+              {movimientos.length > 0 && (
                 <div>
-                  <span style={sectionLabel}>Saldo con el negocio</span>
+                  <span style={sectionLabel}>Movimientos de caja</span>
                   <Card padding="14px">
-                    <div style={rowBetween}>
-                      <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--color-navy)' }}>
-                        {saldoNegocio < 0 ? 'Debe al negocio' : 'A favor del vendedor'}
-                      </span>
-                      <Chip tone={saldoNegocio < 0 ? 'error' : 'amber'} style={saldoNegocio < 0 ? undefined : { background: '#FEF3E2', color: '#7A3E06' }}>
-                        {money(Math.abs(saldoNegocio))}
-                      </Chip>
-                    </div>
+                    {movimientos.map((m, idx) => (
+                      <div
+                        key={m.id}
+                        style={{
+                          paddingTop: idx ? '10px' : 0,
+                          marginTop: idx ? '10px' : 0,
+                          borderTop: idx ? '1px solid var(--color-divider)' : 'none',
+                        }}
+                      >
+                        <div style={rowBetween}>
+                          <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--color-navy)' }}>
+                            {etiquetaMovimiento(m)}
+                          </span>
+                          <span
+                            className="numeric"
+                            style={{
+                              fontSize: '14px',
+                              fontWeight: 800,
+                              color: m.direccion === 'negocio_a_vendedor' ? 'var(--color-error)' : 'var(--color-navy)',
+                            }}
+                          >
+                            {m.direccion === 'negocio_a_vendedor' ? '−' : '+'}
+                            {money(m.monto)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#8A94A6', marginTop: '2px' }}>
+                          {fechaHora(m.fecha)} · {m.forma_pago}
+                          {m.nota ? ` · ${m.nota}` : ''}
+                        </div>
+                      </div>
+                    ))}
                   </Card>
                 </div>
               )}
