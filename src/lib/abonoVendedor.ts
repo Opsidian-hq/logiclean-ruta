@@ -21,6 +21,46 @@ export async function abonosDelCorte(corteId: string): Promise<AbonoSaldoVendedo
   return db.abono_saldo_vendedor.where('corte_id').equals(corteId).toArray();
 }
 
+export interface AbonoFisicoPorVendedor {
+  ya_retirado_efectivo: number;
+  ya_retirado_transferencia: number;
+  ya_entregado_efectivo: number;
+  ya_entregado_transferencia: number;
+}
+
+/**
+ * Agrega los abonos de un corte por vendedor × dirección × forma_pago (Inc
+ * 7.5.2), para que el motor de corte sepa cuánto de la bolsa cruda de cada
+ * vendedor ya no está físicamente en su mano. Consumidor DISTINTO de las
+ * mismas filas que lee `cargarAperturaVigente` (`corteReparto.ts`): esa
+ * función neta los abonos contra el ledger de saldo entre cortes; esta
+ * agrega los mismos abonos para la física de efectivo de ESTE corte (bolsa,
+ * pool_liquido, instrucciones de liquidación) — no son redundantes.
+ */
+export async function abonoFisicoDelCorte(corteId: string): Promise<Map<string, AbonoFisicoPorVendedor>> {
+  const abonos = await abonosDelCorte(corteId);
+  const porVendedor = new Map<string, AbonoFisicoPorVendedor>();
+
+  for (const a of abonos) {
+    const entrada = porVendedor.get(a.vendedor_id) ?? {
+      ya_retirado_efectivo: 0,
+      ya_retirado_transferencia: 0,
+      ya_entregado_efectivo: 0,
+      ya_entregado_transferencia: 0,
+    };
+    if (a.direccion === 'negocio_a_vendedor') {
+      if (a.forma_pago === 'efectivo') entrada.ya_retirado_efectivo += a.monto;
+      else entrada.ya_retirado_transferencia += a.monto;
+    } else {
+      if (a.forma_pago === 'efectivo') entrada.ya_entregado_efectivo += a.monto;
+      else entrada.ya_entregado_transferencia += a.monto;
+    }
+    porVendedor.set(a.vendedor_id, entrada);
+  }
+
+  return porVendedor;
+}
+
 export interface RegistrarAbonoSaldoVendedorInput {
   corteId: string;
   vendedorId: string;

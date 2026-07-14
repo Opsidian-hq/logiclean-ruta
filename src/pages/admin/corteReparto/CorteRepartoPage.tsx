@@ -81,9 +81,17 @@ export function CorteRepartoPage({ onClose }: CorteRepartoPageProps = {}) {
 
   const hayDescuadre = negocioInsumos?.identidadControl.some((ic) => !ic.cuadra) ?? false;
   const puedeAvanzarPaso2 = !hayDescuadre || reconoceDescuadre;
+  // Inc 7.5.2: un vendedor reclamó/entregó por abono más de lo que trae de
+  // bolsa esta semana — instrucción de liquidación no ejecutable, no se
+  // puede cerrar el corte hasta corregir el abono.
+  const hayAbonoExcedeBolsa = salida?.alertas.some((a) => a.tipo === 'abono_excede_bolsa') ?? false;
 
   const puedeAvanzar =
-    paso === 0 ? todosConfirmados : paso === 1 ? puedeAvanzarPaso2 : true;
+    paso === 0 ? todosConfirmados
+    : paso === 1 ? puedeAvanzarPaso2
+    : paso === 4 ? !hayAbonoExcedeBolsa
+    : paso === 5 ? !hayAbonoExcedeBolsa
+    : true;
 
   const avanzar = () => {
     if (paso < PASOS.length - 1) {

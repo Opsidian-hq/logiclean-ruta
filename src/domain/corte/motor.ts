@@ -24,6 +24,18 @@ interface PosicionInterna {
   posicion_objetivo: number;
   cobro_cxc_vieja: number;
   saldo_vendedor_apertura: number;
+  /**
+   * Física de efectivo (Inc 7.5.2): lo que el vendedor realmente tiene en
+   * mano hoy, descontando abonos ya registrados (`negocio_a_vendedor` +
+   * `vendedor_a_negocio`) desde el corte anterior — a diferencia de
+   * `bolsa`/`efectivo`/`transferencia`/`posicion_objetivo`, que siguen siendo
+   * la meta justa/cobranza cruda y no cambian por un retiro anticipado.
+   */
+  bolsa_fisica: number;
+  efectivo_fisico: number;
+  transferencia_fisico: number;
+  objetivo_neto: number;
+  abono_total: number;
 }
 
 export function calcularCorte(entrada: CorteEntrada): CorteSalida {
@@ -34,30 +46,58 @@ export function calcularCorte(entrada: CorteEntrada): CorteSalida {
     (acc, v) => acc + v.efectivo_cobrado_neto + v.transfer_cobrado_neto + v.cxc_nueva,
     0
   );
-  const pool_liquido = vendedores.reduce(
+  const pool_liquido_bruto = vendedores.reduce(
     (acc, v) => acc + v.efectivo_cobrado_neto + v.transfer_cobrado_neto,
     0
   );
+  // Efectivo/transferencia que ya salió de la bolsa colectiva por abonos
+  // "negocio_a_vendedor" (Inc 7.5.2) — a diferencia de "vendedor_a_negocio",
+  // que reubica cash dentro del pool pero nunca lo saca de él.
+  const abono_retirado_total = vendedores.reduce(
+    (acc, v) => acc + (v.abono_ya_retirado_efectivo ?? 0) + (v.abono_ya_retirado_transferencia ?? 0),
+    0
+  );
+  const pool_liquido = pool_liquido_bruto - abono_retirado_total;
 
   const obligaciones_total = negocio.adeudo_la_moderna + negocio.backoffice_pendiente;
   const v_remanente = ventas_periodo - obligaciones_total;
   // Regla 3, PRD §6: T = V / N sin ramas que asuman un N fijo (N=1 ⇒ T = V).
+  // Usa ventas_periodo (crudo, sin ajustar por abonos): el retiro anticipado
+  // de un vendedor no debe reducir la parte justa de los demás.
   const t_por_vendedor = v_remanente / n;
 
-  const posiciones: PosicionInterna[] = vendedores.map((v) => ({
-    vendedor_id: v.vendedor_id,
-    bolsa: v.efectivo_cobrado_neto + v.transfer_cobrado_neto,
-    efectivo: v.efectivo_cobrado_neto,
-    transferencia: v.transfer_cobrado_neto,
-    posicion_objetivo: t_por_vendedor - v.cxc_nueva,
-    cobro_cxc_vieja: v.cobro_cxc_vieja,
-    saldo_vendedor_apertura: v.saldo_vendedor_apertura,
-  }));
+  const posiciones: PosicionInterna[] = vendedores.map((v) => {
+    const bolsa = v.efectivo_cobrado_neto + v.transfer_cobrado_neto;
+    const posicion_objetivo = t_por_vendedor - v.cxc_nueva;
+    const abonoRetiradoEfectivo = v.abono_ya_retirado_efectivo ?? 0;
+    const abonoRetiradoTransferencia = v.abono_ya_retirado_transferencia ?? 0;
+    const abonoEntregadoEfectivo = v.abono_ya_entregado_efectivo ?? 0;
+    const abonoEntregadoTransferencia = v.abono_ya_entregado_transferencia ?? 0;
+    const abono_total =
+      abonoRetiradoEfectivo + abonoRetiradoTransferencia + abonoEntregadoEfectivo + abonoEntregadoTransferencia;
+    return {
+      vendedor_id: v.vendedor_id,
+      bolsa,
+      efectivo: v.efectivo_cobrado_neto,
+      transferencia: v.transfer_cobrado_neto,
+      posicion_objetivo,
+      cobro_cxc_vieja: v.cobro_cxc_vieja,
+      saldo_vendedor_apertura: v.saldo_vendedor_apertura,
+      bolsa_fisica: bolsa - abonoRetiradoEfectivo - abonoRetiradoTransferencia - abonoEntregadoEfectivo - abonoEntregadoTransferencia,
+      efectivo_fisico: Math.max(v.efectivo_cobrado_neto - abonoRetiradoEfectivo - abonoEntregadoEfectivo, 0),
+      transferencia_fisico: Math.max(v.transfer_cobrado_neto - abonoRetiradoTransferencia - abonoEntregadoTransferencia, 0),
+      objetivo_neto: Math.max(posicion_objetivo - abonoRetiradoEfectivo - abonoRetiradoTransferencia, 0),
+      abono_total,
+    };
+  });
 
   // Regla 4: los vendedores en positivo reservan su parte ANTES de pagar
   // obligaciones — no se compara el líquido total contra las obligaciones.
+  // Usa objetivo_neto (meta ya descontando lo que el vendedor retiró
+  // anticipado de SU PROPIA parte) y pool_liquido ya ajustado — así un
+  // faltante real hacia La Moderna por un retiro anticipado no queda oculto.
   const reservado_positivos = posiciones.reduce(
-    (acc, p) => acc + Math.max(p.posicion_objetivo, 0),
+    (acc, p) => acc + p.objetivo_neto,
     0
   );
   const disponible_obligaciones = pool_liquido - reservado_positivos;
@@ -96,6 +136,12 @@ export function calcularCorte(entrada: CorteEntrada): CorteSalida {
     if (p.saldo_vendedor_apertura !== 0) {
       alertas.push({ tipo: 'arrastre_entrante', vendedor_id: p.vendedor_id });
     }
+    // Reclamó/entregó (Inc 7.5.2) más de lo que en realidad trajo de bolsa
+    // esta semana — probable error de captura del abono; bloquea el cierre
+    // (ver CorteRepartoPage) en vez de generar una instrucción no ejecutable.
+    if (p.abono_total > p.bolsa) {
+      alertas.push({ tipo: 'abono_excede_bolsa', vendedor_id: p.vendedor_id, monto: p.abono_total - p.bolsa });
+    }
   }
 
   return {
@@ -116,14 +162,18 @@ export function calcularCorte(entrada: CorteEntrada): CorteSalida {
  * Pasada de liquidación (Paso 5, ADR-0011): movimientos mínimos que llevan a
  * cada actor de lo que tiene en mano a su posición objetivo.
  *
- * Deudores = vendedores cuya bolsa excede lo que se les entrega (incluye a
- * quien tiene posición negativa: se le entrega 0, así que debe su bolsa
- * completa). Acreedores = La Moderna, backoffice y vendedores cuya bolsa no
- * alcanza su objetivo, en ese orden de prioridad. Cada deudor drena primero
- * su efectivo y luego su transferencia (preferencia efectivo→transferencia,
- * ADR-0011) contra el acreedor vigente, con un puntero que solo avanza
- * cuando el acreedor actual queda saldado — así ningún origen-destino-forma
- * se fragmenta en más de una fila.
+ * Deudores = vendedores cuya bolsa FÍSICA (Inc 7.5.2: cruda menos lo que ya
+ * retiró o entregó por abono desde el corte anterior) excede lo que les
+ * queda por reservar de su objetivo (incluye a quien tiene posición
+ * negativa: se le entrega 0, así que debe su bolsa física completa).
+ * Acreedores = La Moderna, backoffice y vendedores cuya bolsa CRUDA no
+ * alcanza su objetivo crudo, en ese orden de prioridad — el lado acreedor no
+ * se ajusta por abonos: un retiro anticipado de un vendedor nunca debe
+ * generar una instrucción de pagarle MÁS desde el pool. Cada deudor drena
+ * primero su efectivo físico y luego su transferencia física (preferencia
+ * efectivo→transferencia, ADR-0011) contra el acreedor vigente, con un
+ * puntero que solo avanza cuando el acreedor actual queda saldado — así
+ * ningún origen-destino-forma se fragmenta en más de una fila.
  */
 function generarLiquidacion(
   posiciones: PosicionInterna[],
@@ -143,9 +193,9 @@ function generarLiquidacion(
   const deudores = posiciones
     .map((p) => ({
       vendedor_id: p.vendedor_id,
-      efectivo_disponible: p.efectivo,
-      transferencia_disponible: p.transferencia,
-      debe: p.bolsa - Math.max(p.posicion_objetivo, 0),
+      efectivo_disponible: p.efectivo_fisico,
+      transferencia_disponible: p.transferencia_fisico,
+      debe: p.bolsa_fisica - p.objetivo_neto,
     }))
     .filter((d) => d.debe > 0);
 

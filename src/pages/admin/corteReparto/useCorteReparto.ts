@@ -25,6 +25,7 @@ import {
   type SelladoDisponible,
 } from '../../../lib/corteReparto';
 import { registrarDevolucionLaModerna } from '../../../lib/movimientoLaModerna';
+import { abonoFisicoDelCorte, type AbonoFisicoPorVendedor } from '../../../lib/abonoVendedor';
 import type { Vendedor, ProductoBase, Corte } from '../../../db/schema';
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
@@ -118,11 +119,30 @@ export function useCorteReparto(responsableId: string | null): UseCorteRepartoRe
       // confirman dos cortes el mismo día, comparar solo por día dejaría
       // fuera del nuevo corte cualquier operación de ese mismo día.
       const inicioInstante = apertura.corte?.fecha_generado ?? '';
-      const entradas = await Promise.all(
-        vends.map((v) =>
-          derivarVendedorEntrada(v.id, inicioInstante, periodoFin, apertura.porVendedor.get(v.id) ?? 0)
-        )
-      );
+      const [entradasCrudas, abonoFisico] = await Promise.all([
+        Promise.all(
+          vends.map((v) =>
+            derivarVendedorEntrada(v.id, inicioInstante, periodoFin, apertura.porVendedor.get(v.id) ?? 0)
+          )
+        ),
+        // Física de efectivo (Inc 7.5.2): cuánto de la bolsa cruda de cada
+        // vendedor ya no está en su mano por un abono registrado contra el
+        // corte que se está abriendo — mismo alcance que `apertura`, pero
+        // para las instrucciones de liquidación, no el ledger de saldo.
+        apertura.corte ? abonoFisicoDelCorte(apertura.corte.id) : Promise.resolve(new Map<string, AbonoFisicoPorVendedor>()),
+      ]);
+      const entradas = entradasCrudas.map((e) => {
+        const abono = abonoFisico.get(e.vendedor_id);
+        return abono
+          ? {
+              ...e,
+              abono_ya_retirado_efectivo: abono.ya_retirado_efectivo,
+              abono_ya_retirado_transferencia: abono.ya_retirado_transferencia,
+              abono_ya_entregado_efectivo: abono.ya_entregado_efectivo,
+              abono_ya_entregado_transferencia: abono.ya_entregado_transferencia,
+            }
+          : e;
+      });
       setVendedoresEntrada(entradas);
       setConfirmaciones(Object.fromEntries(vends.map((v) => [v.id, false])));
 
