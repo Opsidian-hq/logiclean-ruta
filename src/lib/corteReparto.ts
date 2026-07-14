@@ -273,7 +273,7 @@ export async function confirmarCorte(input: ConfirmarCorteInput): Promise<Confir
   const corteId = generateUUID();
   const corte: Corte = {
     id: corteId,
-    periodo_inicio: periodoInicio,
+    periodo_inicio: periodoInicio || null,
     periodo_fin: periodoFin,
     fecha_generado: new Date().toISOString(),
     estado: 'confirmado',

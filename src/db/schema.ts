@@ -140,7 +140,7 @@ export interface Gasto {
 
 export interface Corte {
   id: string;
-  periodo_inicio: string;   // ISO date
+  periodo_inicio: string | null;   // ISO date; null = sin corte previo (primer corte)
   periodo_fin: string;      // ISO date
   fecha_generado: string;   // ISO timestamptz
   estado: 'borrador' | 'confirmado';
